@@ -1,0 +1,40 @@
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin-bottom: 16px;
+}
+
+.icon-badge svg {
+  width: 26px;
+  height: 26px;
+}
+
+.icon-badge-accent {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.icon-badge-accent-2 {
+  background: var(--accent-2-bg);
+  color: var(--accent-2);
+}
+
+/* Variante en ligne : pas de pastille de fond, taille réduite pour se glisser
+   à côté d'un texte de menu. */
+.icon-badge-compact {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 0;
+  margin-right: 6px;
+  background: none !important;
+  vertical-align: -3px;
+}
+
+.icon-badge-compact svg {
+  width: 18px;
+  height: 18px;
+}

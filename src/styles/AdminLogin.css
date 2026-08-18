@@ -1,0 +1,46 @@
+/* Page à part entière (pas de navbar publique ni de footer autour, voir
+   App.vue) : elle occupe tout l'écran pour ressembler à l'entrée d'un site
+   admin distinct plutôt qu'à une sous-page du site public. */
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-alt);
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px;
+  text-align: center;
+}
+
+.admin-login-card form {
+  text-align: left;
+}
+
+.admin-login-password {
+  position: relative;
+}
+
+.admin-login-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+
+.admin-login-back {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--text);
+}

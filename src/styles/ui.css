@@ -1,0 +1,12 @@
+.section-label {
+  display: inline-block;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent-2);
+  margin-bottom: 16px;
+}
+
+.badge-role {
+  white-space: nowrap;
+}

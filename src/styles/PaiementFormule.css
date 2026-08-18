@@ -1,0 +1,41 @@
+.paiement-page {
+  padding: 48px 0 64px;
+}
+
+.form-card,
+.confirmation-card {
+  max-width: 480px;
+  padding: 32px;
+}
+
+.paiement-prix {
+  font-family: var(--heading);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 20px;
+}
+
+.formule-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formule-liste li {
+  padding-left: 24px;
+  position: relative;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.formule-liste li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}

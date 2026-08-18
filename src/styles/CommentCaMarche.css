@@ -1,0 +1,49 @@
+.how-page {
+  padding: 48px 0 64px;
+}
+
+.intro-text {
+  max-width: 640px;
+  font-size: 17px;
+}
+
+.etape-item {
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  height: 100%;
+}
+
+.etapes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.etape-item-horizontal {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: left;
+}
+
+/* Pas de scoped style ici (CSS global importé), donc pas besoin de :deep() pour
+   atteindre l'icône rendue par IconBadge. */
+.etape-item-horizontal .icon-badge {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.etape-step {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-2);
+}

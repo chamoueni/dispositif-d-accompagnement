@@ -1,0 +1,9 @@
+.nouvelle-demande-page {
+  padding: 48px 0 64px;
+}
+
+.form-card,
+.confirmation-card {
+  max-width: 520px;
+  padding: 32px;
+}

@@ -1,0 +1,19 @@
+.mayotte-symbol {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.mayotte-lagon {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+
+.mayotte-land {
+  fill: rgba(255, 255, 255, 0.16);
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}

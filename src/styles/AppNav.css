@@ -1,0 +1,89 @@
+/* Barre flottante : sortie du flux (position: fixed), donc App.vue compense
+   avec un padding-top sur .app-main pour que le contenu ne passe pas dessous. */
+.app-nav {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1100px, calc(100% - 32px));
+  z-index: 1030;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(253, 249, 242, 0.7);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.app-nav .container {
+  max-width: 100%;
+}
+
+.app-nav .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-h);
+}
+
+.brand-text {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Logo image (src/assets/logo.png) : hauteur fixe, largeur libre pour ne pas
+   déformer le fichier fourni (pas forcément carré). */
+.brand-logo {
+  height: 32px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.app-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--text);
+  /* Un lien ne doit jamais casser au milieu ("Comment ça / marche") : il passe
+     entier à la ligne suivante plutôt que de couper les mots. */
+  white-space: nowrap;
+}
+
+.app-nav .nav-link.router-link-active {
+  color: var(--accent);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+
+.nav-actions .btn,
+.nav-actions .badge {
+  white-space: nowrap;
+}
+
+/* Bouton "Aa" (mode confort) : surligné dès qu'il est actif, pour que l'état soit
+   visible sans avoir à lire le texte (utile pour un public qui active le confort
+   justement parce que lire est difficile). */
+.confort-toggle[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+@media (min-width: 992px) {
+  .nav-actions {
+    margin-top: 0;
+  }
+}

@@ -1,0 +1,44 @@
+.service-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin-bottom: 16px;
+}
+
+.service-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.service-icon-soins {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.service-icon-courses {
+  background: var(--accent-2-bg);
+  color: var(--accent-2);
+}
+
+.service-icon-menage {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.service-icon-garde {
+  background: var(--accent-2-bg);
+  color: var(--accent-2);
+}
+
+.service-icon-psychologique {
+  background: var(--accent-2-bg);
+  color: var(--accent-2);
+}
+
+.service-icon-light {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--accent-deep);
+}

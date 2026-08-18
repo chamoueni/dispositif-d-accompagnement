@@ -1,0 +1,139 @@
+import { watch } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuth } from '../stores/auth'
+
+// Chaque page est chargée en lazy (import dynamique) : Vite génère un chunk JS
+// séparé par page, chargé uniquement quand on visite la route correspondante.
+const routes = [
+  {
+    path: '/',
+    name: 'accueil',
+    component: () => import('../pages/Accueil.vue'),
+  },
+  // Pages de présentation publiques (accessibles sans être connecté).
+  {
+    path: '/pourquoi',
+    name: 'pourquoi',
+    component: () => import('../pages/Pourquoi.vue'),
+  },
+  {
+    path: '/services',
+    name: 'services',
+    component: () => import('../pages/Services.vue'),
+  },
+  {
+    path: '/pour-qui',
+    name: 'pour-qui',
+    component: () => import('../pages/PourQui.vue'),
+  },
+  {
+    path: '/comment-ca-marche',
+    name: 'comment-ca-marche',
+    component: () => import('../pages/CommentCaMarche.vue'),
+  },
+  {
+    path: '/atouts',
+    name: 'atouts',
+    component: () => import('../pages/Atouts.vue'),
+  },
+  // guestOnly : réservé aux visiteurs non connectés (redirige vers /profil sinon).
+  {
+    path: '/inscription',
+    name: 'inscription',
+    component: () => import('../pages/Inscription.vue'),
+    meta: { guestOnly: true },
+  },
+  {
+    path: '/connexion',
+    name: 'connexion',
+    component: () => import('../pages/Connexion.vue'),
+    meta: { guestOnly: true },
+  },
+  // requiresAuth : redirige vers /connexion si personne n'est connecté.
+  {
+    path: '/profil',
+    name: 'profil',
+    component: () => import('../pages/Profil.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/recherche',
+    name: 'recherche',
+    component: () => import('../pages/RecherchePersonnel.vue'),
+    meta: { requiresAuth: true },
+  },
+  // :aidantId identifie le prestataire ciblé (id récupéré via useRoute() dans la page).
+  {
+    path: '/nouvelle-demande/:aidantId',
+    name: 'nouvelle-demande',
+    component: () => import('../pages/NouvelleDemande.vue'),
+    meta: { requiresAuth: true },
+  },
+  // :formuleId correspond à un id de FORMULES (voir data/store.js).
+  {
+    path: '/formule/:formuleId',
+    name: 'formule',
+    component: () => import('../pages/PaiementFormule.vue'),
+    meta: { requiresAuth: true },
+  },
+  // Espace admin : page de connexion dédiée (pas de guestOnly ici, la page
+  // gère elle-même la redirection si un admin est déjà connecté), puis le
+  // tableau de bord réservé au compte admin (voir isAdmin dans stores/auth.js).
+  {
+    path: '/admin/connexion',
+    name: 'admin-connexion',
+    component: () => import('../pages/AdminLogin.vue'),
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('../pages/Admin.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+  scrollBehavior() {
+    return { top: 0 }
+  },
+})
+
+// Supabase restaure la session de façon asynchrone au démarrage : tant que ce
+// n'est pas fait, on ne sait pas encore si quelqu'un est connecté. Sans cette
+// attente, un utilisateur déjà connecté se ferait rediriger vers /connexion à
+// chaque rechargement de page, le temps que la session soit restaurée.
+function attendreInitialisation(initialized) {
+  if (initialized.value) return Promise.resolve()
+  return new Promise((resolve) => {
+    const stop = watch(initialized, (prete) => {
+      if (prete) {
+        stop()
+        resolve()
+      }
+    })
+  })
+}
+
+// Garde de navigation globale : applique les règles requiresAuth / guestOnly
+// définies sur chaque route avant de laisser passer.
+router.beforeEach(async (to) => {
+  const { user, isAdmin, initialized } = useAuth()
+  await attendreInitialisation(initialized)
+
+  // Cas particulier de /admin : on renvoie vers la connexion admin dédiée,
+  // pas vers la connexion "grand public" ni l'accueil.
+  if (to.meta.requiresAdmin && (!user.value || !isAdmin.value)) {
+    return { name: 'admin-connexion' }
+  }
+  if (to.meta.requiresAuth && !user.value) {
+    return { name: 'connexion' }
+  }
+  if (to.meta.guestOnly && user.value) {
+    return { name: 'profil' }
+  }
+  return true
+})
+
+export default router

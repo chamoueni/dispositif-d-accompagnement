@@ -1,0 +1,136 @@
+/* Palette et typographie inspirées de la maquette "Mlezi" (teal + or, Fraunces/Inter/
+   IBM Plex Mono) : identité plus marquée que la police système + vert/orange générique
+   utilisés avant. Ces tokens sont repris dans bootstrap-custom.scss pour que les
+   composants Bootstrap (boutons, badges...) suivent la même palette. */
+:root {
+  --text: #3f544f;
+  --text-h: #122421;
+  --bg: #fbfaf6;
+  --bg-alt: #f1efe7;
+  --border: #d9d3c4;
+  --code-bg: #f1efe7;
+  --accent: #0e5c56;
+  --accent-deep: #0a3e3a;
+  --accent-bg: rgba(14, 92, 86, 0.1);
+  --accent-border: rgba(14, 92, 86, 0.45);
+  --accent-2: #e3a234;
+  --accent-2-deep: #b87a1d;
+  --accent-2-bg: rgba(227, 162, 52, 0.14);
+  --social-bg: rgba(241, 239, 231, 0.7);
+  --card-bg: #ffffff;
+  --danger: #c05b4d;
+  --shadow:
+    rgba(10, 40, 36, 0.1) 0 10px 15px -3px, rgba(10, 40, 36, 0.06) 0 4px 6px -2px;
+
+  --sans: 'Inter', system-ui, Roboto, sans-serif;
+  --heading: 'Fraunces', Georgia, serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  /* Thème clair uniquement : Bootstrap est compilé en clair (bootstrap-custom.scss),
+     laisser le navigateur basculer les couleurs en sombre casserait le contraste
+     des composants Bootstrap (texte "muted" notamment). */
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+#app {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
+
+/* Mode confort (voir stores/accessibility.js) : texte agrandi et zones cliquables
+   plus larges, pensé pour les personnes âgées qui ont besoin de plus de confort
+   visuel/tactile. Activé via la classe .mode-confort posée sur <html>. */
+.mode-confort {
+  font-size: 20px;
+}
+
+.mode-confort .btn {
+  font-size: 1.15em;
+  padding: 14px 26px;
+}
+
+.mode-confort .btn-sm {
+  font-size: 1em;
+  padding: 11px 20px;
+}
+
+.mode-confort .form-control,
+.mode-confort .form-select {
+  font-size: 1.1em;
+  padding: 12px 16px;
+}
+
+.mode-confort .nav-link {
+  font-size: 1.1em;
+}
+
+.mode-confort h1 {
+  font-size: 3.2em;
+}
+
+.mode-confort h2 {
+  font-size: 1.6em;
+}

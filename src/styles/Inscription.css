@@ -1,0 +1,38 @@
+.signup-page {
+  padding: 48px 0;
+}
+
+.signup-card {
+  max-width: 560px;
+  padding: 32px;
+}
+
+.role-choices {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.role-choice {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.role-choice input {
+  margin: 0;
+}
+
+.role-choice.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}

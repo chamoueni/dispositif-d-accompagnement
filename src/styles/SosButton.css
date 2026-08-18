@@ -1,0 +1,108 @@
+/* Le widget entier (bouton + menu) est positionné en fixed ; le bouton lui-même
+   n'a plus besoin de l'être individuellement. */
+.sos-widget {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1040;
+}
+
+.sos-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -8px rgba(192, 91, 77, 0.6);
+}
+
+.sos-button:hover {
+  filter: brightness(1.05);
+}
+
+.mode-confort .sos-button {
+  width: 76px;
+  height: 76px;
+  font-size: 18px;
+}
+
+/* Menu qui s'ouvre au-dessus du bouton, aligné sur son bord droit. */
+.sos-menu {
+  position: absolute;
+  right: 0;
+  bottom: 76px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.sos-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-h);
+  text-decoration: none;
+  /* Un des deux items est un <button> (pas un <a>) : on lui retire les styles
+     par défaut du navigateur pour qu'il se fonde avec l'autre. */
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sos-menu-item:hover {
+  background: var(--bg-alt);
+}
+
+.sos-menu-item svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.sos-menu-item-urgence svg {
+  color: var(--danger);
+}
+
+.sos-menu-item span {
+  display: flex;
+  flex-direction: column;
+}
+
+.sos-menu-item strong {
+  font-size: 14px;
+}
+
+.sos-menu-item small {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.sos-form {
+  padding: 4px;
+}
+
+.sos-confirmation {
+  padding: 8px 4px;
+  font-size: 14px;
+  color: var(--text-h);
+}
