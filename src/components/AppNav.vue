@@ -95,13 +95,13 @@ function handleLogout() {
           </li>
           <li class="nav-item">
             <router-link
-              to="/profil"
+              to="/mon-compte"
               class="nav-link"
             >
               <IconBadge
                 name="profile"
                 compact
-              />Mon profil
+              />Mon compte
             </router-link>
           </li>
         </ul>

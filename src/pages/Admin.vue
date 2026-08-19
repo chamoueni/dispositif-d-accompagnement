@@ -161,7 +161,7 @@ const activiteRecente = computed(() => {
       <template v-else>
         <!-- Cartes stats colorées, une par indicateur clé. -->
         <div class="row g-3 mb-4">
-          <div class="col-6 col-lg-3">
+          <div class="col-12 col-sm-6 col-lg-3">
             <div class="admin-stat-card admin-stat-danger">
               <IconBadge
                 name="phone"
@@ -176,7 +176,7 @@ const activiteRecente = computed(() => {
               </p>
             </div>
           </div>
-          <div class="col-6 col-lg-3">
+          <div class="col-12 col-sm-6 col-lg-3">
             <div class="admin-stat-card admin-stat-accent">
               <IconBadge
                 name="profile"
@@ -191,7 +191,7 @@ const activiteRecente = computed(() => {
               </p>
             </div>
           </div>
-          <div class="col-6 col-lg-3">
+          <div class="col-12 col-sm-6 col-lg-3">
             <div class="admin-stat-card admin-stat-accent2">
               <IconBadge
                 name="calendar"
@@ -206,7 +206,7 @@ const activiteRecente = computed(() => {
               </p>
             </div>
           </div>
-          <div class="col-6 col-lg-3">
+          <div class="col-12 col-sm-6 col-lg-3">
             <div class="admin-stat-card admin-stat-accent">
               <IconBadge
                 name="connect"

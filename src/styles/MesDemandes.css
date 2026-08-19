@@ -1,0 +1,16 @@
+.mes-demandes-page {
+  padding: 40px 0 64px;
+}
+
+.demande-item {
+  border-radius: 14px;
+}
+
+/* Badge "Annulée" : neutre, distinct des couleurs sémantiques (succès/attente/
+   danger déjà utilisées), $secondary étant réassigné à l'or dans ce projet et
+   donc impropre à représenter un état neutre/grisé. */
+.badge-neutral {
+  background: var(--bg-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+}

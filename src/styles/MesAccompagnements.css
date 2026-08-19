@@ -1,0 +1,13 @@
+.mes-accompagnements-page {
+  padding: 40px 0 64px;
+}
+
+.mission-item {
+  border-radius: 14px;
+}
+
+.mission-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}

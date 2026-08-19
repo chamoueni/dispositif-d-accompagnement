@@ -1,0 +1,19 @@
+.mon-compte-page {
+  padding: 40px 0 64px;
+}
+
+.compte-tile {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 14px;
+  transition: border-color 0.15s ease;
+}
+
+.compte-tile:hover {
+  border-color: var(--accent-border);
+}
+
+.compte-tile .icon-badge {
+  margin-bottom: 10px;
+}

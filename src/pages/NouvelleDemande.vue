@@ -43,7 +43,16 @@ const envoyee = ref(false)
 
 onMounted(async () => {
   aidant.value = await findById(route.params.aidantId)
-  form.typeService = servicesDisponibles.value[0] || ''
+  // "Refaire cette demande" (voir MesDemandes.vue / Historique.vue) arrive ici
+  // avec typeService/urgence/message en query params : on les reprend s'ils
+  // sont présents et valides pour cet aidant, sinon comportement inchangé.
+  const { typeService, urgence, message } = route.query
+  form.typeService =
+    typeService && servicesDisponibles.value.includes(typeService)
+      ? typeService
+      : servicesDisponibles.value[0] || ''
+  form.urgence = urgence === 'urgente' ? 'urgente' : 'normale'
+  form.message = message || ''
   form.creneauSouhaite = aidant.value?.disponibilites?.[0] || null
   chargement.value = false
 })

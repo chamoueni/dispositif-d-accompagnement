@@ -64,6 +64,32 @@ const routes = [
     component: () => import('../pages/Profil.vue'),
     meta: { requiresAuth: true },
   },
+  // Espace personnel : hub "Mon compte" + ses sous-pages (demandes, missions
+  // en cours, historique). Toutes réservées aux utilisateurs connectés.
+  {
+    path: '/mon-compte',
+    name: 'mon-compte',
+    component: () => import('../pages/MonCompte.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/mes-demandes',
+    name: 'mes-demandes',
+    component: () => import('../pages/MesDemandes.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/mes-accompagnements',
+    name: 'mes-accompagnements',
+    component: () => import('../pages/MesAccompagnements.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/historique',
+    name: 'historique',
+    component: () => import('../pages/Historique.vue'),
+    meta: { requiresAuth: true },
+  },
   {
     path: '/recherche',
     name: 'recherche',
