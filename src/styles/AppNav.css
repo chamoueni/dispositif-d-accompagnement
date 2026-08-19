@@ -24,13 +24,14 @@
 /* Sur petit écran, la barre passe souvent au-dessus de la photo du hero (fond
    sombre) : le fond très translucide (0.7 + flou) prend alors une teinte
    grisâtre inégale selon ce qu'il y a dessous, et le bouton "burger" peut
-   sembler flotter séparément. Fond opaque (sans flou) en dessous de 768px pour
-   une barre lisible quel que soit le contenu derrière elle.
+   sembler flotter séparément. Fond opaque (sans flou) tant que le menu peut
+   être en mode déroulant (jusqu'à 991px, seuil où navbar-expand-lg bascule en
+   mode "burger" : couvre donc aussi bien téléphone que tablette).
    Le backdrop-filter est aussi désactivé ici : une fois le fond quasi opaque,
    le flou n'apporte plus rien et certains navigateurs (Safari iOS) le
    repeignent mal quand le menu déroulant change de hauteur à l'ouverture,
    laissant transparaître des fragments de la page derrière le menu. */
-@media (max-width: 767px) {
+@media (max-width: 991px) {
   .app-nav {
     background: var(--bg);
     -webkit-backdrop-filter: none;
