@@ -77,6 +77,15 @@
   line-height: 1.12;
   margin: 8px 0 16px;
   color: #fff;
+  /* Filet de sécurité : un mot long ("accompagnement") ne doit jamais forcer un
+     débordement horizontal de toute la page sur un petit écran. */
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 480px) {
+  .hero-text h1 {
+    font-size: 32px;
+  }
 }
 
 /* Reprend le style "Fraunces italique" de la maquette Mlezi pour souligner un mot

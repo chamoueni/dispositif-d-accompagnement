@@ -21,6 +21,17 @@
   max-width: 100%;
 }
 
+/* Sur petit écran, la barre passe souvent au-dessus de la photo du hero (fond
+   sombre) : le fond très translucide (0.7 + flou) prend alors une teinte
+   grisâtre inégale selon ce qu'il y a dessous, et le bouton "burger" peut
+   sembler flotter séparément. Fond quasi opaque en dessous de 768px pour une
+   barre lisible et cohérente quel que soit le contenu derrière elle. */
+@media (max-width: 767px) {
+  .app-nav {
+    background: rgba(253, 249, 242, 0.96);
+  }
+}
+
 .app-nav .navbar-brand {
   display: inline-flex;
   align-items: center;
