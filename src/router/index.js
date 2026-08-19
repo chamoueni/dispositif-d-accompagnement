@@ -31,6 +31,14 @@ const routes = [
     name: 'comment-ca-marche',
     component: () => import('../pages/CommentCaMarche.vue'),
   },
+  // Questionnaire "Je cherche de l'aide" en 4 étapes, public (pas de connexion
+  // requise pour explorer les résultats ; envoyer une demande nécessite un
+  // compte, déjà géré par la garde requiresAuth de /nouvelle-demande).
+  {
+    path: '/assistant',
+    name: 'assistant',
+    component: () => import('../pages/AssistantBesoin.vue'),
+  },
   {
     path: '/atouts',
     name: 'atouts',

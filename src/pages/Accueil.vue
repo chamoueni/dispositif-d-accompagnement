@@ -103,11 +103,20 @@ const ENGAGEMENTS = [
             coursiers et des aides à domicile disponibles près de chez elles, à Mayotte.
           </p>
           <div class="hero-actions">
+            <!-- Entrée dédiée vers l'Assistant de besoin (page /assistant), en plus
+                 des actions de compte existantes ci-dessous : ne remplace rien,
+                 s'ajoute pour qui veut être guidé avant de s'inscrire. -->
             <router-link
-              to="/inscription"
+              to="/assistant"
               class="btn btn-primary btn-lg"
             >
-              S'inscrire
+              Je cherche de l'aide
+            </router-link>
+            <router-link
+              to="/inscription"
+              class="btn btn-outline-light btn-lg"
+            >
+              Je souhaite aider
             </router-link>
             <router-link
               to="/connexion"

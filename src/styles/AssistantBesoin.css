@@ -1,0 +1,205 @@
+.assistant-page {
+  padding: 32px 0 64px;
+}
+
+.assistant-header {
+  max-width: 640px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+/* Barre de progression : 4 pastilles numérotées reliées par un trait, l'étape
+   active ressort en couleur pleine, les étapes passées en version atténuée. */
+.assistant-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 auto 4px;
+  max-width: 360px;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.progress-step:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+.progress-step-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.progress-step-active .progress-step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.progress-step-done .progress-step-dot {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent-deep);
+}
+
+.assistant-step-card {
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 18px;
+}
+
+.assistant-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+/* Grille de cartes cliquables (étapes 1 et 2) : grandes zones, faciles à
+   cliquer/toucher, pensées pour un public âgé (cf. demande d'accessibilité). */
+.choice-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.choice-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.choice-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 640px) {
+  .choice-grid-2,
+  .choice-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.choice-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.choice-tile:hover {
+  border-color: var(--accent-border);
+}
+
+.choice-tile-selected {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.choice-tile-compact {
+  padding: 16px 10px;
+  min-height: 128px;
+  justify-content: center;
+  position: relative;
+}
+
+.choice-tile-disabled {
+  opacity: 0.72;
+}
+
+.choice-tile-badge {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+
+/* Sélecteur de zone (étape 3) : boutons "pilule" au-dessus du menu déroulant
+   de communes, pour filtrer rapidement avant de choisir la commune précise. */
+.zone-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zone-tab {
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.zone-tab-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Niveau d'urgence (étape 4) : vert/orange/rouge, cohérent avec la demande de
+   palette (vert = normal, orange = important, rouge = urgent). */
+.urgence-choices {
+  display: flex;
+  gap: 10px;
+}
+
+.urgence-tile {
+  flex: 1;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.urgence-tile-normal.urgence-tile-selected {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent-deep);
+}
+
+.urgence-tile-important.urgence-tile-selected {
+  border-color: var(--accent-2);
+  background: var(--accent-2-bg);
+  color: var(--accent-2-deep);
+}
+
+.urgence-tile-urgent.urgence-tile-selected {
+  border-color: var(--danger);
+  background: rgba(192, 91, 77, 0.12);
+  color: var(--danger);
+}
+
+.results-banner {
+  border-radius: 16px;
+}
