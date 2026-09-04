@@ -161,8 +161,11 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAdmin && (!user.value || !isAdmin.value)) {
     return { name: 'admin-connexion' }
   }
+  // On garde la destination visée (ex. /formule/confort) dans l'URL de connexion,
+  // pour pouvoir y renvoyer l'utilisateur une fois connecté au lieu de le laisser
+  // sur /profil sans lien avec ce qu'il voulait faire (voir Connexion.vue).
   if (to.meta.requiresAuth && !user.value) {
-    return { name: 'connexion' }
+    return { name: 'connexion', query: { redirect: to.fullPath } }
   }
   if (to.meta.guestOnly && user.value) {
     return { name: 'profil' }

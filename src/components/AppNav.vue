@@ -62,10 +62,12 @@ function handleLogout() {
         id="navMain"
         class="collapse navbar-collapse"
       >
-        <!-- Menu réduit pour toute personne connectée : Accueil + Mon profil, plus
-             Recherche pour une personne âgée (seul rôle qui utilise cette page). -->
+        <!-- Menu réduit pour toute personne connectée (hors admin) : Accueil + Mon
+             profil, plus Recherche pour une personne âgée (seul rôle qui utilise
+             cette page). L'admin a son propre espace (sidebar dédiée), donc ces
+             liens ne lui servent à rien ici. -->
         <ul
-          v-if="user"
+          v-if="user && !isAdmin"
           class="navbar-nav me-auto"
         >
           <li class="nav-item">
@@ -109,7 +111,7 @@ function handleLogout() {
         <!-- Menu complet (présentation du dispositif), uniquement pour un visiteur
              pas encore connecté. -->
         <ul
-          v-else
+          v-else-if="!user"
           class="navbar-nav me-auto"
         >
           <li class="nav-item">
@@ -168,7 +170,10 @@ function handleLogout() {
             >
               Admin
             </router-link>
-            <span class="badge text-bg-light border badge-role">{{ ROLE_LABELS[user.role] }}</span>
+            <span
+              v-if="!isAdmin"
+              class="badge text-bg-light border badge-role"
+            >{{ ROLE_LABELS[user.role] }}</span>
             <button
               type="button"
               class="btn btn-outline-secondary btn-sm"

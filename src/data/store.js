@@ -311,7 +311,16 @@ export async function getMessagesContact() {
 
 // Réservé à l'admin (la policy RLS "messages_contact_delete_admin" refuse tout
 // le reste). Supprime définitivement le message ; pas de corbeille/annulation.
+// .select() force Supabase à renvoyer les lignes effectivement supprimées :
+// sans ça, un delete() bloqué par la RLS "réussit" quand même côté client
+// (0 ligne affectée, mais pas d'erreur) et le message semblait supprimé
+// jusqu'au prochain rechargement.
 export async function deleteMessageContact(id) {
-  const { error } = await supabase.from('messages_contact').delete().eq('id', id)
+  const { data, error } = await supabase.from('messages_contact').delete().eq('id', id).select('id')
   if (error) throw new Error(error.message)
+  if (!data || data.length === 0) {
+    throw new Error(
+      "Suppression refusée par la base (droits insuffisants) : le message n'a pas été supprimé.",
+    )
+  }
 }

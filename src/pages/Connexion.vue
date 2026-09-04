@@ -1,21 +1,25 @@
 <script setup>
 // Connexion email/mot de passe via Supabase Auth (voir stores/auth.js).
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
 import '../styles/Connexion.css'
 
 const router = useRouter()
+const route = useRoute()
 const { login } = useAuth()
 
 const form = reactive({ email: '', password: '' })
 const error = ref('')
 
+// Si on arrive ici via la garde requiresAuth (ex. clic sur "Choisir Confort"
+// sans être connecté), on revient après connexion là où on voulait aller
+// plutôt que de laisser l'utilisateur sur /profil sans lien avec son clic.
 async function handleSubmit() {
   error.value = ''
   try {
     await login(form.email, form.password)
-    router.push('/profil')
+    router.push(route.query.redirect || '/profil')
   } catch (err) {
     error.value = err.message
   }
@@ -31,7 +35,7 @@ async function handleSubmit() {
           Connexion
         </h1>
         <p class="text-muted mb-4">
-          Accédez à votre espace.
+          {{ route.query.redirect ? 'Connectez-vous pour continuer.' : 'Accédez à votre espace.' }}
         </p>
 
         <form @submit.prevent="handleSubmit">

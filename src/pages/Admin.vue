@@ -98,8 +98,8 @@ const activiteRecente = computed(() => {
 <template>
   <div class="admin-shell">
     <!-- Sidebar : identité de l'espace admin + navigation + déconnexion. Une
-         seule page pour l'instant (Tableau de bord), donc pas d'autres liens
-         de nav qui ne mèneraient nulle part. -->
+         seule page pour l'instant (Tableau de bord), donc les raccourcis
+         Comptes/Messages sont de simples ancres vers les sections plus bas. -->
     <aside class="admin-sidebar">
       <div class="admin-sidebar-brand">
         <img
@@ -119,6 +119,30 @@ const activiteRecente = computed(() => {
           />
           Tableau de bord
         </span>
+        <!-- Raccourcis vers les sections de la page (une seule page pour l'instant,
+             donc de simples ancres plutôt que des routes séparées). -->
+        <a
+          href="#comptes"
+          class="admin-sidebar-link"
+        >
+          <IconBadge
+            name="profile"
+            tone="accent"
+            compact
+          />
+          Comptes
+        </a>
+        <a
+          href="#messages"
+          class="admin-sidebar-link"
+        >
+          <IconBadge
+            name="phone"
+            tone="accent-2"
+            compact
+          />
+          Messages
+        </a>
         <router-link
           to="/"
           class="admin-sidebar-link"
@@ -159,10 +183,14 @@ const activiteRecente = computed(() => {
       </div>
 
       <template v-else>
-        <!-- Cartes stats colorées, une par indicateur clé. -->
+        <!-- Cartes stats colorées, une par indicateur clé. Doublent aussi comme
+             raccourcis : cliquer une carte défile jusqu'à la section concernée. -->
         <div class="row g-3 mb-4">
           <div class="col-12 col-sm-6 col-lg-3">
-            <div class="admin-stat-card admin-stat-danger">
+            <a
+              href="#messages"
+              class="admin-stat-card admin-stat-danger admin-stat-link"
+            >
               <IconBadge
                 name="phone"
                 tone="accent-2"
@@ -174,10 +202,13 @@ const activiteRecente = computed(() => {
               <p class="admin-stat-label">
                 Messages non lus
               </p>
-            </div>
+            </a>
           </div>
           <div class="col-12 col-sm-6 col-lg-3">
-            <div class="admin-stat-card admin-stat-accent">
+            <a
+              href="#comptes"
+              class="admin-stat-card admin-stat-accent admin-stat-link"
+            >
               <IconBadge
                 name="profile"
                 tone="accent"
@@ -189,10 +220,13 @@ const activiteRecente = computed(() => {
               <p class="admin-stat-label">
                 Comptes au total
               </p>
-            </div>
+            </a>
           </div>
           <div class="col-12 col-sm-6 col-lg-3">
-            <div class="admin-stat-card admin-stat-accent2">
+            <a
+              href="#comptes"
+              class="admin-stat-card admin-stat-accent2 admin-stat-link"
+            >
               <IconBadge
                 name="calendar"
                 tone="accent-2"
@@ -204,10 +238,13 @@ const activiteRecente = computed(() => {
               <p class="admin-stat-label">
                 Nouveaux ce mois
               </p>
-            </div>
+            </a>
           </div>
           <div class="col-12 col-sm-6 col-lg-3">
-            <div class="admin-stat-card admin-stat-accent">
+            <a
+              href="#messages"
+              class="admin-stat-card admin-stat-accent admin-stat-link"
+            >
               <IconBadge
                 name="connect"
                 tone="accent"
@@ -219,14 +256,17 @@ const activiteRecente = computed(() => {
               <p class="admin-stat-label">
                 Messages au total
               </p>
-            </div>
+            </a>
           </div>
         </div>
 
         <div class="row g-4">
           <!-- Colonne principale : comptes + messages. -->
           <div class="col-lg-8">
-            <h2 class="h5 mb-3">
+            <h2
+              id="comptes"
+              class="h5 mb-3"
+            >
               Comptes ({{ utilisateurs.length }})
             </h2>
             <div class="card p-0 mb-5">
@@ -271,7 +311,10 @@ const activiteRecente = computed(() => {
 
             <!-- Messages envoyés via "SOS > Un problème avec le site" (voir
                  components/SosButton.vue). userId est vide pour un visiteur non connecté. -->
-            <h2 class="h5 mb-3">
+            <h2
+              id="messages"
+              class="h5 mb-3"
+            >
               Messages reçus ({{ messages.length }})
             </h2>
             <div
