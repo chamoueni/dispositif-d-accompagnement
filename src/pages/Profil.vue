@@ -5,6 +5,7 @@
 import { reactive, ref } from 'vue'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
+import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Profil.css'
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
@@ -15,7 +16,7 @@ const ROLE_LABELS = {
   particulier: 'Particulier',
 }
 
-const { user, updateProfile } = useAuth()
+const { user, updateProfile, changerMotDePasse } = useAuth()
 
 // Formulaire local pré-rempli avec les valeurs actuelles ; rien n'est sauvegardé
 // tant que handleSave() n'est pas appelé.
@@ -79,6 +80,40 @@ async function handleSave() {
   })
   savedMessage.value = 'Profil mis à jour.'
   setTimeout(() => (savedMessage.value = ''), 2500)
+}
+
+// Changement de mot de passe : formulaire séparé de "Informations" (pas de
+// bouton "Enregistrer" commun) pour ne pas mélanger deux actions différentes.
+const motDePasse = reactive({ nouveau: '', confirmation: '' })
+const motDePasseErreur = ref('')
+const motDePasseMessage = ref('')
+const motDePasseEnCours = ref(false)
+
+async function handleChangerMotDePasse() {
+  motDePasseErreur.value = ''
+  motDePasseMessage.value = ''
+
+  if (motDePasse.nouveau.length < 6) {
+    motDePasseErreur.value = 'Le mot de passe doit contenir au moins 6 caractères.'
+    return
+  }
+  if (motDePasse.nouveau !== motDePasse.confirmation) {
+    motDePasseErreur.value = 'Les deux mots de passe ne correspondent pas.'
+    return
+  }
+
+  motDePasseEnCours.value = true
+  try {
+    await changerMotDePasse(motDePasse.nouveau)
+    motDePasseMessage.value = 'Mot de passe mis à jour.'
+    motDePasse.nouveau = ''
+    motDePasse.confirmation = ''
+    setTimeout(() => (motDePasseMessage.value = ''), 2500)
+  } catch (err) {
+    motDePasseErreur.value = err.message
+  } finally {
+    motDePasseEnCours.value = false
+  }
 }
 </script>
 
@@ -208,6 +243,49 @@ async function handleSave() {
                 v-if="savedMessage"
                 class="text-success small ms-3"
               >{{ savedMessage }}</span>
+            </form>
+          </div>
+
+          <div class="card p-4 mt-4">
+            <h2 class="h5 mb-3">
+              Sécurité
+            </h2>
+            <form @submit.prevent="handleChangerMotDePasse">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Nouveau mot de passe</label>
+                  <ChampMotDePasse
+                    id="nouveau-mot-de-passe"
+                    v-model="motDePasse.nouveau"
+                    autocomplete="new-password"
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Confirmer le mot de passe</label>
+                  <ChampMotDePasse
+                    id="confirmation-mot-de-passe"
+                    v-model="motDePasse.confirmation"
+                    autocomplete="new-password"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                :disabled="motDePasseEnCours"
+              >
+                {{ motDePasseEnCours ? 'Enregistrement…' : 'Changer le mot de passe' }}
+              </button>
+              <span
+                v-if="motDePasseMessage"
+                class="text-success small ms-3"
+              >{{ motDePasseMessage }}</span>
+              <p
+                v-if="motDePasseErreur"
+                class="text-danger small mt-2 mb-0"
+              >
+                {{ motDePasseErreur }}
+              </p>
             </form>
           </div>
         </div>

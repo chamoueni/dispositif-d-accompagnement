@@ -39,7 +39,7 @@
   position: absolute;
   right: 0;
   bottom: 76px;
-  width: 260px;
+  width: 300px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -105,4 +105,48 @@
   padding: 8px 4px;
   font-size: 14px;
   color: var(--text-h);
+}
+
+/* Conversation du chat IA : un peu plus large que le menu, avec l'historique
+   qui défile au-dessus du champ de saisie (toujours visible en bas). */
+.sos-chat {
+  width: 100%;
+}
+
+.sos-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 2px 2px 8px;
+}
+
+.sos-chat-bubble {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  max-width: 88%;
+  white-space: pre-wrap;
+}
+
+.sos-chat-bubble-user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.sos-chat-bubble-ia {
+  align-self: flex-start;
+  background: var(--bg-alt);
+  color: var(--text-h);
+  border-bottom-left-radius: 4px;
+}
+
+.sos-chat-bubble-loading {
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }

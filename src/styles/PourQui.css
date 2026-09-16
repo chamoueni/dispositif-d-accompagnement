@@ -19,6 +19,17 @@
   display: block;
 }
 
+.audience-testimonial {
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.audience-testimonial p {
+  font-size: 0.96rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
 .photo-credit {
   font-size: 11px;
   color: var(--text);

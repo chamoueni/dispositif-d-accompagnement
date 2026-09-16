@@ -99,8 +99,36 @@ async function updateProfile(patch) {
   state.user = { ...state.user, ...patch }
 }
 
+// Changement de mot de passe pour un utilisateur déjà connecté (page Profil).
+// Supabase exige d'être authentifié pour appeler updateUser() : pas besoin de
+// redemander l'ancien mot de passe côté client, la session en cours suffit.
+async function changerMotDePasse(nouveauMotDePasse) {
+  const { error } = await supabase.auth.updateUser({ password: nouveauMotDePasse })
+  if (error) throw new Error(error.message)
+}
+
+// Mot de passe oublié (utilisateur déconnecté) : envoie un email avec un lien
+// qui ouvre /reinitialiser-mot-de-passe avec une session de récupération.
+// Supabase ne révèle jamais si l'email existe ou non (retourne un succès dans
+// les deux cas), donc l'appelant peut toujours afficher un message générique.
+async function demanderReinitialisationMotDePasse(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reinitialiser-mot-de-passe`,
+  })
+  if (error) throw new Error(error.message)
+}
+
 export function useAuth() {
   // toRefs pour que `const { user } = useAuth()` reste réactif dans les
   // composants, comme avec l'ancien computed().
-  return { ...toRefs(state), isAdmin, signup, login, logout, updateProfile }
+  return {
+    ...toRefs(state),
+    isAdmin,
+    signup,
+    login,
+    logout,
+    updateProfile,
+    changerMotDePasse,
+    demanderReinitialisationMotDePasse,
+  }
 }

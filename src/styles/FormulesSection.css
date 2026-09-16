@@ -10,6 +10,11 @@
   box-shadow: var(--shadow);
 }
 
+.formule-card-active {
+  border-color: var(--success, #2e7d32);
+  box-shadow: var(--shadow);
+}
+
 .formule-badge {
   position: absolute;
   top: -12px;

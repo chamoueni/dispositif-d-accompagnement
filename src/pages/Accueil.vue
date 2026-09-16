@@ -100,12 +100,12 @@ const ENGAGEMENTS = [
           <h1>Un accompagnement de <span class="hero-highlight">confiance</span>, à quelques clics</h1>
           <p class="lead">
             Le dispositif met en relation les personnes âgées avec du personnel de santé, des
-            coursiers et des aides à domicile disponibles près de chez elles, à Mayotte.
+            coursiers et des aides à domicile. 
           </p>
           <div class="hero-actions">
-            <!-- Entrée dédiée vers l'Assistant de besoin (page /assistant), en plus
-                 des actions de compte existantes ci-dessous : ne remplace rien,
-                 s'ajoute pour qui veut être guidé avant de s'inscrire. -->
+            <!-- Entrée dédiée vers l'Assistant de besoin (page /assistant) : elle
+                 guide directement l'utilisateur vers le bon parcours sans ajouter
+                 de bouton de connexion redondant dans le hero. -->
             <router-link
               to="/assistant"
               class="btn btn-primary btn-lg"
@@ -117,12 +117,6 @@ const ENGAGEMENTS = [
               class="btn btn-outline-light btn-lg"
             >
               Je souhaite aider
-            </router-link>
-            <router-link
-              to="/connexion"
-              class="btn btn-outline-light btn-lg"
-            >
-              Connexion
             </router-link>
           </div>
         </div>
@@ -348,7 +342,11 @@ const ENGAGEMENTS = [
          gratuite proposée dans le reste du site. Composants dédiés (voir
          components/FormulesSection.vue et PaiementBandeau.vue) plutôt que du
          balisage inline, pour rester cohérent avec le reste du design system. -->
-    <section class="section section-alt">
+    <section
+      id="nos-formules"
+      class="section section-alt"
+      style="scroll-margin-top: 96px"
+    >
       <div class="container text-center">
         <span class="section-label" />
         <h2 class="h3 mb-2">

@@ -107,10 +107,10 @@ const anneeCourante = new Date().getFullYear()
     </div>
   </footer>
 
-  <!-- Toujours accessible dans l'espace personne âgée (sur n'importe quelle page),
-       et aussi sur l'accueil pour rester visible avant même de se connecter :
-       une urgence ne doit pas dépendre d'être identifié. -->
-  <SosButton v-if="!estEspaceAdmin && ((user && user.role === 'senior') || route.name === 'accueil')" />
+  <!-- Bouton SOS visible dans tout le site public, y compris les pages de
+       présentation, pour orienter les visiteurs et répondre rapidement aux
+       questions sans dépendre d'un compte utilisateur. -->
+  <SosButton v-if="!estEspaceAdmin" />
 </template>
 
 <style scoped>

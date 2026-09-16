@@ -24,6 +24,21 @@ const PUBLICS = [
     credit: 'Lucian Alexe',
   },
 ]
+
+const TEMOIGNAGES = [
+  {
+    auteur: 'Marie, 72 ans',
+    texte: 'J’ai trouvé une aide très rapidement pour les courses et une présence rassurante. Le service est simple et bien accompagné.',
+  },
+  {
+    auteur: 'Rachida, famille d’un proche',
+    texte: 'Le dispositif a permis de repérer une aide fiable près de chez nous, sans devoir tout organiser nous-mêmes.',
+  },
+  {
+    auteur: 'Said, infirmier',
+    texte: 'Je peux proposer facilement mes disponibilités et aider des personnes qui ont réellement besoin d’un accompagnement de proximité.',
+  },
+]
 </script>
 
 <template>
@@ -62,6 +77,24 @@ const PUBLICS = [
                 Photo : {{ p.credit }} / Unsplash
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5">
+        <h2 class="h5 mb-3">
+          Témoignages
+        </h2>
+        <div class="row g-3">
+          <div
+            v-for="temoignage in TEMOIGNAGES"
+            :key="temoignage.auteur"
+            class="col-md-4"
+          >
+            <blockquote class="card h-100 p-4 mb-0 audience-testimonial">
+              <p class="mb-3">“{{ temoignage.texte }}”</p>
+              <footer class="text-muted small mb-0">{{ temoignage.auteur }}</footer>
+            </blockquote>
           </div>
         </div>
       </div>

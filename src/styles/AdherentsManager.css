@@ -1,0 +1,17 @@
+/* Mise en page du module adhérents, compatible avec le tableau de bord existant. */
+.adherents-manager {
+  scroll-margin-top: 24px;
+}
+
+.adherents-search {
+  flex: 1 1 240px;
+  max-width: 420px;
+}
+
+.adherents-sort {
+  flex: 0 1 190px;
+}
+
+.adherents-manager .card {
+  border-color: var(--border);
+}

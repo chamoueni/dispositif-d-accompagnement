@@ -59,7 +59,8 @@ async function handleConfirmer() {
           Abonnement confirmé
         </h1>
         <p class="text-muted mb-3">
-          Vous êtes maintenant abonné(e) à la formule {{ formule.nom }} ({{ formule.prix }} €/mois).
+          Vous êtes maintenant abonné(e) à la formule {{ formule.nom }}
+          ({{ formule.prix === 0 ? 'gratuite' : `${formule.prix} €/mois` }}).
         </p>
         <router-link
           to="/profil"
@@ -76,7 +77,16 @@ async function handleConfirmer() {
         <h1 class="h4 mb-1">
           Formule {{ formule.nom }}
         </h1>
-        <p class="paiement-prix">
+        <p
+          v-if="formule.prix === 0"
+          class="paiement-prix"
+        >
+          Gratuit
+        </p>
+        <p
+          v-else
+          class="paiement-prix"
+        >
           {{ formule.prix }} €<span class="text-muted small">/mois</span>
         </p>
 

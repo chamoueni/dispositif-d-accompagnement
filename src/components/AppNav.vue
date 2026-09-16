@@ -35,15 +35,17 @@ function handleLogout() {
 <template>
   <header class="app-nav navbar navbar-expand-lg">
     <div class="container">
-      <!-- Titre du site : volontairement pas un lien, uniquement décoratif. -->
-      <span class="navbar-brand">
+      <router-link
+        to="/"
+        class="navbar-brand"
+      >
         <img
           :src="logo"
           alt=""
           class="brand-logo"
         >
         <span class="brand-text">Dispositif d’accompagnement</span>
-      </span>
+      </router-link>
 
       <!-- Bouton "burger" mobile : ouvre/ferme #navMain via l'API JS de Bootstrap. -->
       <button
@@ -149,6 +151,15 @@ function handleLogout() {
         </ul>
 
         <div class="nav-actions">
+          <template v-if="!user">
+            <router-link
+              to="/connexion"
+              class="btn btn-outline-secondary btn-sm"
+            >
+              Connexion
+            </router-link>
+          </template>
+
           <!-- Mode confort : texte et boutons agrandis dans tout le site (voir index.css). -->
           <button
             type="button"
@@ -160,8 +171,6 @@ function handleLogout() {
             <span class="visually-hidden-focusable"> Mode confort</span>
           </button>
 
-          <!-- Connexion/Inscription ne sont volontairement pas dans le menu : elles
-               restent uniquement sur l'accueil (hero), pour un menu plus sobre. -->
           <template v-if="user">
             <router-link
               v-if="isAdmin"

@@ -57,6 +57,20 @@ const routes = [
     component: () => import('../pages/Connexion.vue'),
     meta: { guestOnly: true },
   },
+  {
+    path: '/mot-de-passe-oublie',
+    name: 'mot-de-passe-oublie',
+    component: () => import('../pages/MotDePasseOublie.vue'),
+    meta: { guestOnly: true },
+  },
+  // Pas de guestOnly/requiresAuth ici : la page gère elle-même la validité de
+  // la session de récupération (voir le composant), la garde globale ne doit
+  // pas trancher avant que cette session ne soit établie.
+  {
+    path: '/reinitialiser-mot-de-passe',
+    name: 'reinitialiser-mot-de-passe',
+    component: () => import('../pages/ReinitialiserMotDePasse.vue'),
+  },
   // requiresAuth : redirige vers /connexion si personne n'est connecté.
   {
     path: '/profil',

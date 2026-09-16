@@ -10,6 +10,7 @@ import { useRouter } from 'vue-router'
 import { getUsers, getMessagesContact, deleteMessageContact } from '../data/store'
 import { useAuth } from '../stores/auth'
 import IconBadge from '../components/IconBadge.vue'
+import AdherentsManager from '../components/AdherentsManager.vue'
 import logo from '../assets/logo.png'
 import '../styles/Admin.css'
 
@@ -142,6 +143,17 @@ const activiteRecente = computed(() => {
             compact
           />
           Messages
+        </a>
+        <a
+          href="#adherents"
+          class="admin-sidebar-link"
+        >
+          <IconBadge
+            name="profile"
+            tone="accent-2"
+            compact
+          />
+          Adhérents
         </a>
         <router-link
           to="/"
@@ -308,6 +320,10 @@ const activiteRecente = computed(() => {
                 Aucun compte pour le moment.
               </p>
             </div>
+
+            <!-- Module CRUD séparé : les comptes Supabase existants restent
+                 inchangés, tandis que les adhérents métier passent par l'API. -->
+            <AdherentsManager />
 
             <!-- Messages envoyés via "SOS > Un problème avec le site" (voir
                  components/SosButton.vue). userId est vide pour un visiteur non connecté. -->

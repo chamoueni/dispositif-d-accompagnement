@@ -4,13 +4,16 @@
   overflow: hidden;
 }
 
-/* Hero plein écran : la photo couvre toute la section (pas juste une vignette),
-   avec un voile dégradé sombre pour garder le texte lisible par-dessus. */
+/* Hero plein écran : la photo couvre toute la section, bord à bord et sans
+   coins arrondis (aucun fond de page visible, même en filet), avec un voile
+   dégradé sombre pour garder le texte lisible par-dessus. */
 .hero-photo-bg {
   min-height: 640px;
   display: flex;
   align-items: center;
   padding: 72px 0;
+  overflow: hidden;
+  box-shadow: inset 0 -40px 60px rgba(18, 16, 12, 0.12);
 }
 
 .hero-bg-image {

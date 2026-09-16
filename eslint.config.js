@@ -13,6 +13,12 @@ export default defineConfig([
     },
   },
   {
+    files: ['server/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     // Les composants de src/pages sont des vues de route (Accueil, Services...),
     // pas des balises réutilisables dans des templates : la règle multi-mots
     // (pensée pour éviter les collisions avec les éléments HTML natifs) ne

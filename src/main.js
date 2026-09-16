@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 // Bootstrap recompilé avec nos variables Sass (couleurs, rayons...) plutôt que le CSS par défaut.
 import './styles/bootstrap-custom.scss'
 // JS de Bootstrap (menu mobile, etc.), nécessaire pour les data-bs-* utilisés dans Nav.vue.
@@ -9,4 +10,4 @@ import './styles/ui.css'
 import App from './App.vue'
 import router from './router'
 
-createApp(App).use(router).mount('#app')
+createApp(App).use(createPinia()).use(router).mount('#app')

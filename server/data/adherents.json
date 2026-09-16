@@ -1,0 +1,12 @@
+[
+  {
+    "id": "723f35b2-1c3e-464f-9530-4001b2adf576",
+    "nom": "nadouma",
+    "email": "kari05@example.com",
+    "telephone": "0612345678000148",
+    "ville": "",
+    "role": "particulier",
+    "statut": "actif",
+    "created_at": "2026-09-07T12:26:28.925Z"
+  }
+]

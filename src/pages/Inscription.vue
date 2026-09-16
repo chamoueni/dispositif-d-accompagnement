@@ -6,6 +6,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
+import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Inscription.css'
 
 const SPECIALITES = ['Infirmier(ère)', 'Aide-soignant(e)', 'Médecin', 'Kinésithérapeute', 'Autre']
@@ -159,13 +160,12 @@ async function handleSubmit() {
                 class="form-label"
                 for="password"
               >Mot de passe</label>
-              <input
+              <ChampMotDePasse
                 id="password"
                 v-model="form.password"
-                type="password"
-                class="form-control"
+                autocomplete="new-password"
                 required
-              >
+              />
             </div>
             <div class="col-md-6 mb-3">
               <label

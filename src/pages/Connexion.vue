@@ -3,6 +3,7 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
+import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Connexion.css'
 
 const router = useRouter()
@@ -57,13 +58,11 @@ async function handleSubmit() {
               class="form-label"
               for="password"
             >Mot de passe</label>
-            <input
+            <ChampMotDePasse
               id="password"
               v-model="form.password"
-              type="password"
-              class="form-control"
               required
-            >
+            />
           </div>
 
           <p
@@ -81,7 +80,13 @@ async function handleSubmit() {
           </button>
         </form>
 
-        <p class="text-center text-muted small mt-3 mb-0">
+        <p class="text-center small mt-3 mb-0">
+          <router-link to="/mot-de-passe-oublie">
+            Mot de passe oublié ?
+          </router-link>
+        </p>
+
+        <p class="text-center text-muted small mt-2 mb-0">
           Pas encore de compte ? <router-link to="/inscription">
             S'inscrire
           </router-link>

@@ -39,6 +39,10 @@ const results = computed(() => {
     return matchesType && matchesVille
   })
 })
+
+const offreEssaiDisponible = computed(() => {
+  return results.value.length > 0 && results.value.some((provider) => provider.role === 'sante' || provider.services?.length)
+})
 </script>
 
 <template>
@@ -85,6 +89,20 @@ const results = computed(() => {
             </select>
           </div>
         </div>
+      </div>
+
+      <div
+        v-if="!chargement && offreEssaiDisponible"
+        class="alert alert-success d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"
+        role="status"
+      >
+        <span>Offre découverte : 3 mises en relation gratuites disponibles pour cette recherche.</span>
+        <router-link
+          to="/formule/basique"
+          class="btn btn-success btn-sm"
+        >
+          Profiter de l'essai gratuit
+        </router-link>
       </div>
 
       <p

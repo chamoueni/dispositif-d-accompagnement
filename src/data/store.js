@@ -39,6 +39,18 @@ export function getZoneCommune(nomCommune) {
 // utilisateurs), pas besoin de table dédiée.
 export const FORMULES = [
   {
+    id: 'basique',
+    nom: 'Basique',
+    prix: 0,
+    miseEnAvant: false,
+    essaiGratuit: true,
+    fonctionnalites: [
+      '3 mises en relation gratuites, sans engagement',
+      'Recherche illimitée de prestataires par commune et par service',
+      'Passage à une formule payante à tout moment',
+    ],
+  },
+  {
     id: 'essentiel',
     nom: 'Essentiel',
     prix: 25,

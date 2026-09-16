@@ -46,6 +46,38 @@ create policy "profiles_update_own" on profiles
   for update to authenticated using (auth.uid() = id);
 
 -- ---------------------------------------------------------------------------
+-- ADHERENTS : table métier alimentée par l'API Express (miroir Supabase).
+-- La clé de service du backend contourne RLS, tandis que cette policy permet
+-- aussi une lecture contrôlée depuis les outils Supabase pour l'administrateur.
+-- ---------------------------------------------------------------------------
+create table if not exists adherents (
+  id uuid primary key,
+  nom text not null,
+  email text not null,
+  telephone text not null default '',
+  ville text not null default '',
+  role text not null default 'particulier'
+    check (role in ('senior', 'sante', 'particulier')),
+  statut text not null default 'actif'
+    check (statut in ('actif', 'inactif')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table adherents enable row level security;
+
+drop policy if exists "adherents_select_admin" on adherents;
+create policy "adherents_select_admin" on adherents
+  for select to authenticated
+  using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
+
+drop policy if exists "adherents_modify_admin" on adherents;
+create policy "adherents_modify_admin" on adherents
+  for all to authenticated
+  using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com')
+  with check (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
+
+-- ---------------------------------------------------------------------------
 -- DEMANDES : une personne âgée sollicite un aidant pour un service donné.
 -- ---------------------------------------------------------------------------
 create table if not exists demandes (

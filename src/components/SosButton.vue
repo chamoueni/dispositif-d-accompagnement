@@ -1,12 +1,11 @@
 <script setup>
-// Bouton d'urgence flottant : toujours visible dans l'espace personne âgée (posé
-// dans App.vue, pas dans une page en particulier). Au clic, propose deux options
-// bien distinctes pour ne pas confondre une urgence réelle avec un souci d'usage :
-// - appel direct au 112 (numéro d'urgence européen, valide à Mayotte)
-// - un message enregistré directement en base pour un problème avec le site.
-//   Pas de lien mailto: ici : ça ne marche que si un client mail est configuré
-//   sur l'appareil, ce qu'on ne peut pas supposer pour le public visé.
-import { ref } from 'vue'
+// Bouton d'urgence flottant : visible sur l'ensemble du site pour aider les
+// utilisateurs à poser des questions, obtenir une réponse rapide et signaler
+// un problème. On garde aussi l'appel d'urgence 112. Le chat pose chaque
+// question à l'assistant IA (voir server/index.js) ; si l'appel échoue (API
+// injoignable, pas de clé configurée...), on retombe sur des réponses FAQ
+// statiques pour que le widget reste utilisable hors-ligne/en démo.
+import { nextTick, ref } from 'vue'
 import { useAuth } from '../stores/auth'
 import { addMessageContact } from '../data/store'
 import '../styles/SosButton.css'
@@ -14,12 +13,47 @@ import '../styles/SosButton.css'
 const { user } = useAuth()
 
 const ouvert = ref(false)
-// vue : 'menu' (choix initial) ou 'formulaire' (saisie du message).
+// vue : 'menu' (choix initial), 'formulaire' (message) ou 'chat'.
 const vue = ref('menu')
 const message = ref('')
 const envoi = ref(false)
 const envoye = ref(false)
 const erreur = ref('')
+
+// Historique de la conversation du chat IA : [{ role: 'user'|'assistant', texte }].
+const historique = ref([])
+const reponseEnCours = ref(false)
+const chatMessagesEl = ref(null)
+
+const DELAI_MAYOTTE_MINUTES = 12
+
+// Réponses de secours si l'assistant IA est injoignable (pas de clé API
+// configurée côté serveur, serveur non déployé, hors-ligne...).
+function formulaireReponseAutomatique(texte) {
+  const contenu = texte.toLowerCase()
+
+  if (contenu.includes('mayotte') || contenu.includes('zone') || contenu.includes('délai')) {
+    return `À Mayotte, le délai moyen de réponse est d'environ ${DELAI_MAYOTTE_MINUTES} minutes pour les demandes de première aide et de mise en relation, puis selon la zone (Nord, Centre, Sud, Petite-Terre).`
+  }
+
+  if (contenu.includes('inscription') || contenu.includes('s inscrire') || contenu.includes('compte')) {
+    return 'Pour vous inscrire, allez sur la page d’accueil puis choisissez “Je souhaite aider” ou “Je cherche de l’aide”. Le profil est ensuite guidé pas à pas.'
+  }
+
+  if (contenu.includes('service') || contenu.includes('aide') || contenu.includes('soin') || contenu.includes('course')) {
+    return 'Le dispositif propose des services comme les soins à domicile, les courses, le ménage, la garde et le soutien psychologique selon les profils disponibles près de chez vous.'
+  }
+
+  if (contenu.includes('prix') || contenu.includes('gratuit') || contenu.includes('essai')) {
+    return 'La mise en relation de base reste gratuite. Une offre découverte peut proposer 3 essais gratuits selon les critères de la recherche et la disponibilité locale.'
+  }
+
+  return 'Je peux vous orienter vers les services disponibles à Mayotte, la procédure d’inscription, les zones géographiques et les délais de réponse. Posez une question plus précise.'
+}
+
+function ouvrirChat() {
+  vue.value = 'chat'
+}
 
 function ouvrirFormulaire() {
   vue.value = 'formulaire'
@@ -27,14 +61,37 @@ function ouvrirFormulaire() {
 
 function fermer() {
   ouvert.value = false
-  // Reset après la fermeture (petite temporisation pour ne pas voir le menu
-  // "sauter" pendant que le panneau se referme).
   setTimeout(() => {
     vue.value = 'menu'
     message.value = ''
     envoye.value = false
     erreur.value = ''
+    historique.value = []
   }, 200)
+}
+
+async function scrollVersLeBas() {
+  await nextTick()
+  if (chatMessagesEl.value) {
+    chatMessagesEl.value.scrollTop = chatMessagesEl.value.scrollHeight
+  }
+}
+
+// Interroge l'assistant IA côté serveur (voir server/index.js, endpoint
+// /api/chat-ia). En cas d'échec (réseau, clé absente, serveur non déployé),
+// on relève l'erreur pour que l'appelant retombe sur la FAQ statique.
+async function demanderAssistantIA(texte) {
+  const reponse = await fetch('/api/chat-ia', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: texte,
+      historique: historique.value.slice(-10),
+    }),
+  })
+  if (!reponse.ok) throw new Error('assistant IA indisponible')
+  const donnees = await reponse.json()
+  return donnees.reponse
 }
 
 async function envoyerMessage() {
@@ -42,6 +99,26 @@ async function envoyerMessage() {
     erreur.value = 'Merci de décrire le problème avant d’envoyer.'
     return
   }
+
+  if (vue.value === 'chat') {
+    const texte = message.value.trim()
+    historique.value.push({ role: 'user', texte })
+    message.value = ''
+    erreur.value = ''
+    reponseEnCours.value = true
+    scrollVersLeBas()
+    try {
+      const texteReponse = await demanderAssistantIA(texte)
+      historique.value.push({ role: 'assistant', texte: texteReponse })
+    } catch {
+      historique.value.push({ role: 'assistant', texte: formulaireReponseAutomatique(texte) })
+    } finally {
+      reponseEnCours.value = false
+      scrollVersLeBas()
+    }
+    return
+  }
+
   erreur.value = ''
   envoi.value = true
   try {
@@ -66,6 +143,26 @@ async function envoyerMessage() {
       class="sos-menu"
     >
       <template v-if="vue === 'menu'">
+        <button
+          type="button"
+          class="sos-menu-item"
+          @click="ouvrirChat"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M7 9h10M7 13h7M5 18l-2 2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7Z" />
+          </svg>
+          <span>
+            <strong>Question rapide</strong>
+            <small>Poser une question</small>
+          </span>
+        </button>
         <a
           href="tel:112"
           class="sos-menu-item sos-menu-item-urgence"
@@ -112,6 +209,58 @@ async function envoyerMessage() {
             <small>Nous envoyer un message</small>
           </span>
         </button>
+      </template>
+
+      <template v-else-if="vue === 'chat'">
+        <div class="sos-chat">
+          <div
+            ref="chatMessagesEl"
+            class="sos-chat-messages"
+          >
+            <p class="sos-confirmation">
+              Bonjour, je peux vous aider sur l’inscription, les services, Mayotte et les délais de réponse.
+            </p>
+            <p
+              v-for="(m, i) in historique"
+              :key="i"
+              class="sos-chat-bubble"
+              :class="m.role === 'user' ? 'sos-chat-bubble-user' : 'sos-chat-bubble-ia'"
+            >
+              {{ m.texte }}
+            </p>
+            <p
+              v-if="reponseEnCours"
+              class="sos-chat-bubble sos-chat-bubble-ia sos-chat-bubble-loading"
+              aria-live="polite"
+            >
+              …
+            </p>
+          </div>
+          <form
+            class="sos-form"
+            @submit.prevent="envoyerMessage"
+          >
+            <label
+              class="visually-hidden"
+              for="sos-chat-message"
+            >Votre question</label>
+            <textarea
+              id="sos-chat-message"
+              v-model="message"
+              class="form-control form-control-sm"
+              rows="2"
+              placeholder="Ex. : Quels sont les services disponibles à Mayotte ?"
+              :disabled="reponseEnCours"
+            />
+            <button
+              type="submit"
+              class="btn btn-primary btn-sm w-100 mt-2"
+              :disabled="reponseEnCours"
+            >
+              {{ reponseEnCours ? 'Réponse en cours…' : 'Envoyer' }}
+            </button>
+          </form>
+        </div>
       </template>
 
       <template v-else-if="envoye">
