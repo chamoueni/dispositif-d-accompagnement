@@ -1,6 +1,7 @@
 <script setup>
 // Page d'accueil : hero + un aperçu concret de chaque section (pas juste des liens).
 // Chaque section garde un lien "En savoir plus" vers sa page dédiée pour le détail complet.
+import { onMounted, onUnmounted, ref } from 'vue'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import IconBadge from '../components/IconBadge.vue'
 import ReefDivider from '../components/ReefDivider.vue'
@@ -80,6 +81,33 @@ const ENGAGEMENTS = [
   { icon: 'connect', title: 'Fiabilité', text: 'Des profils actifs et à jour, pour des mises en relation qui aboutissent.' },
   { icon: 'calendar', title: 'Disponibilité', text: 'Des aidants joignables aux horaires qui vous conviennent.' },
 ]
+
+// Anime chaque carte de "Ce que vous pouvez trouver" (fondu + léger décalage
+// vers le haut) au moment où elle entre dans le viewport, plutôt qu'au
+// chargement de la page : la section est sous la ligne de flottaison, une
+// animation lancée au chargement serait déjà terminée avant que l'utilisateur
+// ne scrolle jusque-là.
+const servicesGrid = ref(null)
+let observateurServices = null
+
+onMounted(() => {
+  const cartes = servicesGrid.value?.querySelectorAll('.reveal-card') ?? []
+  observateurServices = new IntersectionObserver(
+    (entrees) => {
+      entrees.forEach((entree) => {
+        if (entree.isIntersecting) {
+          entree.target.classList.add('is-visible')
+          // Une seule fois : pas besoin de réanimer si on rescrolle dessus.
+          observateurServices.unobserve(entree.target)
+        }
+      })
+    },
+    { threshold: 0.15 },
+  )
+  cartes.forEach((carte) => observateurServices.observe(carte))
+})
+
+onUnmounted(() => observateurServices?.disconnect())
 </script>
 
 <template>
@@ -134,9 +162,24 @@ const ENGAGEMENTS = [
         <MayotteSymbol />
         <span class="hero-mayotte-label">Mayotte</span>
       </div>
-    </section>
 
-    <ReefDivider />
+      <!-- Vague "découpée" dans le bas de la photo (même couleur que le fond de
+           page juste en dessous) : contrairement à ReefDivider (une ligne posée
+           entre deux sections déjà de la même couleur), ici la forme doit se
+           fondre directement dans la photo, sans bande de fond visible entre
+           les deux. D'où un SVG rempli et positionné en absolu par-dessus le
+           bas de l'image plutôt que le composant ReefDivider habituel. -->
+      <svg
+        class="hero-wave"
+        viewBox="0 0 1440 60"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,30 Q60,10 120,30 T240,30 T360,30 T480,30 T600,30 T720,30 T840,30 T960,30 T1080,30 T1200,30 T1320,30 T1440,30 L1440,60 L0,60 Z"
+        />
+      </svg>
+    </section>
 
     <section class="section">
       <div class="container">
@@ -164,18 +207,25 @@ const ENGAGEMENTS = [
         <h2 class="h3 mb-4">
           Ce que vous pouvez trouver
         </h2>
-        <div class="row g-4">
+        <div
+          ref="servicesGrid"
+          class="row g-4"
+        >
           <div
-            v-for="s in SERVICES"
+            v-for="(s, i) in SERVICES"
             :key="s.title"
             class="col-md-6 col-lg-4"
           >
             <!-- Même principe que le hero : photo en fond + voile dégradé pour que
                  le texte blanc reste lisible par-dessus. Les 2 besoins transversaux
-                 (pas de photo dédiée) retombent sur une carte pleine classique. -->
+                 (pas de photo dédiée) retombent sur une carte pleine classique.
+                 "reveal-card" + --delay : anime chaque carte en fondu/décalage
+                 quand elle entre dans le viewport, avec un léger décalage entre
+                 chaque carte pour un effet de vague plutôt qu'un bloc unique. -->
             <div
               v-if="s.photo"
-              class="card h-100 service-tile"
+              class="card h-100 service-tile reveal-card"
+              :style="{ '--delay': `${i * 0.08}s` }"
             >
               <img
                 :src="s.photo"
@@ -201,7 +251,8 @@ const ENGAGEMENTS = [
             </div>
             <div
               v-else
-              class="card p-4 h-100"
+              class="card p-4 h-100 reveal-card"
+              :style="{ '--delay': `${i * 0.08}s` }"
             >
               <ServiceIcon :type="s.icon" />
               <h3 class="h6">

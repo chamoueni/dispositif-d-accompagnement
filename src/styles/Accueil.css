@@ -66,6 +66,20 @@
   }
 }
 
+/* Positionnée sur le bord bas de .hero-photo-bg (qui a overflow: hidden) :
+   la vague semble "découpée" directement dans la photo plutôt que posée en
+   dessous, puisqu'elle est remplie avec la même couleur que le fond de page
+   qui suit immédiatement. */
+.hero-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 48px;
+  fill: var(--bg);
+}
+
 .hero-inner {
   position: relative;
 }
@@ -155,6 +169,48 @@
 
 .service-tile-content .service-icon {
   margin-bottom: 10px;
+}
+
+/* Révélation au scroll (voir IntersectionObserver dans Accueil.vue) : la carte
+   part légèrement en dessous et transparente, puis remonte en fondu une fois
+   visible. --delay (posé en inline style par carte) décale chacune un peu par
+   rapport à la précédente pour un effet de vague plutôt qu'un bloc d'un coup. */
+.reveal-card {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.reveal-card.is-visible {
+  animation: reveal-card-in 0.6s ease forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes reveal-card-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow);
+}
+
+/* Personne ne doit voir un mouvement qu'iel a explicitement désactivé : la
+   carte s'affiche directement dans son état final, sans animation ni décalage
+   au survol. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .reveal-card.is-visible {
+    animation: none;
+  }
 }
 
 .etape-item {
