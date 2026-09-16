@@ -78,6 +78,37 @@ create policy "adherents_modify_admin" on adherents
   with check (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
 
 -- ---------------------------------------------------------------------------
+-- AVIS : témoignages/commentaires publics postés par les utilisateurs sur la
+-- page "Pour qui" (src/pages/PourQui.vue). Remplace les témoignages statiques
+-- codés en dur par de vrais avis stockés en base.
+-- ---------------------------------------------------------------------------
+create table if not exists avis (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (id) on delete cascade,
+  nom text not null default '',
+  texte text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table avis enable row level security;
+
+-- Page publique : visible même sans connexion.
+drop policy if exists "avis_select_anyone" on avis;
+create policy "avis_select_anyone" on avis
+  for select to anon, authenticated using (true);
+
+-- Seul un utilisateur connecté peut poster un avis, et uniquement en son nom.
+drop policy if exists "avis_insert_own" on avis;
+create policy "avis_insert_own" on avis
+  for insert to authenticated with check (auth.uid() = user_id);
+
+-- Auteur ou admin peuvent supprimer un avis (modération basique).
+drop policy if exists "avis_delete_own_or_admin" on avis;
+create policy "avis_delete_own_or_admin" on avis
+  for delete to authenticated
+  using (auth.uid() = user_id or auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
+
+-- ---------------------------------------------------------------------------
 -- DEMANDES : une personne âgée sollicite un aidant pour un service donné.
 -- ---------------------------------------------------------------------------
 create table if not exists demandes (

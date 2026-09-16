@@ -64,25 +64,15 @@ function handleLogout() {
         id="navMain"
         class="collapse navbar-collapse"
       >
-        <!-- Menu réduit pour toute personne connectée (hors admin) : Accueil + Mon
-             profil, plus Recherche pour une personne âgée (seul rôle qui utilise
-             cette page). L'admin a son propre espace (sidebar dédiée), donc ces
-             liens ne lui servent à rien ici. -->
+        <!-- Menu réduit pour toute personne connectée (hors admin) : Mon profil,
+             plus Recherche pour une personne âgée (seul rôle qui utilise cette
+             page). L'admin a son propre espace (sidebar dédiée), donc ces liens
+             ne lui servent à rien ici. "Accueil" n'est plus listé ici : le logo
+             de la navbar (cliquable, voir plus haut) fait déjà ce lien. -->
         <ul
           v-if="user && !isAdmin"
           class="navbar-nav me-auto"
         >
-          <li class="nav-item">
-            <router-link
-              to="/"
-              class="nav-link"
-            >
-              <IconBadge
-                name="home"
-                compact
-              />Accueil
-            </router-link>
-          </li>
           <li
             v-if="user.role === 'senior'"
             class="nav-item"
@@ -111,19 +101,12 @@ function handleLogout() {
         </ul>
 
         <!-- Menu complet (présentation du dispositif), uniquement pour un visiteur
-             pas encore connecté. -->
+             pas encore connecté. "Accueil" retiré ici aussi : le logo cliquable
+             de la navbar y mène déjà. -->
         <ul
           v-else-if="!user"
           class="navbar-nav me-auto"
         >
-          <li class="nav-item">
-            <router-link
-              to="/"
-              class="nav-link"
-            >
-              Accueil
-            </router-link>
-          </li>
           <li class="nav-item">
             <router-link
               to="/services"

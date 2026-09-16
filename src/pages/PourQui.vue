@@ -1,8 +1,13 @@
 <script setup>
 // Page dédiée "Pour qui" : présente les 3 profils du dispositif.
 // Photos Unsplash (licence gratuite), crédit affiché sous chaque carte.
+import { onMounted, ref } from 'vue'
 import BackLink from '../components/BackLink.vue'
+import { useAuth } from '../stores/auth'
+import { addAvis, deleteAvis, getAvis } from '../data/store'
 import '../styles/PourQui.css'
+
+const { user, isAdmin } = useAuth()
 
 const PUBLICS = [
   {
@@ -25,20 +30,53 @@ const PUBLICS = [
   },
 ]
 
-const TEMOIGNAGES = [
-  {
-    auteur: 'Marie, 72 ans',
-    texte: 'J’ai trouvé une aide très rapidement pour les courses et une présence rassurante. Le service est simple et bien accompagné.',
-  },
-  {
-    auteur: 'Rachida, famille d’un proche',
-    texte: 'Le dispositif a permis de repérer une aide fiable près de chez nous, sans devoir tout organiser nous-mêmes.',
-  },
-  {
-    auteur: 'Said, infirmier',
-    texte: 'Je peux proposer facilement mes disponibilités et aider des personnes qui ont réellement besoin d’un accompagnement de proximité.',
-  },
-]
+// Avis réels postés par les utilisateurs (table "avis", voir data/store.js).
+// Pas de témoignages statiques/fictifs ici : uniquement du contenu envoyé
+// par de vrais comptes.
+const avisListe = ref([])
+const chargementAvis = ref(true)
+const nouvelAvis = ref('')
+const envoiAvis = ref(false)
+const erreurAvis = ref('')
+
+onMounted(async () => {
+  avisListe.value = await getAvis()
+  chargementAvis.value = false
+})
+
+async function handleAjouterAvis() {
+  erreurAvis.value = ''
+  if (!nouvelAvis.value.trim()) {
+    erreurAvis.value = "Merci d'écrire un avis avant d'envoyer."
+    return
+  }
+  envoiAvis.value = true
+  try {
+    await addAvis({ userId: user.value.id, nom: user.value.nom, texte: nouvelAvis.value.trim() })
+    // Recharge la liste plutôt que d'insérer localement : plus simple, et évite
+    // de désynchroniser l'ordre/le format avec ce que renvoie vraiment la base.
+    avisListe.value = await getAvis()
+    nouvelAvis.value = ''
+  } catch (err) {
+    erreurAvis.value = err.message
+  } finally {
+    envoiAvis.value = false
+  }
+}
+
+// L'auteur ou l'admin peuvent retirer un avis (modération basique, RLS "avis_delete_own_or_admin").
+function peutSupprimer(avis) {
+  return user.value?.id === avis.user_id || isAdmin.value
+}
+
+async function handleSupprimerAvis(id) {
+  try {
+    await deleteAvis(id)
+    avisListe.value = avisListe.value.filter((a) => a.id !== id)
+  } catch (err) {
+    erreurAvis.value = err.message
+  }
+}
 </script>
 
 <template>
@@ -85,18 +123,86 @@ const TEMOIGNAGES = [
         <h2 class="h5 mb-3">
           Témoignages
         </h2>
-        <div class="row g-3">
+
+        <form
+          v-if="user"
+          class="mb-4 avis-form"
+          @submit.prevent="handleAjouterAvis"
+        >
+          <label
+            class="form-label"
+            for="nouvel-avis"
+          >Partagez votre expérience</label>
+          <textarea
+            id="nouvel-avis"
+            v-model="nouvelAvis"
+            class="form-control"
+            rows="3"
+            placeholder="Votre avis sur le dispositif..."
+          />
+          <p
+            v-if="erreurAvis"
+            class="text-danger small mt-2 mb-0"
+          >
+            {{ erreurAvis }}
+          </p>
+          <button
+            type="submit"
+            class="btn btn-primary mt-2"
+            :disabled="envoiAvis"
+          >
+            {{ envoiAvis ? 'Envoi…' : 'Publier mon avis' }}
+          </button>
+        </form>
+        <p
+          v-else
+          class="text-muted small mb-4"
+        >
+          <router-link to="/connexion">
+            Connectez-vous
+          </router-link> pour laisser un avis.
+        </p>
+
+        <p
+          v-if="chargementAvis"
+          class="text-muted small"
+        >
+          Chargement des avis…
+        </p>
+
+        <div
+          v-else-if="avisListe.length"
+          class="row g-3"
+        >
           <div
-            v-for="temoignage in TEMOIGNAGES"
-            :key="temoignage.auteur"
+            v-for="a in avisListe"
+            :key="a.id"
             class="col-md-4"
           >
             <blockquote class="card h-100 p-4 mb-0 audience-testimonial">
-              <p class="mb-3">“{{ temoignage.texte }}”</p>
-              <footer class="text-muted small mb-0">{{ temoignage.auteur }}</footer>
+              <p class="mb-3">
+                “{{ a.texte }}”
+              </p>
+              <footer class="text-muted small mb-0 d-flex justify-content-between align-items-center">
+                <span>{{ a.nom }}</span>
+                <button
+                  v-if="peutSupprimer(a)"
+                  type="button"
+                  class="btn btn-link btn-sm text-danger p-0"
+                  @click="handleSupprimerAvis(a.id)"
+                >
+                  Supprimer
+                </button>
+              </footer>
             </blockquote>
           </div>
         </div>
+        <p
+          v-else
+          class="text-muted small"
+        >
+          Aucun avis pour le moment. Soyez le premier à en laisser un !
+        </p>
       </div>
 
       <div class="text-center mt-5">

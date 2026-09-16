@@ -1,0 +1,42 @@
+/* Dégradé de texte animé (voir components/HighlightWord.vue). background-clip:
+   text + un fond bien plus large que le texte (background-size: 300%) qu'on
+   fait défiler avec background-position : ça donne un mouvement de "reflet"
+   continu, sans le clignotement qu'aurait une transition de couleur discrète. */
+.highlight-word {
+  font-style: italic;
+  background-image: linear-gradient(
+    100deg,
+    var(--accent-2-deep) 0%,
+    var(--accent-2) 25%,
+    #ffe9b0 50%,
+    var(--accent-2) 75%,
+    var(--accent-2-deep) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: highlight-word-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes highlight-word-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Respecte la préférence système "réduire les animations" : le mot reste
+   coloré (pas de retour au texte noir), juste sans le mouvement en boucle. */
+@media (prefers-reduced-motion: reduce) {
+  .highlight-word {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}

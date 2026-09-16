@@ -91,13 +91,6 @@
   }
 }
 
-/* Reprend le style "Fraunces italique" de la maquette Mlezi pour souligner un mot
-   du titre, sans changer le texte lui-même. */
-.hero-highlight {
-  font-style: italic;
-  color: var(--accent-2);
-}
-
 .hero-text .lead {
   max-width: 480px;
   color: rgba(255, 255, 255, 0.88);

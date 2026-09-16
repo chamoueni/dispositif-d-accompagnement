@@ -336,3 +336,42 @@ export async function deleteMessageContact(id) {
     )
   }
 }
+
+// ---------------------------------------------------------------------------
+// AVIS (témoignages postés par les utilisateurs, page "Pour qui")
+// ---------------------------------------------------------------------------
+
+// Page publique : accessible même sans connexion (RLS "avis_select_anyone").
+export async function getAvis() {
+  const { data, error } = await supabase
+    .from('avis')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) {
+    console.error('getAvis:', error.message)
+    return []
+  }
+  return data
+}
+
+// payload attendu : { userId, nom, texte }. Réservé aux utilisateurs connectés
+// (RLS "avis_insert_own" vérifie que userId correspond bien à l'appelant).
+export async function addAvis(payload) {
+  const { error } = await supabase.from('avis').insert({
+    user_id: payload.userId,
+    nom: payload.nom,
+    texte: payload.texte,
+  })
+  if (error) throw new Error(error.message)
+}
+
+// L'auteur (ou l'admin) peut retirer son propre avis. Même garde-fou que
+// deleteMessageContact() : un delete() bloqué par la RLS ne renvoie pas
+// d'erreur, juste 0 ligne affectée, donc on le détecte nous-mêmes.
+export async function deleteAvis(id) {
+  const { data, error } = await supabase.from('avis').delete().eq('id', id).select('id')
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) {
+    throw new Error("Suppression refusée par la base (droits insuffisants) : l'avis n'a pas été supprimé.")
+  }
+}

@@ -7,6 +7,9 @@ import ReefDivider from '../components/ReefDivider.vue'
 import FormulesSection from '../components/FormulesSection.vue'
 import PaiementBandeau from '../components/PaiementBandeau.vue'
 import MayotteSymbol from '../components/MayotteSymbol.vue'
+// Effet "dégradé animé" sur les mots-clés du titre (voir components/HighlightWord.vue) :
+// réutilisable sur n'importe quel titre, pas seulement celui-ci.
+import HighlightWord from '../components/HighlightWord.vue'
 // Photo fournie par l'utilisateur (coucher de soleil sur le lagon) : importée comme
 // un module pour que Vite l'inclue dans le build avec un nom de fichier "hashé".
 import heroPhoto from '../assets/image.jpg'
@@ -97,7 +100,7 @@ const ENGAGEMENTS = [
       <div class="container hero-inner">
         <div class="hero-text">
           <span class="badge text-bg-secondary mb-3">Aide aux personnes âgées à Mayotte</span>
-          <h1>Un accompagnement de <span class="hero-highlight">confiance</span>, à quelques clics</h1>
+          <h1>Un accompagnement de <HighlightWord>confiance</HighlightWord>, à quelques clics</h1>
           <p class="lead">
             Le dispositif met en relation les personnes âgées avec du personnel de santé, des
             coursiers et des aides à domicile. 
