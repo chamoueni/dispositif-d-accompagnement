@@ -1,6 +1,7 @@
 // Store Pinia des adhérents : l'interface ne connaît que cette API métier.
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { API_BASE_URL } from '../lib/apiBase'
 
 export const useAdherentsStore = defineStore('adherents', () => {
   const adherents = ref([])
@@ -9,7 +10,7 @@ export const useAdherentsStore = defineStore('adherents', () => {
 
   // Centralise les appels fetch vers le backend Express.
   async function appelerApi(url, options = {}) {
-    const reponse = await fetch(url, {
+    const reponse = await fetch(`${API_BASE_URL}${url}`, {
       headers: { 'Content-Type': 'application/json' },
       ...options,
     })

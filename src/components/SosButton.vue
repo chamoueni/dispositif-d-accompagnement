@@ -8,6 +8,7 @@
 import { nextTick, ref } from 'vue'
 import { useAuth } from '../stores/auth'
 import { addMessageContact } from '../data/store'
+import { API_BASE_URL } from '../lib/apiBase'
 import '../styles/SosButton.css'
 
 const { user } = useAuth()
@@ -81,7 +82,7 @@ async function scrollVersLeBas() {
 // /api/chat-ia). En cas d'échec (réseau, clé absente, serveur non déployé),
 // on relève l'erreur pour que l'appelant retombe sur la FAQ statique.
 async function demanderAssistantIA(texte) {
-  const reponse = await fetch('/api/chat-ia', {
+  const reponse = await fetch(`${API_BASE_URL}/api/chat-ia`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
