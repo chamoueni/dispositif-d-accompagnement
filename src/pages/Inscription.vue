@@ -11,6 +11,14 @@ import '../styles/Inscription.css'
 
 const SPECIALITES = ['Infirmier(ère)', 'Aide-soignant(e)', 'Médecin', 'Kinésithérapeute', 'Autre']
 
+// Format email basique (au-delà du type="email" du navigateur, qui laisse
+// passer des choses comme "a@b" sans domaine complet).
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// Numéros français/réunionnais/mahorais : local à 10 chiffres (0X XX XX XX XX,
+// le format utilisé aussi bien en France qu'à La Réunion et Mayotte) ou
+// international +33/+262. Espaces, points et tirets tolérés à la saisie.
+const TELEPHONE_REGEX = /^(0\d{9}|\+33\d{9}|\+262\d{9})$/
+
 const router = useRouter()
 const { signup } = useAuth()
 
@@ -20,6 +28,7 @@ const form = reactive({
   password: '',
   telephone: '',
   ville: COMMUNES_MAYOTTE[0].nom,
+  adresse: '',
   role: 'senior',
   specialite: SPECIALITES[0],
   services: [],
@@ -39,8 +48,17 @@ function toggleService(service) {
 async function handleSubmit() {
   error.value = ''
 
-  if (!form.nom || !form.email || !form.password || !form.telephone || !form.ville) {
+  if (!form.nom || !form.email || !form.password || !form.telephone || !form.ville || !form.adresse) {
     error.value = 'Merci de remplir tous les champs obligatoires.'
+    return
+  }
+  if (!EMAIL_REGEX.test(form.email.trim())) {
+    error.value = 'Merci de renseigner une adresse email valide.'
+    return
+  }
+  if (!TELEPHONE_REGEX.test(form.telephone.replace(/[\s.-]/g, ''))) {
+    error.value =
+      'Merci de renseigner un numéro de téléphone valide (France, Réunion ou Mayotte), au format 06 12 34 56 78 ou +262 6 12 34 56 78.'
     return
   }
   if (form.password.length < 6) {
@@ -58,13 +76,14 @@ async function handleSubmit() {
       password: form.password,
       telephone: form.telephone,
       ville: form.ville,
+      adresse: form.adresse,
       role: form.role,
       specialite: form.role === 'sante' ? form.specialite : '',
       services: form.role === 'particulier' ? [...form.services] : [],
       bio: form.bio,
       disponibilites: [],
     })
-    router.push('/profil')
+    router.push('/mon-compte')
   } catch (err) {
     error.value = err.message
   } finally {
@@ -182,24 +201,40 @@ async function handleSubmit() {
             </div>
           </div>
 
-          <div class="mb-3">
-            <label
-              class="form-label"
-              for="ville"
-            >Commune</label>
-            <select
-              id="ville"
-              v-model="form.ville"
-              class="form-select"
-            >
-              <option
-                v-for="c in COMMUNES_MAYOTTE"
-                :key="c.nom"
-                :value="c.nom"
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label
+                class="form-label"
+                for="ville"
+              >Commune</label>
+              <select
+                id="ville"
+                v-model="form.ville"
+                class="form-select"
               >
-                {{ c.nom }}
-              </option>
-            </select>
+                <option
+                  v-for="c in COMMUNES_MAYOTTE"
+                  :key="c.nom"
+                  :value="c.nom"
+                >
+                  {{ c.nom }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label
+                class="form-label"
+                for="adresse"
+              >Adresse postale</label>
+              <input
+                id="adresse"
+                v-model="form.adresse"
+                type="text"
+                class="form-control"
+                placeholder="N°, rue, lieu-dit..."
+                required
+              >
+            </div>
           </div>
 
           <div

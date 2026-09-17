@@ -18,12 +18,28 @@ const router = useRouter()
 // pour l'afficher ici plutôt que de la laisser invisible une fois l'abonnement souscrit.
 const formuleActive = computed(() => FORMULES.find((f) => f.id === user.value?.abonnement?.formuleId))
 
-const LIENS = [
-  { to: '/profil', icon: 'profile', titre: 'Mon profil', texte: 'Vos informations et vos disponibilités.' },
-  { to: '/mes-demandes', icon: 'connect', titre: 'Mes demandes', texte: 'Demandes envoyées ou reçues, et leur statut.' },
-  { to: '/mes-accompagnements', icon: 'calendar', titre: 'Mes accompagnements', texte: 'Vos missions en cours.' },
-  { to: '/historique', icon: 'shield-check', titre: 'Historique', texte: 'Vos missions terminées ou annulées.' },
-]
+// Tuiles adaptées au rôle : le texte (et pour le senior, la tuile "Trouver de
+// l'aide" en plus) change selon qui consulte, pour que chacun retrouve tout de
+// suite les actions qui le concernent plutôt qu'un intitulé générique flou.
+const LIENS = computed(() => {
+  if (user.value?.role === 'senior') {
+    return [
+      { to: '/recherche', icon: 'search', titre: "Trouver de l'aide", texte: 'Cherchez un aidant par commune et par service.' },
+      { to: '/profil', icon: 'profile', titre: 'Mon profil', texte: 'Vos informations personnelles.' },
+      { to: '/mes-demandes', icon: 'connect', titre: 'Mes demandes', texte: 'Demandes envoyées et leur statut.' },
+      { to: '/mes-accompagnements', icon: 'calendar', titre: 'Mes accompagnements', texte: "Aides en cours auprès de vous." },
+      { to: '/historique', icon: 'shield-check', titre: 'Historique', texte: 'Missions terminées ou annulées.' },
+    ]
+  }
+  // Personnel de santé / particulier : ce sont eux qui reçoivent les demandes
+  // et proposent des créneaux, d'où des intitulés tournés vers l'offre d'aide.
+  return [
+    { to: '/profil', icon: 'profile', titre: 'Mon profil', texte: 'Vos informations et vos disponibilités.' },
+    { to: '/mes-demandes', icon: 'connect', titre: 'Demandes reçues', texte: 'Demandes de personnes âgées, à accepter ou refuser.' },
+    { to: '/mes-accompagnements', icon: 'calendar', titre: 'Mes missions', texte: 'Accompagnements en cours.' },
+    { to: '/historique', icon: 'shield-check', titre: 'Historique', texte: 'Missions terminées ou annulées.' },
+  ]
+})
 
 async function seDeconnecter() {
   await logout()
@@ -41,7 +57,12 @@ async function seDeconnecter() {
         <span class="text-muted">— {{ user?.nom || user?.email }}</span>
       </div>
 
-      <div class="card p-3 mb-4 d-flex flex-row align-items-center justify-content-between flex-wrap gap-2 abonnement-statut">
+      <!-- Les formules d'accompagnement sont réservées aux personnes âgées
+           (voir FormulesSection.vue) : pas la peine d'en parler à un aidant. -->
+      <div
+        v-if="user?.role === 'senior'"
+        class="card p-3 mb-4 d-flex flex-row align-items-center justify-content-between flex-wrap gap-2 abonnement-statut"
+      >
         <span v-if="formuleActive">
           Formule active : <strong>{{ formuleActive.nom }}</strong>
           <span class="text-muted">

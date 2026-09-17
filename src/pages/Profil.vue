@@ -2,10 +2,11 @@
 // Page "Mon profil" : édition des infos communes +, selon le rôle, soit un CTA
 // vers la recherche (personne âgée), soit la gestion des disponibilités
 // (personnel de santé / particulier).
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
+import BackLink from '../components/BackLink.vue'
 import '../styles/Profil.css'
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
@@ -24,14 +25,12 @@ const form = reactive({
   nom: user.value.nom,
   telephone: user.value.telephone,
   ville: user.value.ville,
+  adresse: user.value.adresse,
   bio: user.value.bio,
   specialite: user.value.specialite || SPECIALITES[0],
   services: [...(user.value.services || [])],
 })
 
-// Créneau horaire précis (et non plus une simple indication "Matin"/"Après-midi") :
-// nécessaire pour pouvoir proposer ce créneau lors de l'envoi d'une demande.
-const newSlot = reactive({ jour: JOURS[0], heureDebut: '08:00', heureFin: '12:00' })
 const slotError = ref('')
 const savedMessage = ref('')
 
@@ -41,28 +40,47 @@ function toggleService(service) {
   else form.services.splice(index, 1)
 }
 
-// Les disponibilités sont enregistrées immédiatement (pas de bouton "Enregistrer"),
-// pour que la liste affichée reste toujours synchronisée avec ce qui est stocké.
-// updateProfile() (Supabase) est async : on attend la confirmation d'écriture
-// avant de considérer la disponibilité comme ajoutée.
-async function addSlot() {
-  slotError.value = ''
-  if (newSlot.heureFin <= newSlot.heureDebut) {
-    slotError.value = "L'heure de fin doit être après l'heure de début."
-    return
-  }
-  const exists = user.value.disponibilites.some(
-    (d) =>
-      d.jour === newSlot.jour && d.heureDebut === newSlot.heureDebut && d.heureFin === newSlot.heureFin,
+// Calendrier de disponibilité : 3 créneaux fixes par jour plutôt qu'un champ
+// horaire libre, pour que ça se présente vraiment comme une grille cliquable
+// (calendrier) au lieu d'un simple formulaire jour + heure de début/fin.
+const CRENEAUX = [
+  { id: 'matin', label: 'Matin', heureDebut: '08:00', heureFin: '12:00' },
+  { id: 'apres-midi', label: 'Après-midi', heureDebut: '12:00', heureFin: '17:00' },
+  { id: 'soir', label: 'Soir', heureDebut: '17:00', heureFin: '20:00' },
+]
+
+function estActif(jour, creneau) {
+  return user.value.disponibilites.some(
+    (d) => d.jour === jour && d.heureDebut === creneau.heureDebut && d.heureFin === creneau.heureFin,
   )
-  if (exists) return
-  const disponibilites = [...user.value.disponibilites, { ...newSlot }]
+}
+
+// Une case du calendrier = un créneau standard (jour + Matin/Après-midi/Soir).
+// Clic : on l'ajoute s'il n'y est pas, on le retire sinon. updateProfile()
+// (Supabase) est async : la case ne change d'état qu'une fois l'écriture confirmée.
+async function toggleCreneau(jour, creneau) {
+  slotError.value = ''
+  const dejaActif = estActif(jour, creneau)
+  const disponibilites = dejaActif
+    ? user.value.disponibilites.filter(
+        (d) => !(d.jour === jour && d.heureDebut === creneau.heureDebut && d.heureFin === creneau.heureFin),
+      )
+    : [...user.value.disponibilites, { jour, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin }]
   try {
     await updateProfile({ disponibilites })
   } catch (err) {
     slotError.value = err.message
   }
 }
+
+// D'anciennes disponibilités à horaires libres (avant ce calendrier à créneaux
+// fixes) ne correspondent à aucune case de la grille : on les garde visibles
+// ici plutôt que de les faire disparaître silencieusement de l'interface.
+const autresCreneaux = computed(() =>
+  user.value.disponibilites
+    .map((slot, index) => ({ slot, index }))
+    .filter(({ slot }) => !CRENEAUX.some((c) => c.heureDebut === slot.heureDebut && c.heureFin === slot.heureFin)),
+)
 
 async function removeSlot(index) {
   const disponibilites = user.value.disponibilites.filter((_, i) => i !== index)
@@ -74,6 +92,7 @@ async function handleSave() {
     nom: form.nom,
     telephone: form.telephone,
     ville: form.ville,
+    adresse: form.adresse,
     bio: form.bio,
     specialite: user.value.role === 'sante' ? form.specialite : '',
     services: user.value.role === 'particulier' ? [...form.services] : [],
@@ -120,6 +139,7 @@ async function handleChangerMotDePasse() {
 <template>
   <section class="dashboard-page">
     <div class="container">
+      <BackLink />
       <div class="d-flex align-items-center gap-2 mb-4">
         <h1 class="h3 mb-0">
           Mon profil
@@ -153,20 +173,31 @@ async function handleChangerMotDePasse() {
                 </div>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Commune</label>
-                <select
-                  v-model="form.ville"
-                  class="form-select"
-                >
-                  <option
-                    v-for="c in COMMUNES_MAYOTTE"
-                    :key="c.nom"
-                    :value="c.nom"
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Commune</label>
+                  <select
+                    v-model="form.ville"
+                    class="form-select"
                   >
-                    {{ c.nom }}
-                  </option>
-                </select>
+                    <option
+                      v-for="c in COMMUNES_MAYOTTE"
+                      :key="c.nom"
+                      :value="c.nom"
+                    >
+                      {{ c.nom }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Adresse postale</label>
+                  <input
+                    v-model="form.adresse"
+                    type="text"
+                    class="form-control"
+                    placeholder="N°, rue, lieu-dit..."
+                  >
+                </div>
               </div>
 
               <div
@@ -313,69 +344,72 @@ async function handleChangerMotDePasse() {
             v-else
             class="card p-4"
           >
-            <h2 class="h5 mb-3">
-              Mes disponibilités
+            <h2 class="h5 mb-1">
+              Mon calendrier de disponibilité
             </h2>
+            <p class="text-muted small mb-3">
+              Cliquez sur un créneau pour le proposer ou le retirer.
+            </p>
 
-            <ul class="slot-list">
-              <li
-                v-for="(slot, index) in user.disponibilites"
-                :key="`${slot.jour}-${slot.heureDebut}-${slot.heureFin}`"
-              >
-                <span>{{ slot.jour }} — {{ slot.heureDebut }} à {{ slot.heureFin }}</span>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  @click="removeSlot(index)"
-                >
-                  Retirer
-                </button>
-              </li>
-              <li
-                v-if="!user.disponibilites.length"
-                class="text-muted small"
-              >
-                Aucune disponibilité renseignée pour le moment.
-              </li>
-            </ul>
-
-            <div class="add-slot">
-              <select
-                v-model="newSlot.jour"
-                class="form-select form-select-sm"
-              >
-                <option
+            <div class="dispo-calendrier">
+              <div class="dispo-calendrier-entete">
+                <span />
+                <span
                   v-for="j in JOURS"
                   :key="j"
-                  :value="j"
-                >
-                  {{ j }}
-                </option>
-              </select>
-              <input
-                v-model="newSlot.heureDebut"
-                type="time"
-                class="form-control form-control-sm"
+                >{{ j.slice(0, 3) }}</span>
+              </div>
+              <div
+                v-for="creneau in CRENEAUX"
+                :key="creneau.id"
+                class="dispo-calendrier-ligne"
               >
-              <input
-                v-model="newSlot.heureFin"
-                type="time"
-                class="form-control form-control-sm"
-              >
-              <button
-                type="button"
-                class="btn btn-sm btn-primary"
-                @click="addSlot"
-              >
-                Ajouter
-              </button>
+                <span class="dispo-calendrier-label">{{ creneau.label }}</span>
+                <button
+                  v-for="j in JOURS"
+                  :key="`${creneau.id}-${j}`"
+                  type="button"
+                  class="dispo-case"
+                  :class="{ 'dispo-case-active': estActif(j, creneau) }"
+                  :aria-pressed="estActif(j, creneau)"
+                  :aria-label="`${creneau.label} ${j}`"
+                  @click="toggleCreneau(j, creneau)"
+                />
+              </div>
             </div>
+
             <p
               v-if="slotError"
-              class="text-danger small mt-2 mb-0"
+              class="text-danger small mt-3 mb-0"
             >
               {{ slotError }}
             </p>
+
+            <!-- Créneaux à horaires libres enregistrés avant ce calendrier :
+                 gardés visibles/supprimables plutôt que masqués silencieusement. -->
+            <div
+              v-if="autresCreneaux.length"
+              class="mt-3"
+            >
+              <p class="text-muted small mb-2">
+                Autres créneaux enregistrés :
+              </p>
+              <ul class="slot-list">
+                <li
+                  v-for="{ slot, index } in autresCreneaux"
+                  :key="`${slot.jour}-${slot.heureDebut}-${slot.heureFin}`"
+                >
+                  <span>{{ slot.jour }} — {{ slot.heureDebut }} à {{ slot.heureFin }}</span>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="removeSlot(index)"
+                  >
+                    Retirer
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

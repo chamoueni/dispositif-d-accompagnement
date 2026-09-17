@@ -4,11 +4,9 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppNav from './components/AppNav.vue'
 import SosButton from './components/SosButton.vue'
-import { useAuth } from './stores/auth'
 // Même logo que la navbar (voir AppNav.vue), pour une identité cohérente jusqu'en bas de page.
 import logo from './assets/logo.png'
 
-const { user } = useAuth()
 const route = useRoute()
 
 // L'espace admin (tableau de bord + sa connexion dédiée) construit sa propre

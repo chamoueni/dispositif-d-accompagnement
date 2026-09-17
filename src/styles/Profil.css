@@ -26,14 +26,64 @@
   font-size: 14px;
 }
 
-.add-slot {
+/* Calendrier de disponibilité : une grille jours x créneaux, chaque case étant
+   un bouton à bascule (voir toggleCreneau() dans Profil.vue). CSS grid plutôt
+   qu'un tableau : plus simple à rendre responsive (colonnes qui rétrécissent
+   sur mobile sans scroll horizontal). */
+.dispo-calendrier {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.add-slot select,
-.add-slot input {
-  flex: 1 1 auto;
-  min-width: 90px;
+.dispo-calendrier-entete,
+.dispo-calendrier-ligne {
+  display: grid;
+  grid-template-columns: 64px repeat(7, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.dispo-calendrier-entete span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  text-align: center;
+}
+
+.dispo-calendrier-label {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.dispo-case {
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-alt);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dispo-case:hover {
+  border-color: var(--accent-border);
+}
+
+.dispo-case-active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .dispo-calendrier-entete,
+  .dispo-calendrier-ligne {
+    grid-template-columns: 48px repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .dispo-case {
+    height: 26px;
+  }
 }

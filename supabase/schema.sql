@@ -17,6 +17,7 @@ create table if not exists profiles (
   nom text not null default '',
   telephone text not null default '',
   ville text not null default '',
+  adresse text not null default '',
   specialite text not null default '',
   bio text not null default '',
   services text[] not null default '{}',
@@ -24,6 +25,11 @@ create table if not exists profiles (
   abonnement jsonb,
   created_at timestamptz not null default now()
 );
+
+-- "create table if not exists" ne modifie pas une table déjà existante : sur un
+-- projet déjà en place, ce alter est ce qui ajoute vraiment la colonne (à
+-- rejouer manuellement dans le SQL Editor, comme le reste de ce fichier).
+alter table profiles add column if not exists adresse text not null default '';
 
 alter table profiles enable row level security;
 

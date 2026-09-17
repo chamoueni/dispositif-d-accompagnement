@@ -8,6 +8,16 @@
   padding: 32px;
 }
 
+/* Un peu plus large que .form-card seul : les champs carte/facturation en 2
+   colonnes (expiration + CVC) ont besoin d'un peu plus de place. */
+.form-card:has(.paiement-form) {
+  max-width: 540px;
+}
+
+.paiement-form h2 {
+  color: var(--text-h);
+}
+
 .paiement-prix {
   font-family: var(--heading);
   font-size: 32px;

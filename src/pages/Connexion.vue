@@ -20,7 +20,7 @@ async function handleSubmit() {
   error.value = ''
   try {
     await login(form.email, form.password)
-    router.push(route.query.redirect || '/profil')
+    router.push(route.query.redirect || '/mon-compte')
   } catch (err) {
     error.value = err.message
   }

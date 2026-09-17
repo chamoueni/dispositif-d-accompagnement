@@ -177,12 +177,20 @@ router.beforeEach(async (to) => {
   }
   // On garde la destination visée (ex. /formule/confort) dans l'URL de connexion,
   // pour pouvoir y renvoyer l'utilisateur une fois connecté au lieu de le laisser
-  // sur /profil sans lien avec ce qu'il voulait faire (voir Connexion.vue).
+  // sur son tableau de bord sans lien avec ce qu'il voulait faire (voir Connexion.vue).
   if (to.meta.requiresAuth && !user.value) {
     return { name: 'connexion', query: { redirect: to.fullPath } }
   }
+  // L'accueil (page marketing) est réservé aux visiteurs : une fois connecté,
+  // "/" (et donc le logo cliquable de la navbar) mène au tableau de bord plutôt
+  // qu'à la page publique, qui ne sert plus à rien une fois dans le dispositif.
+  // Exception : un lien avec ancre (ex. /#nos-formules depuis Mon compte) reste
+  // volontairement ciblé, sinon il ne mènerait jamais à la bonne section.
+  if (to.name === 'accueil' && user.value && !to.hash) {
+    return { name: isAdmin.value ? 'admin' : 'mon-compte' }
+  }
   if (to.meta.guestOnly && user.value) {
-    return { name: 'profil' }
+    return { name: isAdmin.value ? 'admin' : 'mon-compte' }
   }
   return true
 })

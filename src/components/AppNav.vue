@@ -16,15 +16,22 @@ import IconBadge from './IconBadge.vue'
 import logo from '../assets/logo.png'
 import '../styles/AppNav.css'
 
-const ROLE_LABELS = {
-  senior: 'Personne âgée',
-  sante: 'Personnel de santé',
-  particulier: 'Particulier',
-}
-
 const { user, isAdmin, logout } = useAuth()
 const { state: accessibilite, toggle: toggleAccessibilite } = useAccessibility()
 const router = useRouter()
+
+// Affiche "Prénom N." plutôt que le rôle (senior/santé/particulier) dans la
+// navbar : plus personnel, et le rôle est de toute façon déjà visible ailleurs
+// (page Profil). "nom" est saisi comme un nom complet en un seul champ à
+// l'inscription (voir Inscription.vue) : on ne garde que le 1er mot comme
+// prénom et l'initiale du dernier mot comme nom, sans supposer qu'il y a
+// forcément 2 mots (un seul mot renseigné reste affiché tel quel).
+function nomAffiche(nom) {
+  if (!nom) return ''
+  const mots = nom.trim().split(/\s+/)
+  if (mots.length === 1) return mots[0]
+  return `${mots[0]} ${mots[mots.length - 1][0]}.`
+}
 
 function handleLogout() {
   logout()
@@ -165,7 +172,7 @@ function handleLogout() {
             <span
               v-if="!isAdmin"
               class="badge text-bg-light border badge-role"
-            >{{ ROLE_LABELS[user.role] }}</span>
+            >{{ nomAffiche(user.nom) }}</span>
             <button
               type="button"
               class="btn btn-outline-secondary btn-sm"

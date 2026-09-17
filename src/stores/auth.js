@@ -48,9 +48,9 @@ supabase.auth.onAuthStateChange((_event, session) => {
 })
 
 // Crée le compte Supabase Auth puis la ligne de profil associée.
-// payload : { nom, email, password, telephone, ville, role, specialite, services, bio, disponibilites }
+// payload : { nom, email, password, telephone, ville, adresse, role, specialite, services, bio, disponibilites }
 async function signup(payload) {
-  const { nom, email, password, telephone, ville, role, specialite, services, bio, disponibilites } =
+  const { nom, email, password, telephone, ville, adresse, role, specialite, services, bio, disponibilites } =
     payload
 
   const { data, error } = await supabase.auth.signUp({ email, password })
@@ -68,6 +68,7 @@ async function signup(payload) {
     nom,
     telephone,
     ville,
+    adresse,
     role,
     specialite,
     services,
