@@ -9,14 +9,37 @@ import {
   supprimerAdherent,
 } from './adherentsStore.js'
 import { synchroniserAdherent } from './supabaseSync.js'
+import { supabaseAdmin } from './supabaseAdmin.js'
 
 const app = express()
 const port = Number(process.env.PORT) || 3001
 const rolesAutorises = ['senior', 'sante', 'particulier']
 const statutsAutorises = ['actif', 'inactif']
+// Même email en dur que côté client (voir ADMIN_EMAIL dans stores/auth.js) et
+// que les policies RLS Supabase : pas de rôle "admin" séparé pour ce projet.
+const ADMIN_EMAIL = 'moustakimsinina05@gmail.com'
 
 app.use(cors())
 app.use(express.json())
+
+// Protège les routes /api/admin/* : le front envoie le token de session Supabase
+// de l'utilisateur connecté (Authorization: Bearer <access_token>), qu'on
+// vérifie ici avant d'autoriser une action qui utilise la clé service role
+// (donc capable de contourner toute RLS) — sans ce contrôle, ces routes
+// seraient utilisables par n'importe qui connaissant leur URL.
+async function verifierAdmin(req, res, next) {
+  if (!supabaseAdmin) {
+    return res.status(503).json({ message: "Service d'administration non configuré côté serveur." })
+  }
+  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
+  if (!token) return res.status(401).json({ message: 'Authentification requise.' })
+
+  const { data, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || data.user?.email !== ADMIN_EMAIL) {
+    return res.status(403).json({ message: "Accès réservé à l'administrateur." })
+  }
+  next()
+}
 
 // Client Anthropic : lit ANTHROPIC_API_KEY dans l'environnement (jamais côté
 // client/VITE_, voir .env.example). N'est instancié que si la clé est présente,
@@ -93,6 +116,23 @@ app.delete('/api/adherents/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Adhérent introuvable.' })
     }
     await synchroniserAdherent(adherent, 'supprimer')
+    return res.status(204).end()
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Supprime un compte entièrement (auth.users + sa ligne "profiles", qui suit
+// via "on delete cascade", voir supabase/schema.sql). Une simple suppression
+// RLS de la ligne "profiles" ne suffirait pas : le compte Supabase Auth
+// resterait, bloquant toute réinscription avec le même email ("User already
+// registered") — c'est exactement le bug rencontré avec attoufams@gmail.com.
+// auth.admin.deleteUser() n'est disponible qu'avec la clé service role, donc
+// côté serveur uniquement, jamais depuis le client.
+app.delete('/api/admin/comptes/:id', verifierAdmin, async (req, res, next) => {
+  try {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(req.params.id)
+    if (error) return res.status(400).json({ message: error.message })
     return res.status(204).end()
   } catch (error) {
     next(error)

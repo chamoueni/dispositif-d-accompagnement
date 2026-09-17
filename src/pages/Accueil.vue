@@ -128,7 +128,7 @@ onUnmounted(() => observateurServices?.disconnect())
       <div class="container hero-inner">
         <div class="hero-text">
           <span class="badge text-bg-secondary mb-3">Aide aux personnes âgées à Mayotte</span>
-          <h1>Un accompagnement de <HighlightWord>confiance</HighlightWord>, à quelques clics</h1>
+          <h1>Un accompagnement de <HighlightWord>confiance</HighlightWord>, en quelques clics</h1>
           <p class="lead">
             Le dispositif met en relation les personnes âgées avec du personnel de santé, des
             coursiers et des aides à domicile. 

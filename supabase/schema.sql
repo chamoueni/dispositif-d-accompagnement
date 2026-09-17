@@ -51,6 +51,15 @@ drop policy if exists "profiles_update_own" on profiles;
 create policy "profiles_update_own" on profiles
   for update to authenticated using (auth.uid() = id);
 
+-- L'admin peut modifier n'importe quel profil depuis l'espace admin (gestion
+-- des comptes). Policy additionnelle (permissive) à côté de "profiles_update_own" :
+-- Postgres les combine avec un OR, donc un utilisateur normal garde le droit de
+-- modifier uniquement son propre profil, et l'admin gagne le droit sur tous.
+drop policy if exists "profiles_update_admin" on profiles;
+create policy "profiles_update_admin" on profiles
+  for update to authenticated
+  using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
+
 -- ---------------------------------------------------------------------------
 -- ADHERENTS : table métier alimentée par l'API Express (miroir Supabase).
 -- La clé de service du backend contourne RLS, tandis que cette policy permet
@@ -146,6 +155,13 @@ drop policy if exists "demandes_update_participants" on demandes;
 create policy "demandes_update_participants" on demandes
   for update to authenticated using (auth.uid() = demandeur_id or auth.uid() = aidant_id);
 
+-- L'admin voit aussi toutes les demandes, pour le suivi d'activité du tableau
+-- de bord (sans ça, la policy "participants" ci-dessus lui masquerait tout).
+drop policy if exists "demandes_select_admin" on demandes;
+create policy "demandes_select_admin" on demandes
+  for select to authenticated
+  using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
+
 -- ---------------------------------------------------------------------------
 -- MISES_EN_RELATION : la mission elle-même, une fois une demande acceptée.
 -- ---------------------------------------------------------------------------
@@ -173,6 +189,13 @@ create policy "mer_insert_participants" on mises_en_relation
 drop policy if exists "mer_update_participants" on mises_en_relation;
 create policy "mer_update_participants" on mises_en_relation
   for update to authenticated using (auth.uid() = demandeur_id or auth.uid() = aidant_id);
+
+-- Même besoin que pour "demandes" ci-dessus : l'admin doit voir toutes les
+-- missions, pas seulement celles où il serait lui-même participant.
+drop policy if exists "mer_select_admin" on mises_en_relation;
+create policy "mer_select_admin" on mises_en_relation
+  for select to authenticated
+  using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
 
 -- ---------------------------------------------------------------------------
 -- MESSAGES_CONTACT : "Un problème avec le site" dans le menu SOS (voir

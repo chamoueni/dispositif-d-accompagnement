@@ -1,15 +1,10 @@
 // Miroir Supabase facultatif : le fichier JSON reste la source locale de secours.
-import 'dotenv/config'
-import { createClient } from '@supabase/supabase-js'
-
-const url = process.env.SUPABASE_URL
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-const client = url && serviceRoleKey ? createClient(url, serviceRoleKey) : null
+import { supabaseAdmin } from './supabaseAdmin.js'
 
 export async function synchroniserAdherent(adherent, operation) {
-  if (!client) return
+  if (!supabaseAdmin) return
 
-  const table = client.from('adherents')
+  const table = supabaseAdmin.from('adherents')
   if (operation === 'supprimer') {
     const { error } = await table.delete().eq('id', adherent.id)
     if (error) throw error

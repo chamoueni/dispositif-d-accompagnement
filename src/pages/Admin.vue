@@ -7,7 +7,16 @@
 // l'atteindre, pas de vérification supplémentaire ici.
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUsers, getMessagesContact, deleteMessageContact } from '../data/store'
+import {
+  getUsers,
+  getMessagesContact,
+  deleteMessageContact,
+  getDemandes,
+  getMisesEnRelation,
+  updateCompteAdmin,
+  deleteCompteAdmin,
+  COMMUNES_MAYOTTE,
+} from '../data/store'
 import { useAuth } from '../stores/auth'
 import IconBadge from '../components/IconBadge.vue'
 import AdherentsManager from '../components/AdherentsManager.vue'
@@ -31,12 +40,143 @@ const ROLE_BADGE_CLASS = {
 
 const utilisateurs = ref([])
 const messages = ref([])
+const demandes = ref([])
+const missions = ref([])
 const chargement = ref(true)
 
 onMounted(async () => {
-  ;[utilisateurs.value, messages.value] = await Promise.all([getUsers(), getMessagesContact()])
+  ;[utilisateurs.value, messages.value, demandes.value, missions.value] = await Promise.all([
+    getUsers(),
+    getMessagesContact(),
+    getDemandes(),
+    getMisesEnRelation(),
+  ])
   chargement.value = false
 })
+
+// --- Recherche et filtres sur le tableau des comptes ----------------------
+const recherche = ref('')
+const filtreRole = ref('tous')
+
+const utilisateursFiltres = computed(() => {
+  const q = recherche.value.trim().toLowerCase()
+  return utilisateurs.value.filter((u) => {
+    if (filtreRole.value !== 'tous' && u.role !== filtreRole.value) return false
+    if (!q) return true
+    return (
+      (u.nom || '').toLowerCase().includes(q) ||
+      (u.ville || '').toLowerCase().includes(q) ||
+      (u.telephone || '').toLowerCase().includes(q)
+    )
+  })
+})
+
+// --- Édition d'un compte (admin, voir profiles_update_admin en RLS) -------
+const editionId = ref(null)
+const editionForm = ref({ nom: '', role: 'senior', ville: '', telephone: '', adresse: '' })
+const editionEnCours = ref(false)
+const editionErreur = ref('')
+
+function commencerEdition(u) {
+  editionId.value = u.id
+  editionForm.value = {
+    nom: u.nom || '',
+    role: u.role,
+    ville: u.ville || COMMUNES_MAYOTTE[0].nom,
+    telephone: u.telephone || '',
+    adresse: u.adresse || '',
+  }
+  editionErreur.value = ''
+}
+
+function annulerEdition() {
+  editionId.value = null
+}
+
+async function enregistrerEdition(id) {
+  editionEnCours.value = true
+  editionErreur.value = ''
+  try {
+    await updateCompteAdmin(id, { ...editionForm.value })
+    const cible = utilisateurs.value.find((u) => u.id === id)
+    if (cible) Object.assign(cible, editionForm.value)
+    editionId.value = null
+  } catch (err) {
+    editionErreur.value = err.message
+  } finally {
+    editionEnCours.value = false
+  }
+}
+
+// --- Suppression complète d'un compte (auth + profil, voir data/store.js) -
+const suppressionCompteEnCours = ref(null)
+
+async function supprimerCompte(u) {
+  if (
+    !confirm(
+      `Supprimer définitivement le compte de ${u.nom || 'cet utilisateur'} ? Cette action est irréversible.`,
+    )
+  ) {
+    return
+  }
+  suppressionCompteEnCours.value = u.id
+  try {
+    await deleteCompteAdmin(u.id)
+    utilisateurs.value = utilisateurs.value.filter((item) => item.id !== u.id)
+  } catch (err) {
+    alert(`Échec de la suppression : ${err.message}`)
+  } finally {
+    suppressionCompteEnCours.value = null
+  }
+}
+
+// --- Suivi de l'activité (demandes + missions, voir demandes_select_admin et
+// mer_select_admin en RLS : sans elles l'admin ne verrait que les demandes où
+// il serait lui-même participant, donc rien) ---------------------------------
+const STATUT_DEMANDE_LABELS = {
+  en_attente: 'En attente',
+  acceptee: 'Acceptée',
+  refusee: 'Refusée',
+  terminee: 'Terminée',
+  annulee: 'Annulée',
+}
+
+const STATUT_MISSION_LABELS = {
+  en_cours: 'En cours',
+  terminee: 'Terminée',
+  annulee: 'Annulée',
+}
+
+// Mêmes clés que SERVICE_LABELS dans NouvelleDemande.vue (source des valeurs
+// réellement enregistrées en base pour type_service).
+const SERVICE_LABELS = {
+  soins: 'Soins',
+  coursier: 'Coursier',
+  menage: 'Ménage',
+}
+
+const nomParId = computed(() => {
+  const map = {}
+  utilisateurs.value.forEach((u) => {
+    map[u.id] = u.nom || 'Compte supprimé'
+  })
+  return map
+})
+
+function nomCompte(id) {
+  return nomParId.value[id] || 'Compte supprimé'
+}
+
+const demandesEnAttente = computed(() => demandes.value.filter((d) => d.statut === 'en_attente').length)
+const missionsEnCours = computed(() => missions.value.filter((m) => m.statutMission === 'en_cours').length)
+
+// Les plus récentes en premier, comme les autres listes de la page.
+const demandesTriees = computed(() =>
+  [...demandes.value].sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation)),
+)
+const missionsTriees = computed(() =>
+  [...missions.value].sort((a, b) => new Date(b.dateDebut) - new Date(a.dateDebut)),
+)
 
 async function seDeconnecter() {
   await logout()
@@ -143,6 +283,17 @@ const activiteRecente = computed(() => {
             compact
           />
           Messages
+        </a>
+        <a
+          href="#activite"
+          class="admin-sidebar-link"
+        >
+          <IconBadge
+            name="calendar"
+            tone="accent"
+            compact
+          />
+          Activité
         </a>
         <a
           href="#adherents"
@@ -272,6 +423,48 @@ const activiteRecente = computed(() => {
           </div>
         </div>
 
+        <!-- Deuxième rangée de cartes : suivi de l'activité (demandes et
+             missions), invisible côté admin avant l'ajout des policies RLS
+             demandes_select_admin / mer_select_admin. -->
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6 col-lg-3">
+            <a
+              href="#activite"
+              class="admin-stat-card admin-stat-accent2 admin-stat-link"
+            >
+              <IconBadge
+                name="calendar"
+                tone="accent-2"
+                compact
+              />
+              <p class="admin-stat">
+                {{ demandesEnAttente }}
+              </p>
+              <p class="admin-stat-label">
+                Demandes en attente
+              </p>
+            </a>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <a
+              href="#activite"
+              class="admin-stat-card admin-stat-accent admin-stat-link"
+            >
+              <IconBadge
+                name="shield-check"
+                tone="accent"
+                compact
+              />
+              <p class="admin-stat">
+                {{ missionsEnCours }}
+              </p>
+              <p class="admin-stat-label">
+                Missions en cours
+              </p>
+            </a>
+          </div>
+        </div>
+
         <div class="row g-4">
           <!-- Colonne principale : comptes + messages. -->
           <div class="col-lg-8">
@@ -281,6 +474,36 @@ const activiteRecente = computed(() => {
             >
               Comptes ({{ utilisateurs.length }})
             </h2>
+
+            <!-- Recherche (nom, commune, téléphone) + filtre par rôle : le
+                 tableau ci-dessous reste toujours en base sur "utilisateurs",
+                 seul l'affichage change (utilisateursFiltres). -->
+            <div class="admin-filtres mb-3">
+              <input
+                v-model="recherche"
+                type="search"
+                class="form-control"
+                placeholder="Rechercher un nom, une commune, un téléphone…"
+              >
+              <select
+                v-model="filtreRole"
+                class="form-select"
+              >
+                <option value="tous">
+                  Tous les rôles
+                </option>
+                <option value="senior">
+                  Personnes âgées
+                </option>
+                <option value="sante">
+                  Personnel de santé
+                </option>
+                <option value="particulier">
+                  Particuliers
+                </option>
+              </select>
+            </div>
+
             <div class="card p-0 mb-5">
               <div class="table-responsive">
                 <table class="table admin-table mb-0">
@@ -291,33 +514,135 @@ const activiteRecente = computed(() => {
                       <th>Commune</th>
                       <th>Téléphone</th>
                       <th>Inscrit le</th>
+                      <th class="text-end">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr
-                      v-for="u in utilisateurs"
+                    <template
+                      v-for="u in utilisateursFiltres"
                       :key="u.id"
                     >
-                      <td>{{ u.nom || '—' }}</td>
-                      <td>
-                        <span :class="['badge', ROLE_BADGE_CLASS[u.role]]">
-                          {{ ROLE_LABELS[u.role] || u.role }}
-                        </span>
-                      </td>
-                      <td>{{ u.ville || '—' }}</td>
-                      <td>{{ u.telephone || '—' }}</td>
-                      <td class="text-muted small">
-                        {{ formatDate(u.created_at) }}
-                      </td>
-                    </tr>
+                      <!-- Ligne normale, ou formulaire d'édition inline si
+                           c'est le compte en cours de modification. -->
+                      <tr v-if="editionId !== u.id">
+                        <td>{{ u.nom || '—' }}</td>
+                        <td>
+                          <span :class="['badge', ROLE_BADGE_CLASS[u.role]]">
+                            {{ ROLE_LABELS[u.role] || u.role }}
+                          </span>
+                        </td>
+                        <td>{{ u.ville || '—' }}</td>
+                        <td>{{ u.telephone || '—' }}</td>
+                        <td class="text-muted small">
+                          {{ formatDate(u.created_at) }}
+                        </td>
+                        <td class="text-end">
+                          <div class="admin-row-actions">
+                            <button
+                              type="button"
+                              class="btn btn-outline-secondary btn-sm"
+                              @click="commencerEdition(u)"
+                            >
+                              Modifier
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              :disabled="suppressionCompteEnCours === u.id"
+                              @click="supprimerCompte(u)"
+                            >
+                              {{ suppressionCompteEnCours === u.id ? 'Suppression…' : 'Supprimer' }}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr v-else>
+                        <td colspan="6">
+                          <div class="admin-edition-form">
+                            <div class="admin-edition-champs">
+                              <input
+                                v-model="editionForm.nom"
+                                type="text"
+                                class="form-control form-control-sm"
+                                placeholder="Nom complet"
+                              >
+                              <select
+                                v-model="editionForm.role"
+                                class="form-select form-select-sm"
+                              >
+                                <option value="senior">
+                                  Personne âgée
+                                </option>
+                                <option value="sante">
+                                  Personnel de santé
+                                </option>
+                                <option value="particulier">
+                                  Particulier
+                                </option>
+                              </select>
+                              <select
+                                v-model="editionForm.ville"
+                                class="form-select form-select-sm"
+                              >
+                                <option
+                                  v-for="c in COMMUNES_MAYOTTE"
+                                  :key="c.nom"
+                                  :value="c.nom"
+                                >
+                                  {{ c.nom }}
+                                </option>
+                              </select>
+                              <input
+                                v-model="editionForm.telephone"
+                                type="tel"
+                                class="form-control form-control-sm"
+                                placeholder="Téléphone"
+                              >
+                              <input
+                                v-model="editionForm.adresse"
+                                type="text"
+                                class="form-control form-control-sm"
+                                placeholder="Adresse postale"
+                              >
+                            </div>
+                            <p
+                              v-if="editionErreur"
+                              class="text-danger small mb-2"
+                            >
+                              {{ editionErreur }}
+                            </p>
+                            <div class="admin-row-actions">
+                              <button
+                                type="button"
+                                class="btn btn-primary btn-sm"
+                                :disabled="editionEnCours"
+                                @click="enregistrerEdition(u.id)"
+                              >
+                                {{ editionEnCours ? 'Enregistrement…' : 'Enregistrer' }}
+                              </button>
+                              <button
+                                type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                :disabled="editionEnCours"
+                                @click="annulerEdition"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </template>
                   </tbody>
                 </table>
               </div>
               <p
-                v-if="!utilisateurs.length"
+                v-if="!utilisateursFiltres.length"
                 class="text-muted text-center py-5 mb-0"
               >
-                Aucun compte pour le moment.
+                {{ utilisateurs.length ? 'Aucun compte ne correspond à cette recherche.' : 'Aucun compte pour le moment.' }}
               </p>
             </div>
 
@@ -365,6 +690,106 @@ const activiteRecente = computed(() => {
             >
               Aucun message pour le moment.
             </p>
+
+            <!-- Suivi de l'activité "métier" du dispositif : demandes envoyées
+                 par les personnes âgées, puis missions démarrées une fois une
+                 demande acceptée (voir data/store.js). Nécessite les policies
+                 RLS demandes_select_admin / mer_select_admin (voir schema.sql),
+                 sinon ces deux tableaux resteraient vides pour l'admin. -->
+            <h2
+              id="activite"
+              class="h5 mb-3 mt-5"
+            >
+              Suivi de l'activité
+            </h2>
+
+            <h3 class="h6 text-muted mb-2">
+              Demandes ({{ demandes.length }})
+            </h3>
+            <div class="card p-0 mb-4">
+              <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Demandeur</th>
+                      <th>Aidant</th>
+                      <th>Service</th>
+                      <th>Statut</th>
+                      <th>Créée le</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="d in demandesTriees"
+                      :key="d.id"
+                    >
+                      <td>{{ nomCompte(d.demandeurId) }}</td>
+                      <td>{{ nomCompte(d.aidantId) }}</td>
+                      <td>{{ SERVICE_LABELS[d.typeService] || d.typeService }}</td>
+                      <td>
+                        <span class="badge text-bg-light border">
+                          {{ STATUT_DEMANDE_LABELS[d.statut] || d.statut }}
+                        </span>
+                      </td>
+                      <td class="text-muted small">
+                        {{ formatDate(d.dateCreation) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p
+                v-if="!demandes.length"
+                class="text-muted text-center py-4 mb-0"
+              >
+                Aucune demande pour le moment.
+              </p>
+            </div>
+
+            <h3 class="h6 text-muted mb-2">
+              Missions ({{ missions.length }})
+            </h3>
+            <div class="card p-0 mb-5">
+              <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Demandeur</th>
+                      <th>Aidant</th>
+                      <th>Statut</th>
+                      <th>Début</th>
+                      <th>Fin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="m in missionsTriees"
+                      :key="m.id"
+                    >
+                      <td>{{ nomCompte(m.demandeurId) }}</td>
+                      <td>{{ nomCompte(m.aidantId) }}</td>
+                      <td>
+                        <span class="badge text-bg-light border">
+                          {{ STATUT_MISSION_LABELS[m.statutMission] || m.statutMission }}
+                        </span>
+                      </td>
+                      <td class="text-muted small">
+                        {{ formatDate(m.dateDebut) }}
+                      </td>
+                      <td class="text-muted small">
+                        {{ m.dateFin ? formatDate(m.dateFin) : '—' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p
+                v-if="!missions.length"
+                class="text-muted text-center py-4 mb-0"
+              >
+                Aucune mission pour le moment.
+              </p>
+            </div>
           </div>
 
           <!-- Colonne latérale : fil d'activité récente (comptes + messages mélangés). -->

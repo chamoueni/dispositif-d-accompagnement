@@ -72,7 +72,8 @@
 /* Espace pour que les titres visés par les raccourcis (#comptes, #messages)
    ne se retrouvent pas collés en haut de l'écran après un scroll d'ancre. */
 #comptes,
-#messages {
+#messages,
+#activite {
   scroll-margin-top: 24px;
 }
 
@@ -183,6 +184,54 @@
   font-size: 13px;
   color: var(--text);
   margin: 2px 0 0;
+}
+
+/* Barre recherche + filtre au-dessus du tableau des comptes. */
+.admin-filtres {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-filtres input[type='search'] {
+  flex: 1 1 auto;
+}
+
+.admin-filtres select {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+@media (max-width: 480px) {
+  .admin-filtres {
+    flex-direction: column;
+  }
+
+  .admin-filtres select {
+    width: 100%;
+  }
+}
+
+/* Boutons "Modifier"/"Supprimer" (ou "Enregistrer"/"Annuler" en édition), à
+   droite d'une ligne du tableau des comptes. */
+.admin-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Ligne de tableau remplacée par un mini-formulaire pendant l'édition d'un
+   compte (voir editionId dans Admin.vue) : occupe toute la largeur (colspan)
+   plutôt que de garder les colonnes d'origine, plus lisible pour 5 champs. */
+.admin-edition-form {
+  padding: 8px 0;
+}
+
+.admin-edition-champs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .admin-table th {

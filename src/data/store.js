@@ -3,6 +3,7 @@
 // fonctions sont maintenant asynchrones (elles renvoient des Promises), donc
 // chaque appelant doit utiliser await/.then() plutôt qu'un accès synchrone.
 import { supabase } from '../lib/supabaseClient'
+import { API_BASE_URL } from '../lib/apiBase'
 
 // Les 17 communes de Mayotte, regroupées par zone géographique approximative.
 // Sert à trier par "proximité" sans vraie géolocalisation (cf. spécificité Mayotte :
@@ -109,6 +110,35 @@ export async function findById(id) {
     return null
   }
   return data
+}
+
+// Réservé à l'admin (policy RLS "profiles_update_admin") : modifie n'importe
+// quel profil depuis l'espace admin, contrairement à updateProfile() dans
+// stores/auth.js qui ne touche qu'au profil de l'utilisateur connecté.
+export async function updateCompteAdmin(id, patch) {
+  const { data, error } = await supabase.from('profiles').update(patch).eq('id', id).select('id')
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) {
+    throw new Error('Modification refusée par la base (droits insuffisants).')
+  }
+}
+
+// Supprime un compte entièrement (compte Supabase Auth + profil) via l'API
+// backend, seule à détenir la clé service role nécessaire pour supprimer un
+// utilisateur Auth (voir server/index.js). Une suppression RLS de la seule
+// ligne "profiles" laisserait le compte Auth en place, bloquant toute
+// réinscription avec le même email par la suite.
+export async function deleteCompteAdmin(id) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData.session?.access_token
+  const response = await fetch(`${API_BASE_URL}/api/admin/comptes/${id}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.message || 'Échec de la suppression du compte.')
+  }
 }
 
 // ---------------------------------------------------------------------------
