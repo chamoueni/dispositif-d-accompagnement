@@ -1,11 +1,12 @@
 -- Schéma Supabase du dispositif d'accompagnement.
 -- À exécuter une fois dans l'éditeur SQL de ton projet (supabase.com > SQL Editor).
 --
--- IMPORTANT avant de tester l'inscription depuis le site :
--- Authentication > Providers > Email > désactive "Confirm email" (ou confirme le
--- compte manuellement). Sinon signUp() ne renvoie pas de session immédiate et la
--- création du profil juste après (voir stores/auth.js) échoue tant que l'email
--- n'est pas confirmé.
+-- IMPORTANT pour empêcher l'inscription avec une adresse email inexistante :
+-- Authentication > Providers > Email > active "Confirm email". Le profil
+-- n'est alors créé qu'à la première connexion réussie après confirmation
+-- (voir signup() et creerProfilDepuisMetadata() dans stores/auth.js, qui
+-- gèrent ce cas via les métadonnées du compte Auth) : pas de session
+-- immédiate à l'inscription, donc pas d'insert "profiles" avant confirmation.
 
 -- ---------------------------------------------------------------------------
 -- PROFILES : infos "métier" de l'utilisateur, en plus de auth.users (qui gère

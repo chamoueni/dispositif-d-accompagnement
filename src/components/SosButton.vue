@@ -78,21 +78,36 @@ async function scrollVersLeBas() {
   }
 }
 
+// Délai max avant d'abandonner l'appel et de retomber sur la FAQ statique :
+// le widget ne doit jamais faire attendre l'utilisateur plus de quelques
+// secondes, y compris si le serveur Render met du temps à se réveiller
+// (mise en veille du plan gratuit après inactivité) ou si l'API IA répond
+// lentement.
+const DELAI_MAX_REPONSE_IA_MS = 5000
+
 // Interroge l'assistant IA côté serveur (voir server/index.js, endpoint
-// /api/chat-ia). En cas d'échec (réseau, clé absente, serveur non déployé),
-// on relève l'erreur pour que l'appelant retombe sur la FAQ statique.
+// /api/chat-ia). En cas d'échec ou de dépassement du délai (réseau, clé
+// absente, serveur non déployé/endormi), on relève l'erreur pour que
+// l'appelant retombe sur la FAQ statique.
 async function demanderAssistantIA(texte) {
-  const reponse = await fetch(`${API_BASE_URL}/api/chat-ia`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message: texte,
-      historique: historique.value.slice(-10),
-    }),
-  })
-  if (!reponse.ok) throw new Error('assistant IA indisponible')
-  const donnees = await reponse.json()
-  return donnees.reponse
+  const controleur = new AbortController()
+  const delai = setTimeout(() => controleur.abort(), DELAI_MAX_REPONSE_IA_MS)
+  try {
+    const reponse = await fetch(`${API_BASE_URL}/api/chat-ia`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: texte,
+        historique: historique.value.slice(-10),
+      }),
+      signal: controleur.signal,
+    })
+    if (!reponse.ok) throw new Error('assistant IA indisponible')
+    const donnees = await reponse.json()
+    return donnees.reponse
+  } finally {
+    clearTimeout(delai)
+  }
 }
 
 async function envoyerMessage() {

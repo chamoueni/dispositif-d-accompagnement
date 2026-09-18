@@ -4,7 +4,7 @@
 // reçues et permet de les accepter/refuser. C'est la première interface qui
 // pilote réellement updateDemandeStatut (jusqu'ici défini dans data/store.js
 // mais jamais appelé nulle part dans l'app).
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   getDemandesByDemandeur,
@@ -12,6 +12,7 @@ import {
   getMiseEnRelationByDemande,
   updateDemandeStatut,
   getUsers,
+  missionDemarree,
 } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
@@ -33,6 +34,12 @@ const profilsParId = ref({})
 const missionsParDemande = ref({})
 const chargement = ref(true)
 const actionEnCours = ref(null)
+
+// Tique régulièrement pour que le badge "Acceptée" bascule tout seul en "En
+// cours" après DELAI_DEMARRAGE_MISSION_MS, sans que l'utilisateur ait besoin
+// de recharger la page.
+const maintenant = ref(Date.now())
+let tickId
 
 async function charger() {
   chargement.value = true
@@ -56,7 +63,13 @@ async function charger() {
   chargement.value = false
 }
 
-onMounted(charger)
+onMounted(() => {
+  charger()
+  tickId = setInterval(() => {
+    maintenant.value = Date.now()
+  }, 15000)
+})
+onUnmounted(() => clearInterval(tickId))
 
 // Autre partie de la demande : l'aidant pour une personne âgée, le demandeur
 // pour un aidant.
@@ -70,11 +83,16 @@ function statutAffiche(demande) {
   if (demande.statut === 'refusee') return { label: 'Refusée', classe: 'text-bg-danger' }
   if (demande.statut === 'terminee') return { label: 'Terminée', classe: 'text-bg-success' }
   if (demande.statut === 'annulee') return { label: 'Annulée', classe: 'badge-neutral' }
-  // 'acceptee' : en_cours tant que la mission ne dit pas le contraire.
+  // 'acceptee' : d'abord "Acceptée" (mise en relation toute fraîche), puis "En
+  // cours" automatiquement après quelques minutes (voir missionDemarree),
+  // tant que la mission ne dit pas le contraire.
   const mission = missionsParDemande.value[demande.id]
   if (mission?.statutMission === 'terminee') return { label: 'Terminée', classe: 'text-bg-success' }
   if (mission?.statutMission === 'annulee') return { label: 'Annulée', classe: 'badge-neutral' }
-  return { label: 'En cours', classe: 'text-bg-primary' }
+  if (mission && missionDemarree(mission, maintenant.value)) {
+    return { label: 'En cours', classe: 'text-bg-primary' }
+  }
+  return { label: 'Acceptée', classe: 'text-bg-info' }
 }
 
 function formatDate(iso) {

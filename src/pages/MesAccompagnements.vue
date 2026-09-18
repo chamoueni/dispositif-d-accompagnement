@@ -3,7 +3,7 @@
 // mise_en_relation par demande acceptée, voir addDemande/updateDemandeStatut
 // dans data/store.js). Permet de marquer une mission terminée/annulée, ce qui
 // met aussi à jour la demande liée pour qu'elle apparaisse dans l'Historique.
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   getMisesEnRelation,
   getDemandesByDemandeur,
@@ -11,6 +11,7 @@ import {
   updateMiseEnRelationStatut,
   updateDemandeStatut,
   getUsers,
+  missionDemarree,
 } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
@@ -33,6 +34,12 @@ const actionEnCours = ref(null)
 // séparée : un simple accordéon suffit pour le peu d'infos supplémentaires).
 const missionOuverte = ref(null)
 
+// Tique régulièrement pour que les missions tout juste acceptées (encore
+// affichées "Acceptée" côté Mes demandes, voir missionDemarree) apparaissent
+// ici automatiquement dès que le délai est passé, sans recharger la page.
+const maintenant = ref(Date.now())
+let tickId
+
 async function charger() {
   chargement.value = true
   const [toutesMissions, mesDemandes, profils] = await Promise.all([
@@ -52,7 +59,18 @@ async function charger() {
   chargement.value = false
 }
 
-onMounted(charger)
+// Parmi les missions "en_cours" en base, celles encore toutes fraîches (moins
+// de DELAI_DEMARRAGE_MISSION_MS) restent en phase "Acceptée" côté Mes
+// demandes : on ne les affiche pas encore ici comme accompagnement actif.
+const missionsAffichees = computed(() => missions.value.filter((m) => missionDemarree(m, maintenant.value)))
+
+onMounted(() => {
+  charger()
+  tickId = setInterval(() => {
+    maintenant.value = Date.now()
+  }, 15000)
+})
+onUnmounted(() => clearInterval(tickId))
 
 function autrePartie(mission) {
   const id = user.value.role === 'senior' ? mission.aidantId : mission.demandeurId
@@ -119,14 +137,14 @@ async function annulerMission(mission) {
 
       <template v-else>
         <p
-          v-if="!missions.length"
+          v-if="!missionsAffichees.length"
           class="text-muted text-center py-5"
         >
           Aucun accompagnement en cours pour le moment.
         </p>
 
         <div
-          v-for="mission in missions"
+          v-for="mission in missionsAffichees"
           :key="mission.id"
           class="card p-3 mb-3 mission-item"
         >

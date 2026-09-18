@@ -35,6 +35,12 @@ function messageErreurAuth(error) {
   }
   if (/rate limit/i.test(brut)) return 'Trop de tentatives, merci de réessayer dans quelques minutes.'
   if (/network/i.test(brut)) return 'Impossible de contacter le serveur, vérifiez votre connexion.'
+  // Confirmation par email activée (voir Authentication > Providers > Email
+  // sur Supabase) : Supabase bloque la connexion tant que le lien reçu par
+  // mail n'a pas été cliqué.
+  if (/email not confirmed/i.test(brut)) {
+    return 'Merci de confirmer votre adresse email avant de vous connecter : vérifiez votre boîte mail (et vos spams).'
+  }
   return brut || 'Une erreur est survenue, merci de réessayer.'
 }
 
@@ -66,11 +72,46 @@ async function chargerProfil(authUser) {
   }
   const { data, error } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
   if (error) {
+    // PGRST116 = aucune ligne trouvée. Arrive quand la confirmation par email
+    // est activée : signup() n'a pas pu créer le profil tout de suite (pas de
+    // session à ce moment-là, donc RLS refuse l'insert) et l'a laissé en
+    // attente dans les métadonnées du compte Auth (voir signup ci-dessous).
+    // On le crée maintenant, à cette toute première connexion réussie.
+    if (error.code === 'PGRST116') {
+      const cree = await creerProfilDepuisMetadata(authUser)
+      if (cree) return
+    }
     console.error('Impossible de charger le profil :', error.message)
     state.user = null
     return
   }
   state.user = { ...data, email: authUser.email }
+}
+
+async function creerProfilDepuisMetadata(authUser) {
+  const meta = authUser.user_metadata || {}
+  // Pas de "role" dans les métadonnées : ce n'est pas un compte issu de notre
+  // formulaire d'inscription (ou déjà traité) ; rien à recréer automatiquement.
+  if (!meta.role) return false
+
+  const { error } = await supabase.from('profiles').insert({
+    id: authUser.id,
+    nom: meta.nom || '',
+    telephone: meta.telephone || '',
+    ville: meta.ville || '',
+    adresse: meta.adresse || '',
+    role: meta.role,
+    specialite: meta.specialite || '',
+    services: meta.services || [],
+    bio: meta.bio || '',
+    disponibilites: meta.disponibilites || [],
+  })
+  if (error) {
+    console.error('Impossible de créer le profil après confirmation :', error.message)
+    return false
+  }
+  await chargerProfil(authUser)
+  return true
 }
 
 // Initialisation au chargement de l'app : restaure la session existante (si
@@ -91,13 +132,25 @@ async function signup(payload) {
   const { nom, email, password, telephone, ville, adresse, role, specialite, services, bio, disponibilites } =
     payload
 
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  // Les infos du formulaire partent aussi dans les métadonnées du compte Auth
+  // (raw_user_meta_data), pas seulement dans l'insert "profiles" plus bas :
+  // avec la confirmation par email activée, on n'a pas encore de session ici
+  // pour créer la ligne "profiles" (RLS l'interdirait), donc ces métadonnées
+  // servent à la recréer automatiquement à la première connexion réussie, une
+  // fois l'email confirmé (voir creerProfilDepuisMetadata ci-dessus).
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { nom, telephone, ville, adresse, role, specialite, services, bio, disponibilites } },
+  })
   if (error) throw new Error(messageErreurAuth(error))
-  if (!data.user) {
-    // Cas où la confirmation par email est activée côté Supabase : pas de
-    // session immédiate, donc pas moyen de créer le profil tout de suite.
+
+  if (!data.session) {
+    // Confirmation par email activée : Supabase renvoie bien "data.user" (mais
+    // sans session tant que le lien reçu par mail n'est pas cliqué) — vérifier
+    // data.session plutôt que data.user est ce qui distingue vraiment ce cas.
     throw new Error(
-      'Compte créé : vérifie ta boîte mail pour confirmer ton adresse avant de te connecter.',
+      "Compte créé : un email de confirmation a été envoyé à votre adresse. Cliquez sur le lien qu'il contient, puis connectez-vous.",
     )
   }
 

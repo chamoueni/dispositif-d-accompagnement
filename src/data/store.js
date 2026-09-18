@@ -295,6 +295,22 @@ export async function addMiseEnRelation(payload) {
   return mapMiseEnRelation(data)
 }
 
+// Délai entre l'acceptation d'une demande (création de la mise en relation)
+// et son passage à l'affichage "En cours" : le temps que la mise en relation
+// soit vraiment effective (premier contact, etc.) plutôt qu'un statut "En
+// cours" instantané dès le clic sur "Accepter". Purement un délai d'affichage
+// (voir MesDemandes.vue / MesAccompagnements.vue) : statut_mission reste
+// "en_cours" en base dès la création, seule la présentation à l'écran change.
+export const DELAI_DEMARRAGE_MISSION_MS = 3 * 60 * 1000
+
+// "maintenant" est injecté par l'appelant (plutôt que Date.now() interne) pour
+// que ça reste réactif côté Vue : le composant fait dépendre ce paramètre d'un
+// ref qui tique régulièrement, ce qui refait évaluer cette fonction et change
+// l'affichage automatiquement, sans recharger la page.
+export function missionDemarree(mission, maintenant = Date.now()) {
+  return maintenant - new Date(mission.dateDebut).getTime() >= DELAI_DEMARRAGE_MISSION_MS
+}
+
 // Termine ou annule une mission ; renseigne date_fin dans les deux cas.
 export async function updateMiseEnRelationStatut(id, statutMission) {
   const { data, error } = await supabase
