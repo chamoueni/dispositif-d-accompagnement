@@ -31,7 +31,7 @@ const peutSouscrire = computed(() => !user.value || user.value.role === 'senior'
     <div
       v-for="formule in FORMULES"
       :key="formule.id"
-      class="col-md-6 col-lg-4"
+      class="col-md-6 col-lg-3"
     >
       <div
         class="card p-4 h-100 formule-card"
