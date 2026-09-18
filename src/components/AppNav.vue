@@ -116,6 +116,14 @@ function handleLogout() {
         >
           <li class="nav-item">
             <router-link
+              to="/pourquoi"
+              class="nav-link"
+            >
+              Pourquoi
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link
               to="/services"
               class="nav-link"
             >
@@ -130,9 +138,19 @@ function handleLogout() {
               Pour qui
             </router-link>
           </li>
+          <li class="nav-item">
+            <router-link
+              to="/atouts"
+              class="nav-link"
+            >
+              Engagements
+            </router-link>
+          </li>
         </ul>
 
         <div class="nav-actions">
+          <!-- Visiteur : "S'inscrire" est l'action principale du site, donc en
+               bouton plein, avec Connexion en second plan à côté. -->
           <template v-if="!user">
             <router-link
               to="/connexion"
@@ -140,12 +158,19 @@ function handleLogout() {
             >
               Connexion
             </router-link>
+            <router-link
+              to="/inscription"
+              class="btn btn-primary btn-sm"
+            >
+              S'inscrire
+            </router-link>
           </template>
 
           <!-- Mode confort : texte et boutons agrandis dans tout le site (voir index.css). -->
           <button
             type="button"
             class="btn btn-outline-secondary btn-sm confort-toggle"
+            title="Mode confort : agrandir le texte et les boutons"
             :aria-pressed="accessibilite.actif"
             @click="toggleAccessibilite"
           >

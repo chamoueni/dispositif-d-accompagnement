@@ -53,6 +53,9 @@
   align-items: center;
   gap: 10px;
   color: var(--text-h);
+  /* Autorise le titre à se comprimer plutôt qu'à pousser le bouton burger sur
+     une 2e ligne (la barre faisait deux étages sur téléphone). */
+  min-width: 0;
 }
 
 .brand-text {
@@ -65,6 +68,27 @@
   color: transparent;
 }
 
+/* Téléphone : titre plus petit et sur 2 lignes si besoin, pour que logo + titre
+   + burger tiennent sur une seule rangée. Le titre se comprime (flex + min-width
+   à 0) au lieu de prendre toute la largeur et de renvoyer le burger en dessous.
+   Attention : ne pas passer le container en flex-wrap: nowrap, sinon le panneau
+   déroulant ne peut plus se placer sous cette rangée et chevauche le logo. */
+@media (max-width: 575px) {
+  .app-nav .navbar-brand {
+    /* Réserve la place du bouton burger (56px) à droite : sans ça, le titre +
+       la marge de 1rem que Bootstrap lui ajoute dépassaient de quelques pixels
+       et renvoyaient le burger sur une 2e rangée. */
+    max-width: calc(100% - 76px);
+    margin-right: 8px;
+  }
+
+  .brand-text {
+    font-size: 15px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+}
+
 /* Logo image (src/assets/logo.png) : hauteur fixe, largeur libre pour ne pas
    déformer le fichier fourni (pas forcément carré). */
 .brand-logo {
@@ -74,6 +98,7 @@
 }
 
 .app-nav .nav-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   font-weight: 600;
@@ -83,8 +108,27 @@
   white-space: nowrap;
 }
 
+.app-nav .nav-link:hover {
+  color: var(--accent);
+}
+
 .app-nav .nav-link.router-link-active {
   color: var(--accent);
+}
+
+/* Soulignement sous la page courante : la couleur seule ne suffisait pas à
+   repérer où on est, surtout en mode confort où tout est déjà plus gras. */
+@media (min-width: 992px) {
+  .app-nav .nav-link.router-link-active::after {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent-2);
+  }
 }
 
 .nav-actions {
