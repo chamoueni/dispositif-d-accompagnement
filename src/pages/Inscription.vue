@@ -300,7 +300,7 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="bio"
-            >Présentation</label>
+            >Présentation <span class="text-muted small">(facultatif)</span></label>
             <textarea
               id="bio"
               v-model="form.bio"

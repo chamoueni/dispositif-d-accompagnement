@@ -41,8 +41,17 @@ function messageErreurAuth(error) {
 // Même principe pour les erreurs Postgres/PostgREST (table "profiles") : elles
 // sont bien plus rares à remonter jusqu'à l'utilisateur (la RLS les bloque
 // normalement avant), mais autant ne jamais lui montrer du texte technique.
-function messageErreurProfil(error) {
+// Exportée (contrairement à messageErreurAuth) : réutilisée par
+// updateCompteAdmin() dans data/store.js, seul autre endroit qui écrit dans
+// "profiles" en dehors de ce fichier.
+export function messageErreurProfil(error) {
   const brut = error?.message || ''
+  // Contrainte profiles_telephone_unique (voir supabase/schema.sql) : message
+  // spécifique, plus juste que le générique "Ce compte existe déjà" ci-dessous
+  // (le compte lui-même n'existe pas forcément déjà, c'est le numéro qui est pris).
+  if (/profiles_telephone_unique/i.test(brut)) {
+    return 'Ce numéro de téléphone est déjà utilisé par un autre compte.'
+  }
   if (/duplicate key/i.test(brut)) return 'Ce compte existe déjà.'
   if (/network|fetch/i.test(brut)) return 'Impossible de contacter le serveur, vérifiez votre connexion.'
   return 'Impossible de sauvegarder ces informations, merci de réessayer.'

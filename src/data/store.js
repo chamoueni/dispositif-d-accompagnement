@@ -4,6 +4,7 @@
 // chaque appelant doit utiliser await/.then() plutôt qu'un accès synchrone.
 import { supabase } from '../lib/supabaseClient'
 import { API_BASE_URL } from '../lib/apiBase'
+import { messageErreurProfil } from '../stores/auth'
 
 // Les 17 communes de Mayotte, regroupées par zone géographique approximative.
 // Sert à trier par "proximité" sans vraie géolocalisation (cf. spécificité Mayotte :
@@ -117,7 +118,7 @@ export async function findById(id) {
 // stores/auth.js qui ne touche qu'au profil de l'utilisateur connecté.
 export async function updateCompteAdmin(id, patch) {
   const { data, error } = await supabase.from('profiles').update(patch).eq('id', id).select('id')
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(messageErreurProfil(error))
   if (!data || data.length === 0) {
     throw new Error('Modification refusée par la base (droits insuffisants).')
   }

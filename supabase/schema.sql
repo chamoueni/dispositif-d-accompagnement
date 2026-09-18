@@ -31,6 +31,14 @@ create table if not exists profiles (
 -- rejouer manuellement dans le SQL Editor, comme le reste de ce fichier).
 alter table profiles add column if not exists adresse text not null default '';
 
+-- Un même numéro de téléphone ne doit pas pouvoir être utilisé sur deux
+-- comptes différents. Index unique PARTIEL (where telephone <> '') plutôt
+-- qu'une contrainte unique classique : la colonne a un défaut '' et plusieurs
+-- lignes à '' ne doivent pas se bloquer mutuellement, seuls les vrais numéros
+-- doivent être uniques (le téléphone est de toute façon obligatoire côté
+-- formulaire d'inscription, voir Inscription.vue).
+create unique index if not exists profiles_telephone_unique on profiles (telephone) where telephone <> '';
+
 alter table profiles enable row level security;
 
 -- Tout utilisateur connecté peut consulter les profils (nécessaire pour la page

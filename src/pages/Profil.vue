@@ -276,7 +276,7 @@ async function handleChangerMotDePasse() {
                 v-if="user.role !== 'senior'"
                 class="mb-3"
               >
-                <label class="form-label">Présentation</label>
+                <label class="form-label">Présentation <span class="text-muted small">(facultatif)</span></label>
                 <textarea
                   v-model="form.bio"
                   class="form-control"
