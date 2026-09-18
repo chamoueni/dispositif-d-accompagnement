@@ -10,3 +10,81 @@
 .badge-role {
   white-space: nowrap;
 }
+
+/* --- Boutons ---------------------------------------------------------------
+   Réglages communs à tous les boutons Bootstrap du site, pour deux raisons
+   mesurées sur la page :
+   1. lisibilité : le texte or de .btn-outline-secondary (Connexion, Commencer,
+      Choisir une formule... : la variante la plus utilisée du site) ressortait
+      à 2,1:1 sur le fond crème, très loin du minimum lisible de 4,5:1 ;
+   2. confort tactile : les .btn-sm tombaient à 35px de haut, trop petit comme
+      cible pour le public visé (personnes âgées), même hors mode confort. */
+
+.btn {
+  /* inline-flex (et non inline-block) : sans ça, min-height colle le libellé
+     en haut du bouton au lieu de le centrer. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 600;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* Contour or : libellé en texte foncé (la bordure, elle, garde l'identité
+   dorée), et remplissage or au survol plutôt qu'un simple changement de teinte. */
+.btn-outline-secondary {
+  color: var(--text-h);
+  border-color: var(--accent-2);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:active,
+.btn-outline-secondary:focus-visible {
+  color: var(--text-h);
+  background-color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+/* Survol : léger soulèvement + ombre, pour que l'état cliquable se voie sans
+   dépendre uniquement d'une nuance de couleur. */
+.btn:hover:not(:disabled):not(.disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -6px rgba(10, 40, 36, 0.45);
+}
+
+/* Appui : le bouton revient à plat, retour immédiat au clic. */
+.btn:active:not(:disabled):not(.disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Navigation au clavier : anneau net et contrasté, jamais masqué par l'ombre. */
+.btn:focus-visible {
+  outline: 3px solid var(--accent-2-deep);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn:disabled,
+.btn.disabled {
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+
+  .btn:hover:not(:disabled):not(.disabled) {
+    transform: none;
+  }
+}
