@@ -19,10 +19,21 @@ const ROLE_LABELS = {
 
 const { user, updateProfile, changerMotDePasse } = useAuth()
 
+// "nom" reste stocké comme un nom complet en un seul champ en base (voir
+// profiles.nom) — inchangé pour ne pas casser l'affichage navbar ("Prénom N.",
+// voir nomAffiche() dans AppNav.vue). On le découpe juste ici en deux champs
+// (Prénom/Nom) pour une saisie plus naturelle, puis on les recolle à l'enregistrement.
+function decouperNom(nomComplet) {
+  const mots = (nomComplet || '').trim().split(/\s+/).filter(Boolean)
+  if (mots.length === 0) return { prenom: '', nomFamille: '' }
+  if (mots.length === 1) return { prenom: mots[0], nomFamille: '' }
+  return { prenom: mots[0], nomFamille: mots.slice(1).join(' ') }
+}
+
 // Formulaire local pré-rempli avec les valeurs actuelles ; rien n'est sauvegardé
 // tant que handleSave() n'est pas appelé.
 const form = reactive({
-  nom: user.value.nom,
+  ...decouperNom(user.value.nom),
   telephone: user.value.telephone,
   ville: user.value.ville,
   adresse: user.value.adresse,
@@ -89,7 +100,7 @@ async function removeSlot(index) {
 
 async function handleSave() {
   await updateProfile({
-    nom: form.nom,
+    nom: `${form.prenom} ${form.nomFamille}`.trim(),
     telephone: form.telephone,
     ville: form.ville,
     adresse: form.adresse,
@@ -156,13 +167,24 @@ async function handleChangerMotDePasse() {
             <form @submit.prevent="handleSave">
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Nom complet</label>
+                  <label class="form-label">Prénom</label>
                   <input
-                    v-model="form.nom"
+                    v-model="form.prenom"
                     type="text"
                     class="form-control"
                   >
                 </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Nom</label>
+                  <input
+                    v-model="form.nomFamille"
+                    type="text"
+                    class="form-control"
+                  >
+                </div>
+              </div>
+
+              <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Téléphone</label>
                   <input
@@ -171,9 +193,6 @@ async function handleChangerMotDePasse() {
                     class="form-control"
                   >
                 </div>
-              </div>
-
-              <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Commune</label>
                   <select
@@ -189,15 +208,16 @@ async function handleChangerMotDePasse() {
                     </option>
                   </select>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Adresse postale</label>
-                  <input
-                    v-model="form.adresse"
-                    type="text"
-                    class="form-control"
-                    placeholder="N°, rue, lieu-dit..."
-                  >
-                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Adresse postale</label>
+                <input
+                  v-model="form.adresse"
+                  type="text"
+                  class="form-control"
+                  placeholder="N°, rue, lieu-dit..."
+                >
               </div>
 
               <div
