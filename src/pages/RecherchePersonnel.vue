@@ -2,8 +2,10 @@
 // Recherche de prestataires : filtre côté client sur la liste complète des
 // utilisateurs (pas de pagination/API, le volume de données mock reste petit).
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { getUsers, COMMUNES_MAYOTTE } from '../data/store.js'
 import ProviderCard from '../components/ProviderCard.vue'
+import BackLink from '../components/BackLink.vue'
 import '../styles/Recherche.css'
 
 const TYPES = [
@@ -12,10 +14,18 @@ const TYPES = [
   { value: 'menage', label: 'Ménage' },
 ]
 
+const route = useRoute()
+
+// "Besoin d'aide" dans le profil d'une personne âgée (voir Profil.vue) mène
+// ici avec ?type=coursier|menage|sante : on préremplit le filtre pour arriver
+// directement sur les résultats du service demandé plutôt qu'une recherche
+// vide à reconfigurer. Type inconnu/absent : comportement inchangé (santé).
+const typeInitial = TYPES.some((t) => t.value === route.query.type) ? route.query.type : 'sante'
+
 // ville : '' = toutes les communes. Le select ne propose que des noms de
 // commune canoniques (COMMUNES_MAYOTTE), donc la comparaison peut être stricte.
 const filters = reactive({
-  type: 'sante',
+  type: typeInitial,
   ville: '',
 })
 
@@ -48,6 +58,7 @@ const offreEssaiDisponible = computed(() => {
 <template>
   <section class="search-page">
     <div class="container">
+      <BackLink />
       <span class="section-label" />
       <h1 class="h3 mb-4">
         Trouver de l'aide

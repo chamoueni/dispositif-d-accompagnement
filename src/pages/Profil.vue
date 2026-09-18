@@ -350,14 +350,31 @@ async function handleChangerMotDePasse() {
               Besoin d'aide ?
             </h2>
             <p class="text-muted mb-3">
-              Trouvez un personnel de santé, un coursier ou une aide-ménagère près de chez vous.
+              Choisissez ce dont vous avez besoin, la recherche s'ouvre déjà filtrée.
             </p>
-            <router-link
-              to="/recherche"
-              class="btn btn-secondary"
-            >
-              Lancer une recherche
-            </router-link>
+            <!-- Chaque bouton mène à /recherche préfiltrée sur ce service (voir
+                 route.query.type dans RecherchePersonnel.vue), pour éviter à la
+                 personne âgée de reconfigurer une recherche à chaque fois. -->
+            <div class="senior-cta-choix">
+              <router-link
+                to="/recherche?type=sante"
+                class="btn btn-secondary"
+              >
+                Personnel de santé
+              </router-link>
+              <router-link
+                to="/recherche?type=coursier"
+                class="btn btn-secondary"
+              >
+                Coursier
+              </router-link>
+              <router-link
+                to="/recherche?type=menage"
+                class="btn btn-secondary"
+              >
+                Ménage
+              </router-link>
+            </div>
           </div>
 
           <div

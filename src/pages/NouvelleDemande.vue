@@ -4,7 +4,7 @@
 // de l'aide, jamais l'inverse dans ce dispositif.
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { findById, addDemande } from '../data/store'
+import { findById, addDemande, getDemandesByDemandeur } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import DictateButton from '../components/DictateButton.vue'
@@ -40,9 +40,24 @@ const form = reactive({
 
 const error = ref('')
 const envoyee = ref(false)
+const envoiEnCours = ref(false)
+// Demande déjà en cours (en attente ou acceptée) envoyée par ce demandeur à ce
+// même aidant, s'il y en a une : sert à bloquer l'envoi d'un doublon plutôt
+// que de laisser une personne âgée solliciter plusieurs fois le même prestataire
+// avant même d'avoir de réponse.
+const demandeExistante = ref(null)
 
 onMounted(async () => {
   aidant.value = await findById(route.params.aidantId)
+
+  if (aidant.value && user.value.role === 'senior') {
+    const demandesEnvoyees = await getDemandesByDemandeur(user.value.id)
+    demandeExistante.value =
+      demandesEnvoyees.find(
+        (d) => d.aidantId === aidant.value.id && ['en_attente', 'acceptee'].includes(d.statut),
+      ) || null
+  }
+
   // "Refaire cette demande" (voir MesDemandes.vue / Historique.vue) arrive ici
   // avec typeService/urgence/message en query params : on les reprend s'ils
   // sont présents et valides pour cet aidant, sinon comportement inchangé.
@@ -69,6 +84,7 @@ const acces = computed(() => {
   if (chargement.value) return 'chargement'
   if (!aidant.value) return 'introuvable'
   if (user.value.role !== 'senior') return 'role-invalide'
+  if (demandeExistante.value) return 'deja-envoyee'
   return 'ok'
 })
 
@@ -78,7 +94,12 @@ async function handleSubmit() {
     error.value = 'Merci de choisir un type de service.'
     return
   }
+  // Garde-fou en plus du blocage par acces === 'deja-envoyee' : évite qu'un
+  // double-clic sur "Envoyer" (avant que envoyee.value ne passe à true) ne
+  // crée deux demandes identiques coup sur coup.
+  if (envoiEnCours.value) return
 
+  envoiEnCours.value = true
   try {
     await addDemande({
       demandeurId: user.value.id,
@@ -91,6 +112,8 @@ async function handleSubmit() {
     envoyee.value = true
   } catch (err) {
     error.value = err.message
+  } finally {
+    envoiEnCours.value = false
   }
 }
 </script>
@@ -122,6 +145,17 @@ async function handleSubmit() {
         class="alert alert-warning"
       >
         Seules les personnes âgées peuvent envoyer une demande.
+      </div>
+
+      <div
+        v-else-if="acces === 'deja-envoyee'"
+        class="alert alert-warning"
+      >
+        Vous avez déjà une demande {{ demandeExistante.statut === 'acceptee' ? 'acceptée' : 'en attente' }}
+        auprès de {{ aidant.nom }}. Attendez sa réponse avant d'en envoyer une nouvelle.
+        <router-link to="/mes-demandes">
+          Voir mes demandes
+        </router-link>
       </div>
 
       <div
@@ -243,8 +277,9 @@ async function handleSubmit() {
           <button
             type="submit"
             class="btn btn-primary w-100"
+            :disabled="envoiEnCours"
           >
-            Envoyer la demande
+            {{ envoiEnCours ? 'Envoi…' : 'Envoyer la demande' }}
           </button>
         </form>
       </div>
