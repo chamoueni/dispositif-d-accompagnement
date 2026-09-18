@@ -26,11 +26,6 @@ const routes = [
     name: 'pour-qui',
     component: () => import('../pages/PourQui.vue'),
   },
-  {
-    path: '/comment-ca-marche',
-    name: 'comment-ca-marche',
-    component: () => import('../pages/CommentCaMarche.vue'),
-  },
   // Questionnaire "Je cherche de l'aide" en 4 étapes, public (pas de connexion
   // requise pour explorer les résultats ; envoyer une demande nécessite un
   // compte, déjà géré par la garde requiresAuth de /nouvelle-demande).

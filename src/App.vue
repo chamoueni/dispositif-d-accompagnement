@@ -61,9 +61,6 @@ const anneeCourante = new Date().getFullYear()
         <router-link to="/pour-qui">
           Pour qui
         </router-link>
-        <router-link to="/comment-ca-marche">
-          Comment ça marche
-        </router-link>
         <router-link to="/atouts">
           Nos engagements
         </router-link>

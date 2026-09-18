@@ -346,10 +346,10 @@ onUnmounted(() => observateurServices?.disconnect())
           </div>
         </div>
         <router-link
-          to="/comment-ca-marche"
-          class="teaser-link d-inline-block mt-3"
+          to="/inscription"
+          class="btn btn-outline-secondary d-inline-block mt-3"
         >
-          Voir les étapes →
+          Commencer
         </router-link>
       </div>
     </section>

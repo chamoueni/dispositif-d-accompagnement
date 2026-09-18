@@ -130,14 +130,6 @@ function handleLogout() {
               Pour qui
             </router-link>
           </li>
-          <li class="nav-item">
-            <router-link
-              to="/comment-ca-marche"
-              class="nav-link"
-            >
-              Comment ça marche
-            </router-link>
-          </li>
         </ul>
 
         <div class="nav-actions">
