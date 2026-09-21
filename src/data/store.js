@@ -180,6 +180,7 @@ function mapDemande(row) {
     message: row.message,
     creneauSouhaite: row.creneau_souhaite,
     statut: row.statut,
+    codeArrivee: row.code_arrivee,
     dateCreation: row.date_creation,
     dateMiseAJour: row.date_mise_a_jour,
   }
@@ -234,12 +235,66 @@ export async function addDemande(payload) {
   return mapDemande(data)
 }
 
+// Code à 4 chiffres que l'intervenant annonce en arrivant, pour que la personne
+// âgée vérifie qu'elle ouvre bien à la bonne personne.
+//
+// crypto.getRandomValues et non Math.random : c'est un code de vérification, sa
+// valeur ne doit pas être devinable. Math.random n'offre aucune garantie
+// d'imprévisibilité et ses suites sont reconstituables.
+//
+// Le modulo 10000 introduit un biais théorique sur la plage 0-65535 d'un
+// Uint16 ; il est ici négligeable et sans portée pratique pour un code lu à voix
+// haute. Formaté sur 4 chiffres, zéros de tête compris ("0472" reste un code
+// valide et se dicte aussi bien).
+function genererCodeArrivee() {
+  const tirage = new Uint16Array(1)
+  crypto.getRandomValues(tirage)
+  return String(tirage[0] % 10000).padStart(4, '0')
+}
+
+// Renvoie le code à écrire, ou null s'il ne faut rien écrire.
+//
+// Tolère l'absence de la colonne "code_arrivee". supabase/schema.sql ne
+// s'applique pas tout seul : entre le déploiement de ce code et l'exécution du
+// SQL dans le tableau de bord, la colonne n'existe pas encore. Sans ce garde-fou,
+// la requête échouerait et ACCEPTER UNE DEMANDE deviendrait impossible — on
+// casserait une fonction qui marche pour en ajouter une nouvelle. Dans ce cas on
+// renonce simplement au code, le reste de l'acceptation se déroule normalement.
+async function codeArriveeAAttribuer(id) {
+  try {
+    const { data, error } = await supabase
+      .from('demandes')
+      .select('code_arrivee')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    // Un code déjà attribué n'est jamais régénéré : la personne âgée a pu le
+    // noter, il doit rester le même jusqu'à la visite.
+    return data?.code_arrivee ? null : genererCodeArrivee()
+  } catch (err) {
+    console.warn(
+      "Code d'arrivée ignoré : la colonne demandes.code_arrivee n'existe pas encore. " +
+        'Rejouer le alter table de supabase/schema.sql dans le SQL Editor.',
+      err.message,
+    )
+    return null
+  }
+}
+
 // Change le statut d'une demande. Si le nouveau statut est "acceptee", une
-// MISE_EN_RELATION est créée dans la foulée pour représenter la mission qui démarre.
+// MISE_EN_RELATION est créée dans la foulée pour représenter la mission qui démarre,
+// et un code d'arrivée est attribué.
 export async function updateDemandeStatut(id, statut) {
+  const patch = { statut, date_mise_a_jour: new Date().toISOString() }
+
+  if (statut === 'acceptee') {
+    const code = await codeArriveeAAttribuer(id)
+    if (code) patch.code_arrivee = code
+  }
+
   const { data, error } = await supabase
     .from('demandes')
-    .update({ statut, date_mise_a_jour: new Date().toISOString() })
+    .update(patch)
     .eq('id', id)
     .select()
     .single()

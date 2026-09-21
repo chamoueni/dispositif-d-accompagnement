@@ -148,6 +148,14 @@ create table if not exists demandes (
   date_mise_a_jour timestamptz not null default now()
 );
 
+-- Code annonce par l'intervenant en arrivant chez la personne agee, pour qu'elle
+-- puisse verifier qu'elle ouvre bien a la bonne personne. Genere au moment ou
+-- l'aidant accepte la demande (voir updateDemandeStatut dans src/data/store.js),
+-- donc null tant que la demande est en attente.
+-- Colonne ajoutee par alter : "create table if not exists" ci-dessus ne modifie
+-- pas une table deja existante.
+alter table demandes add column if not exists code_arrivee text;
+
 alter table demandes enable row level security;
 
 -- Seuls le demandeur et l'aidant concernés voient/modifient une demande.

@@ -189,6 +189,29 @@ function refaire(demande) {
               >
                 « {{ demande.message }} »
               </p>
+
+              <!-- Code d'arrivée : protection contre les faux visiteurs. Il
+                   n'apparaît qu'une fois la demande acceptée, puisqu'il est
+                   attribué à ce moment-là (voir updateDemandeStatut dans
+                   data/store.js). Même bloc pour les deux rôles, avec la
+                   consigne inversée : la personne âgée l'attend, l'intervenant
+                   l'annonce. -->
+              <div
+                v-if="demande.statut === 'acceptee' && demande.codeArrivee"
+                class="code-arrivee"
+              >
+                <span class="code-arrivee-libelle">
+                  <template v-if="user.role === 'senior'">
+                    À son arrivée, {{ autrePartie(demande)?.nom || 'l’intervenant' }} doit
+                    vous annoncer ce code. S’il ne le connaît pas, n’ouvrez pas.
+                  </template>
+                  <template v-else>
+                    Annoncez ce code en arrivant chez
+                    {{ autrePartie(demande)?.nom || 'la personne' }}.
+                  </template>
+                </span>
+                <strong class="code-arrivee-valeur">{{ demande.codeArrivee }}</strong>
+              </div>
             </div>
 
             <div class="d-flex gap-2 flex-shrink-0">

@@ -14,3 +14,42 @@
   color: var(--text);
   border: 1px solid var(--border);
 }
+
+/* --- Code d'arrivee ---------------------------------------------------------
+   Code que l'intervenant annonce en arrivant, pour que la personne agee verifie
+   a qui elle ouvre. Traite comme une information de securite, pas comme un
+   detail : encadre, detache du reste de la carte, et chiffres tres grands pour
+   etre lus et dictes sans effort. */
+.code-arrivee {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--couleur-bouton);
+  border-radius: 12px;
+  background: #eaf1fe;
+}
+
+.code-arrivee-libelle {
+  flex: 1 1 220px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text-h);
+}
+
+/* Chiffres espaces : a 26px avec une chasse fixe, le code se lit d'un coup et
+   se dicte sans confusion entre deux chiffres voisins. */
+.code-arrivee-valeur {
+  font-family: var(--mono);
+  font-size: 26px;
+  letter-spacing: 0.18em;
+  color: var(--couleur-bouton-survol);
+  white-space: nowrap;
+}
+
+.mode-confort .code-arrivee-valeur {
+  font-size: 32px;
+}
