@@ -24,6 +24,7 @@ import 'leaflet.markercluster'
 // "Default" impose des pastilles bleues, or les regroupements doivent être
 // verts (voir .cluster-aidants dans CarteMayotte.css).
 import 'leaflet.markercluster/dist/MarkerCluster.css'
+import { useI18n } from 'vue-i18n'
 import { getUsers, getCoordonneesCommune } from '../data/store.js'
 import { useAuth } from '../stores/auth'
 import '../styles/CarteMayotte.css'
@@ -35,12 +36,9 @@ const ZOOM = 10
 // Mêmes besoins que la page Recherche (voir pages/RecherchePersonnel.vue) : un
 // visiteur qui filtre ici et poursuit sur /recherche retrouve les mêmes
 // catégories, sans avoir à retraduire ce qu'il cherche.
-const BESOINS = [
-  { valeur: 'tous', label: 'Tous' },
-  { valeur: 'sante', label: 'Santé' },
-  { valeur: 'coursier', label: 'Coursier' },
-  { valeur: 'menage', label: 'Ménage' },
-]
+// Seulement des identifiants : le libellé est résolu dans le template avec t(),
+// sinon il resterait figé dans la langue active au chargement du module.
+const BESOINS = ['tous', 'sante', 'coursier', 'menage']
 
 // Fonds de carte IGN (Géoplateforme, accès libre sans clé). Le satellite tient
 // lieu de "vue Google Maps" : les tuiles Google ne peuvent pas être utilisées
@@ -53,6 +51,7 @@ const MODELE_IGN =
 
 const ATTRIBUTION = '© <a href="https://www.ign.fr/">IGN</a> — Géoplateforme'
 
+const { t } = useI18n()
 const { user, initialized } = useAuth()
 
 const conteneur = ref(null)
@@ -289,7 +288,7 @@ onBeforeUnmount(() => {
     role="button"
     tabindex="0"
     :aria-expanded="estOuverte"
-    aria-label="Carte des aidants à Mayotte : agrandir pour l'explorer"
+    :aria-label="t('accueil.carte.agrandir')"
     @mouseenter="surEntreeSouris"
     @mouseleave="surSortieSouris"
     @click="surClic"
@@ -309,18 +308,18 @@ onBeforeUnmount(() => {
       v-show="estOuverte && user"
       class="carte-filtres"
       role="group"
-      aria-label="Filtrer les aidants par besoin"
+      :aria-label="t('accueil.carte.filtre_titre')"
     >
       <button
         v-for="b in BESOINS"
-        :key="b.valeur"
+        :key="b"
         type="button"
         class="btn btn-sm"
-        :class="besoin === b.valeur ? 'btn-primary' : 'btn-outline-secondary'"
-        :aria-pressed="besoin === b.valeur"
-        @click.stop="besoin = b.valeur"
+        :class="besoin === b ? 'btn-primary' : 'btn-outline-secondary'"
+        :aria-pressed="besoin === b"
+        @click.stop="besoin = b"
       >
-        {{ b.label }}
+        {{ t('accueil.carte.filtre_' + b) }}
       </button>
     </div>
 
@@ -331,19 +330,19 @@ onBeforeUnmount(() => {
       v-show="estOuverte"
       class="carte-voile-connexion"
     >
-      <p>Connectez-vous pour voir les aidants près de chez vous.</p>
+      <p>{{ t('accueil.carte.invite_connexion') }}</p>
       <router-link
         to="/connexion"
         class="btn btn-primary btn-sm"
         @click.stop
       >
-        Se connecter
+        {{ t('accueil.carte.se_connecter') }}
       </router-link>
     </div>
 
     <span
       v-show="!estOuverte"
       class="carte-mayotte-label"
-    >{{ user && nombreAffiche ? nombreAffiche + ' aidants' : 'Mayotte' }}</span>
+    >{{ user && nombreAffiche ? t('accueil.carte.aidants', { n: nombreAffiche }) : t('accueil.carte.label') }}</span>
   </div>
 </template>

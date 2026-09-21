@@ -1,0 +1,139 @@
+{
+  "langue": {
+    "choisir": "Choisir la langue",
+    "fr": "Français",
+    "shi": "Shimaoré",
+    "kib": "Kibushi"
+  },
+  "accueil": {
+    "hero": {
+      "badge": "Aide aux personnes âgées à Mayotte",
+      "titre": "Un accompagnement de {mot}, en quelques clics",
+      "mot": "confiance",
+      "chapo": "Le dispositif met en relation les personnes âgées avec du personnel de santé, des coursiers et des aides à domicile.",
+      "cta_aide": "Je cherche de l'aide",
+      "cta_aider": "Je souhaite aider"
+    },
+    "carte": {
+      "label": "Mayotte",
+      "aidants": "{n} aidants",
+      "invite_connexion": "Connectez-vous pour voir les aidants près de chez vous.",
+      "se_connecter": "Se connecter",
+      "filtre_titre": "Filtrer les aidants par besoin",
+      "filtre_tous": "Tous",
+      "filtre_sante": "Santé",
+      "filtre_coursier": "Coursier",
+      "filtre_menage": "Ménage",
+      "agrandir": "Carte des aidants à Mayotte : agrandir pour l'explorer"
+    },
+    "pourquoi": {
+      "titre": "Pourquoi ce dispositif",
+      "texte": "À Mayotte comme ailleurs, beaucoup de personnes âgées peinent à trouver de l'aide pour les gestes du quotidien ou pour un suivi de santé régulier, ce qui nourrit leur isolement.",
+      "lien": "Comprendre le contexte →"
+    },
+    "services": {
+      "titre": "Ce que vous pouvez trouver",
+      "lien": "Voir tous les services →",
+      "soins_titre": "Soins à domicile",
+      "soins_texte": "Infirmiers, aides-soignants ou kinésithérapeutes disponibles près de chez vous.",
+      "courses_titre": "Courses",
+      "courses_texte": "Un coursier de confiance se charge de vos achats du quotidien.",
+      "menage_titre": "Ménage",
+      "menage_texte": "Une aide à domicile pour l'entretien de votre logement.",
+      "garde_titre": "Service de garde",
+      "garde_texte": "Une présence rassurante à domicile quelques heures dans la journée.",
+      "psy_titre": "Suivi psychologique",
+      "psy_texte": "Un accompagnement humain pour rompre l'isolement."
+    },
+    "pour_qui": {
+      "titre": "Pour qui",
+      "lien": "Voir qui est concerné →",
+      "agees_titre": "Personnes âgées",
+      "agees_texte": "Un coup de main pour les soins, les courses ou le ménage.",
+      "sante_titre": "Personnel de santé",
+      "sante_texte": "Proposez vos soins à domicile selon vos disponibilités.",
+      "particuliers_titre": "Particuliers",
+      "particuliers_texte": "Rendez service comme coursier ou pour du ménage."
+    },
+    "etapes": {
+      "titre": "Comment ça marche",
+      "numero": "Étape {n}",
+      "cta": "Commencer",
+      "profil_titre": "Créez votre profil",
+      "profil_texte": "Personne âgée, personnel de santé ou particulier.",
+      "dispos_titre": "Indiquez vos disponibilités",
+      "dispos_texte": "Si vous proposez un service.",
+      "trouver_titre": "Trouvez la bonne personne",
+      "trouver_texte": "Par ville et par type de besoin.",
+      "suivre_titre": "Suivez votre demande",
+      "suivre_texte": "Statut visible à chaque étape, jusqu'à la mission terminée."
+    },
+    "engagements": {
+      "titre": "Nos engagements",
+      "phrase": "Un dispositif pensé pour le bien-être et l'autonomie des personnes âgées.",
+      "cta": "Rejoindre le dispositif",
+      "securite_titre": "Sécurité",
+      "securite_texte": "Rôle, services et disponibilités visibles avant tout contact.",
+      "fiabilite_titre": "Fiabilité",
+      "fiabilite_texte": "Des profils actifs et à jour, pour des mises en relation qui aboutissent.",
+      "dispo_titre": "Disponibilité",
+      "dispo_texte": "Des aidants joignables aux horaires qui vous conviennent."
+    },
+    "formules": {
+      "titre": "Nos formules",
+      "texte": "Un accompagnement mensuel, en plus de la mise en relation gratuite, pour un suivi plus régulier."
+    }
+  },
+  "demande": {
+    "chargement": "Chargement…",
+    "introuvable": "Ce profil n'existe pas ou plus.",
+    "retour_recherche": "Retour à la recherche",
+    "role_invalide": "Seules les personnes âgées peuvent envoyer une demande.",
+    "deja_acceptee": "acceptée",
+    "deja_en_attente": "en attente",
+    "deja_envoyee": "Vous avez déjà une demande {statut} auprès de {nom}. Attendez sa réponse avant d'en envoyer une nouvelle.",
+    "voir_mes_demandes": "Voir mes demandes",
+    "envoyee_titre": "Demande envoyée",
+    "envoyee_texte": "{nom} recevra votre demande et pourra l'accepter ou la refuser.",
+    "destinataire": "Demande à {nom} · {ville}",
+    "titre": "Envoyer une demande",
+    "type_service": "Type de service",
+    "service_soins": "Soins",
+    "service_coursier": "Coursier",
+    "service_menage": "Ménage",
+    "urgence": "Urgence",
+    "urgence_normale": "Normale",
+    "urgence_urgente": "Urgente",
+    "creneau": "Créneau souhaité",
+    "creneau_format": "{jour} · {debut} à {fin}",
+    "message": "Message (optionnel)",
+    "message_exemple": "Précisez votre besoin si nécessaire.",
+    "erreur_service": "Merci de choisir un type de service.",
+    "envoi_en_cours": "Envoi…",
+    "envoyer": "Envoyer la demande"
+  },
+  "sos": {
+    "bouton": "SOS",
+    "bouton_aria": "Aide et urgence",
+    "question_titre": "Question rapide",
+    "question_texte": "Poser une question",
+    "urgence_titre": "Urgence",
+    "urgence_texte": "Appeler le 112",
+    "probleme_titre": "Un problème avec le site",
+    "probleme_texte": "Nous envoyer un message",
+    "chat_accueil": "Bonjour, je peux vous aider sur l'inscription, les services, Mayotte et les délais de réponse.",
+    "chat_label": "Votre question",
+    "chat_exemple": "Ex. : Quels sont les services disponibles à Mayotte ?",
+    "chat_en_cours": "Réponse en cours…",
+    "contact_label": "Décrivez le problème",
+    "contact_exemple": "Qu'est-ce qui ne fonctionne pas ?",
+    "contact_envoye": "Message envoyé, merci. On vous répondra dès que possible.",
+    "envoi_en_cours": "Envoi…",
+    "envoyer": "Envoyer",
+    "fermer": "Fermer"
+  },
+  "vocal": {
+    "ecouter": "Écouter",
+    "aria": "Écouter cette fiche"
+  }
+}

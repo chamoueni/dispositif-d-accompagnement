@@ -1,0 +1,58 @@
+/* Selecteur de langue (voir components/SelecteurLangue.vue). Gros boutons
+   lisibles : le public vise est age, les cibles tactiles etroites et les libelles
+   en petit corps sont les premiers obstacles rencontres. */
+.selecteur-langue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.langue-bouton {
+  /* 44px de haut minimum : meme regle que les boutons du site (voir ui.css). */
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 50rem;
+  border: 2px solid var(--couleur-bouton);
+  background: transparent;
+  color: var(--couleur-bouton-survol);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.langue-bouton:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+/* Langue active : remplissage plein. L'etat ne repose pas que sur la couleur,
+   le bouton est aussi le seul en gras plein contraste — repere utilisable meme
+   avec une vision des couleurs alteree. */
+.langue-bouton.est-active {
+  background: var(--couleur-bouton);
+  border-color: var(--couleur-bouton);
+  color: var(--couleur-bouton-texte);
+  font-weight: 700;
+}
+
+.langue-bouton:focus-visible {
+  outline: 3px solid var(--couleur-bouton-survol);
+  outline-offset: 2px;
+}
+
+/* En mode confort (voir index.css), tout grossit : le selecteur suit. */
+.mode-confort .langue-bouton {
+  font-size: 1.05em;
+  padding: 10px 22px;
+}
+
+@media (max-width: 991px) {
+  .langue-bouton {
+    padding: 8px 14px;
+    font-size: 15px;
+  }
+}

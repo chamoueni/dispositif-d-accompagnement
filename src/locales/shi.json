@@ -1,0 +1,139 @@
+{
+  "langue": {
+    "choisir": "Choisir la langue",
+    "fr": "Français",
+    "shi": "Shimaoré",
+    "kib": "Kibushi"
+  },
+  "accueil": {
+    "hero": {
+      "badge": "À TRADUIRE : Aide aux personnes âgées à Mayotte",
+      "titre": "À TRADUIRE : Un accompagnement de {mot}, en quelques clics",
+      "mot": "À TRADUIRE : confiance",
+      "chapo": "À TRADUIRE : Le dispositif met en relation les personnes âgées avec du personnel de santé, des coursiers et des aides à domicile.",
+      "cta_aide": "À TRADUIRE : Je cherche de l'aide",
+      "cta_aider": "À TRADUIRE : Je souhaite aider"
+    },
+    "carte": {
+      "label": "À TRADUIRE : Mayotte",
+      "aidants": "À TRADUIRE : {n} aidants",
+      "invite_connexion": "À TRADUIRE : Connectez-vous pour voir les aidants près de chez vous.",
+      "se_connecter": "À TRADUIRE : Se connecter",
+      "filtre_titre": "À TRADUIRE : Filtrer les aidants par besoin",
+      "filtre_tous": "À TRADUIRE : Tous",
+      "filtre_sante": "À TRADUIRE : Santé",
+      "filtre_coursier": "À TRADUIRE : Coursier",
+      "filtre_menage": "À TRADUIRE : Ménage",
+      "agrandir": "À TRADUIRE : Carte des aidants à Mayotte : agrandir pour l'explorer"
+    },
+    "pourquoi": {
+      "titre": "À TRADUIRE : Pourquoi ce dispositif",
+      "texte": "À TRADUIRE : À Mayotte comme ailleurs, beaucoup de personnes âgées peinent à trouver de l'aide pour les gestes du quotidien ou pour un suivi de santé régulier, ce qui nourrit leur isolement.",
+      "lien": "À TRADUIRE : Comprendre le contexte →"
+    },
+    "services": {
+      "titre": "À TRADUIRE : Ce que vous pouvez trouver",
+      "lien": "À TRADUIRE : Voir tous les services →",
+      "soins_titre": "À TRADUIRE : Soins à domicile",
+      "soins_texte": "À TRADUIRE : Infirmiers, aides-soignants ou kinésithérapeutes disponibles près de chez vous.",
+      "courses_titre": "À TRADUIRE : Courses",
+      "courses_texte": "À TRADUIRE : Un coursier de confiance se charge de vos achats du quotidien.",
+      "menage_titre": "À TRADUIRE : Ménage",
+      "menage_texte": "À TRADUIRE : Une aide à domicile pour l'entretien de votre logement.",
+      "garde_titre": "À TRADUIRE : Service de garde",
+      "garde_texte": "À TRADUIRE : Une présence rassurante à domicile quelques heures dans la journée.",
+      "psy_titre": "À TRADUIRE : Suivi psychologique",
+      "psy_texte": "À TRADUIRE : Un accompagnement humain pour rompre l'isolement."
+    },
+    "pour_qui": {
+      "titre": "À TRADUIRE : Pour qui",
+      "lien": "À TRADUIRE : Voir qui est concerné →",
+      "agees_titre": "À TRADUIRE : Personnes âgées",
+      "agees_texte": "À TRADUIRE : Un coup de main pour les soins, les courses ou le ménage.",
+      "sante_titre": "À TRADUIRE : Personnel de santé",
+      "sante_texte": "À TRADUIRE : Proposez vos soins à domicile selon vos disponibilités.",
+      "particuliers_titre": "À TRADUIRE : Particuliers",
+      "particuliers_texte": "À TRADUIRE : Rendez service comme coursier ou pour du ménage."
+    },
+    "etapes": {
+      "titre": "À TRADUIRE : Comment ça marche",
+      "numero": "À TRADUIRE : Étape {n}",
+      "cta": "À TRADUIRE : Commencer",
+      "profil_titre": "À TRADUIRE : Créez votre profil",
+      "profil_texte": "À TRADUIRE : Personne âgée, personnel de santé ou particulier.",
+      "dispos_titre": "À TRADUIRE : Indiquez vos disponibilités",
+      "dispos_texte": "À TRADUIRE : Si vous proposez un service.",
+      "trouver_titre": "À TRADUIRE : Trouvez la bonne personne",
+      "trouver_texte": "À TRADUIRE : Par ville et par type de besoin.",
+      "suivre_titre": "À TRADUIRE : Suivez votre demande",
+      "suivre_texte": "À TRADUIRE : Statut visible à chaque étape, jusqu'à la mission terminée."
+    },
+    "engagements": {
+      "titre": "À TRADUIRE : Nos engagements",
+      "phrase": "À TRADUIRE : Un dispositif pensé pour le bien-être et l'autonomie des personnes âgées.",
+      "cta": "À TRADUIRE : Rejoindre le dispositif",
+      "securite_titre": "À TRADUIRE : Sécurité",
+      "securite_texte": "À TRADUIRE : Rôle, services et disponibilités visibles avant tout contact.",
+      "fiabilite_titre": "À TRADUIRE : Fiabilité",
+      "fiabilite_texte": "À TRADUIRE : Des profils actifs et à jour, pour des mises en relation qui aboutissent.",
+      "dispo_titre": "À TRADUIRE : Disponibilité",
+      "dispo_texte": "À TRADUIRE : Des aidants joignables aux horaires qui vous conviennent."
+    },
+    "formules": {
+      "titre": "À TRADUIRE : Nos formules",
+      "texte": "À TRADUIRE : Un accompagnement mensuel, en plus de la mise en relation gratuite, pour un suivi plus régulier."
+    }
+  },
+  "demande": {
+    "chargement": "À TRADUIRE : Chargement…",
+    "introuvable": "À TRADUIRE : Ce profil n'existe pas ou plus.",
+    "retour_recherche": "À TRADUIRE : Retour à la recherche",
+    "role_invalide": "À TRADUIRE : Seules les personnes âgées peuvent envoyer une demande.",
+    "deja_acceptee": "À TRADUIRE : acceptée",
+    "deja_en_attente": "À TRADUIRE : en attente",
+    "deja_envoyee": "À TRADUIRE : Vous avez déjà une demande {statut} auprès de {nom}. Attendez sa réponse avant d'en envoyer une nouvelle.",
+    "voir_mes_demandes": "À TRADUIRE : Voir mes demandes",
+    "envoyee_titre": "À TRADUIRE : Demande envoyée",
+    "envoyee_texte": "À TRADUIRE : {nom} recevra votre demande et pourra l'accepter ou la refuser.",
+    "destinataire": "À TRADUIRE : Demande à {nom} · {ville}",
+    "titre": "À TRADUIRE : Envoyer une demande",
+    "type_service": "À TRADUIRE : Type de service",
+    "service_soins": "À TRADUIRE : Soins",
+    "service_coursier": "À TRADUIRE : Coursier",
+    "service_menage": "À TRADUIRE : Ménage",
+    "urgence": "À TRADUIRE : Urgence",
+    "urgence_normale": "À TRADUIRE : Normale",
+    "urgence_urgente": "À TRADUIRE : Urgente",
+    "creneau": "À TRADUIRE : Créneau souhaité",
+    "creneau_format": "À TRADUIRE : {jour} · {debut} à {fin}",
+    "message": "À TRADUIRE : Message (optionnel)",
+    "message_exemple": "À TRADUIRE : Précisez votre besoin si nécessaire.",
+    "erreur_service": "À TRADUIRE : Merci de choisir un type de service.",
+    "envoi_en_cours": "À TRADUIRE : Envoi…",
+    "envoyer": "À TRADUIRE : Envoyer la demande"
+  },
+  "sos": {
+    "bouton": "À TRADUIRE : SOS",
+    "bouton_aria": "À TRADUIRE : Aide et urgence",
+    "question_titre": "À TRADUIRE : Question rapide",
+    "question_texte": "À TRADUIRE : Poser une question",
+    "urgence_titre": "À TRADUIRE : Urgence",
+    "urgence_texte": "À TRADUIRE : Appeler le 112",
+    "probleme_titre": "À TRADUIRE : Un problème avec le site",
+    "probleme_texte": "À TRADUIRE : Nous envoyer un message",
+    "chat_accueil": "À TRADUIRE : Bonjour, je peux vous aider sur l'inscription, les services, Mayotte et les délais de réponse.",
+    "chat_label": "À TRADUIRE : Votre question",
+    "chat_exemple": "À TRADUIRE : Ex. : Quels sont les services disponibles à Mayotte ?",
+    "chat_en_cours": "À TRADUIRE : Réponse en cours…",
+    "contact_label": "À TRADUIRE : Décrivez le problème",
+    "contact_exemple": "À TRADUIRE : Qu'est-ce qui ne fonctionne pas ?",
+    "contact_envoye": "À TRADUIRE : Message envoyé, merci. On vous répondra dès que possible.",
+    "envoi_en_cours": "À TRADUIRE : Envoi…",
+    "envoyer": "À TRADUIRE : Envoyer",
+    "fermer": "À TRADUIRE : Fermer"
+  },
+  "vocal": {
+    "ecouter": "À TRADUIRE : Écouter",
+    "aria": "À TRADUIRE : Écouter cette fiche"
+  }
+}

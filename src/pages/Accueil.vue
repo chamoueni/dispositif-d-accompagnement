@@ -2,6 +2,7 @@
 // Page d'accueil : hero + un aperçu concret de chaque section (pas juste des liens).
 // Chaque section garde un lien "En savoir plus" vers sa page dédiée pour le détail complet.
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import IconBadge from '../components/IconBadge.vue'
 import ReefDivider from '../components/ReefDivider.vue'
@@ -30,58 +31,38 @@ import santePhoto from '../assets/personnel-de-sante.jpg'
 import particulierPhoto from '../assets/particuliers.jpg'
 import '../styles/Accueil.css'
 
+const { t } = useI18n()
+
+// Ces tableaux ne contiennent plus que des identifiants : les libelles sont
+// resolus dans le template avec t(), sinon ils resteraient figes dans la langue
+// active au chargement du module et ne suivraient pas le changement de langue.
 const SERVICES = [
-  {
-    icon: 'soins',
-    title: 'Soins à domicile',
-    text: 'Infirmiers, aides-soignants ou kinésithérapeutes disponibles près de chez vous.',
-    photo: soinsPhoto,
-  },
-  {
-    icon: 'courses',
-    title: 'Courses',
-    text: 'Un coursier de confiance se charge de vos achats du quotidien.',
-    photo: coursesPhoto,
-  },
-  {
-    icon: 'menage',
-    title: 'Ménage',
-    text: "Une aide à domicile pour l'entretien de votre logement.",
-    photo: menagePhoto,
-  },
-  {
-    icon: 'garde',
-    title: 'Service de garde',
-    text: 'Une présence rassurante à domicile quelques heures dans la journée.',
-    photo: gardePhoto,
-  },
-  // Besoin transversal (cahier des charges) plutôt qu'un service réservable,
-  // mais a désormais sa propre photo comme les autres cartes de cette grille.
-  {
-    icon: 'psychologique',
-    title: 'Suivi psychologique',
-    text: 'Un accompagnement humain pour rompre l’isolement.',
-    photo: psychologiquePhoto,
-  },
+  { cle: 'soins', icon: 'soins', photo: soinsPhoto },
+  { cle: 'courses', icon: 'courses', photo: coursesPhoto },
+  { cle: 'menage', icon: 'menage', photo: menagePhoto },
+  { cle: 'garde', icon: 'garde', photo: gardePhoto },
+  // Besoin transversal (cahier des charges) plutot qu'un service reservable,
+  // mais a desormais sa propre photo comme les autres cartes de cette grille.
+  { cle: 'psy', icon: 'psychologique', photo: psychologiquePhoto },
 ]
 
 const PUBLICS = [
-  { title: 'Personnes âgées', text: 'Un coup de main pour les soins, les courses ou le ménage.', photo: seniorPhoto },
-  { title: 'Personnel de santé', text: 'Proposez vos soins à domicile selon vos disponibilités.', photo: santePhoto },
-  { title: 'Particuliers', text: 'Rendez service comme coursier ou pour du ménage.', photo: particulierPhoto },
+  { cle: 'agees', photo: seniorPhoto },
+  { cle: 'sante', photo: santePhoto },
+  { cle: 'particuliers', photo: particulierPhoto },
 ]
 
 const ETAPES = [
-  { icon: 'profile', title: 'Créez votre profil', text: 'Personne âgée, personnel de santé ou particulier.' },
-  { icon: 'calendar', title: 'Indiquez vos disponibilités', text: 'Si vous proposez un service.' },
-  { icon: 'search', title: 'Trouvez la bonne personne', text: 'Par ville et par type de besoin.' },
-  { icon: 'shield-check', title: 'Suivez votre demande', text: "Statut visible à chaque étape, jusqu'à la mission terminée." },
+  { cle: 'profil', icon: 'profile' },
+  { cle: 'dispos', icon: 'calendar' },
+  { cle: 'trouver', icon: 'search' },
+  { cle: 'suivre', icon: 'shield-check' },
 ]
 
 const ENGAGEMENTS = [
-  { icon: 'shield-check', title: 'Sécurité', text: 'Rôle, services et disponibilités visibles avant tout contact.' },
-  { icon: 'connect', title: 'Fiabilité', text: 'Des profils actifs et à jour, pour des mises en relation qui aboutissent.' },
-  { icon: 'calendar', title: 'Disponibilité', text: 'Des aidants joignables aux horaires qui vous conviennent.' },
+  { cle: 'securite', icon: 'shield-check' },
+  { cle: 'fiabilite', icon: 'connect' },
+  { cle: 'dispo', icon: 'calendar' },
 ]
 
 // Anime chaque carte de "Ce que vous pouvez trouver" (fondu + léger décalage
@@ -124,11 +105,21 @@ onUnmounted(() => observateurServices?.disconnect())
     <section class="hero hero-clair">
       <div class="container hero-inner">
         <div class="hero-text">
-          <span class="badge text-bg-secondary mb-3">Aide aux personnes âgées à Mayotte</span>
-          <h1>Un accompagnement de <HighlightWord>confiance</HighlightWord>, en quelques clics</h1>
+          <span class="badge text-bg-secondary mb-3">{{ t('accueil.hero.badge') }}</span>
+          <!-- i18n-t plutot qu'une concatenation : la phrase reste une seule unite
+               traduisible, et le mot mis en avant est injecte a la place du
+               parametre {mot}. Un traducteur peut donc le deplacer dans la phrase. -->
+          <i18n-t
+            keypath="accueil.hero.titre"
+            tag="h1"
+            scope="global"
+          >
+            <template #mot>
+              <HighlightWord>{{ t('accueil.hero.mot') }}</HighlightWord>
+            </template>
+          </i18n-t>
           <p class="lead">
-            Le dispositif met en relation les personnes âgées avec du personnel de santé, des
-            coursiers et des aides à domicile. 
+            {{ t('accueil.hero.chapo') }}
           </p>
           <div class="hero-actions">
             <!-- Entrée dédiée vers l'Assistant de besoin (page /assistant) : elle
@@ -138,7 +129,7 @@ onUnmounted(() => observateurServices?.disconnect())
               to="/assistant"
               class="btn btn-primary btn-lg"
             >
-              Je cherche de l'aide
+              {{ t('accueil.hero.cta_aide') }}
             </router-link>
             <!-- Était en "outline-light" quand le bouton se détachait sur la photo
                  sombre : sur le fond clair, il serait devenu invisible. -->
@@ -146,7 +137,7 @@ onUnmounted(() => observateurServices?.disconnect())
               to="/inscription"
               class="btn btn-outline-secondary btn-lg"
             >
-              Je souhaite aider
+              {{ t('accueil.hero.cta_aider') }}
             </router-link>
           </div>
         </div>
@@ -174,17 +165,16 @@ onUnmounted(() => observateurServices?.disconnect())
         <span class="section-label" />
         <IconBadge name="connect" />
         <h2 class="h3 mb-3">
-          Pourquoi ce dispositif
+          {{ t('accueil.pourquoi.titre') }}
         </h2>
         <p class="text-muted intro-text mb-3">
-          À Mayotte comme ailleurs, beaucoup de personnes âgées peinent à trouver de l'aide pour
-          les gestes du quotidien ou pour un suivi de santé régulier, ce qui nourrit leur isolement.
+          {{ t('accueil.pourquoi.texte') }}
         </p>
         <router-link
           to="/pourquoi"
           class="teaser-link"
         >
-          Comprendre le contexte →
+          {{ t('accueil.pourquoi.lien') }}
         </router-link>
       </div>
     </section>
@@ -193,7 +183,7 @@ onUnmounted(() => observateurServices?.disconnect())
       <div class="container">
         <span class="section-label" />
         <h2 class="h3 mb-4">
-          Ce que vous pouvez trouver
+          {{ t('accueil.services.titre') }}
         </h2>
         <div
           ref="servicesGrid"
@@ -201,7 +191,7 @@ onUnmounted(() => observateurServices?.disconnect())
         >
           <div
             v-for="(s, i) in SERVICES"
-            :key="s.title"
+            :key="s.cle"
             class="col-md-6 col-lg-4"
           >
             <!-- Même principe que le hero : photo en fond + voile dégradé pour que
@@ -217,7 +207,7 @@ onUnmounted(() => observateurServices?.disconnect())
             >
               <img
                 :src="s.photo"
-                :alt="s.title"
+                :alt="t(`accueil.services.${s.cle}_titre`)"
                 class="service-tile-photo"
               >
               <div
@@ -230,10 +220,10 @@ onUnmounted(() => observateurServices?.disconnect())
                   tone="light"
                 />
                 <h3 class="h6">
-                  {{ s.title }}
+                  {{ t(`accueil.services.${s.cle}_titre`) }}
                 </h3>
                 <p class="small mb-0">
-                  {{ s.text }}
+                  {{ t(`accueil.services.${s.cle}_texte`) }}
                 </p>
               </div>
             </div>
@@ -244,10 +234,10 @@ onUnmounted(() => observateurServices?.disconnect())
             >
               <ServiceIcon :type="s.icon" />
               <h3 class="h6">
-                {{ s.title }}
+                {{ t(`accueil.services.${s.cle}_titre`) }}
               </h3>
               <p class="text-muted small mb-0">
-                {{ s.text }}
+                {{ t(`accueil.services.${s.cle}_texte`) }}
               </p>
             </div>
           </div>
@@ -256,7 +246,7 @@ onUnmounted(() => observateurServices?.disconnect())
           to="/services"
           class="teaser-link d-inline-block mt-3"
         >
-          Voir tous les services →
+          {{ t('accueil.services.lien') }}
         </router-link>
       </div>
     </section>
@@ -265,19 +255,19 @@ onUnmounted(() => observateurServices?.disconnect())
       <div class="container">
         <span class="section-label" />
         <h2 class="h3 mb-4">
-          Pour qui
+          {{ t('accueil.pour_qui.titre') }}
         </h2>
         <div class="row g-4">
           <div
             v-for="p in PUBLICS"
-            :key="p.title"
+            :key="p.cle"
             class="col-md-4"
           >
             <!-- Même carte "photo en fond" que la section Services juste au-dessus. -->
             <div class="card h-100 service-tile">
               <img
                 :src="p.photo"
-                :alt="p.title"
+                :alt="t(`accueil.pour_qui.${p.cle}_titre`)"
                 class="service-tile-photo"
               >
               <div
@@ -286,10 +276,10 @@ onUnmounted(() => observateurServices?.disconnect())
               />
               <div class="service-tile-content">
                 <h3 class="h6">
-                  {{ p.title }}
+                  {{ t(`accueil.pour_qui.${p.cle}_titre`) }}
                 </h3>
                 <p class="small mb-0">
-                  {{ p.text }}
+                  {{ t(`accueil.pour_qui.${p.cle}_texte`) }}
                 </p>
               </div>
             </div>
@@ -299,7 +289,7 @@ onUnmounted(() => observateurServices?.disconnect())
           to="/pour-qui"
           class="teaser-link d-inline-block mt-3"
         >
-          Voir qui est concerné →
+          {{ t('accueil.pour_qui.lien') }}
         </router-link>
       </div>
     </section>
@@ -308,12 +298,12 @@ onUnmounted(() => observateurServices?.disconnect())
       <div class="container">
         <span class="section-label" />
         <h2 class="h3 mb-4">
-          Comment ça marche
+          {{ t('accueil.etapes.titre') }}
         </h2>
         <div class="row g-4">
           <div
             v-for="(e, i) in ETAPES"
-            :key="e.title"
+            :key="e.cle"
             class="col-md-6 col-lg-3"
           >
             <div class="etape-item">
@@ -322,13 +312,13 @@ onUnmounted(() => observateurServices?.disconnect())
                 :tone="i % 2 === 0 ? 'accent' : 'accent-2'"
               />
               <p class="etape-step">
-                Étape {{ i + 1 }}
+                {{ t('accueil.etapes.numero', { n: i + 1 }) }}
               </p>
               <h3 class="h6 mb-1">
-                {{ e.title }}
+                {{ t(`accueil.etapes.${e.cle}_titre`) }}
               </h3>
               <p class="text-muted small mb-0">
-                {{ e.text }}
+                {{ t(`accueil.etapes.${e.cle}_texte`) }}
               </p>
             </div>
           </div>
@@ -337,7 +327,7 @@ onUnmounted(() => observateurServices?.disconnect())
           to="/inscription"
           class="btn btn-outline-secondary d-inline-block mt-3"
         >
-          Commencer
+          {{ t('accueil.etapes.cta') }}
         </router-link>
       </div>
     </section>
@@ -348,12 +338,12 @@ onUnmounted(() => observateurServices?.disconnect())
       <div class="container text-center">
         <span class="section-label" />
         <h2 class="h3 mb-4">
-          Nos engagements
+          {{ t('accueil.engagements.titre') }}
         </h2>
         <div class="row g-4 justify-content-center mb-4">
           <div
             v-for="(v, i) in ENGAGEMENTS"
-            :key="v.title"
+            :key="v.cle"
             class="col-md-4"
           >
             <IconBadge
@@ -361,21 +351,21 @@ onUnmounted(() => observateurServices?.disconnect())
               :tone="i % 2 === 0 ? 'accent' : 'accent-2'"
             />
             <h3 class="h6 mb-1">
-              {{ v.title }}
+              {{ t(`accueil.engagements.${v.cle}_titre`) }}
             </h3>
             <p class="text-muted small">
-              {{ v.text }}
+              {{ t(`accueil.engagements.${v.cle}_texte`) }}
             </p>
           </div>
         </div>
         <p class="lead text-muted mb-4">
-          Un dispositif pensé pour le bien-être et l'autonomie des personnes âgées.
+          {{ t('accueil.engagements.phrase') }}
         </p>
         <router-link
           to="/inscription"
           class="btn btn-primary btn-lg"
         >
-          Rejoindre le dispositif
+          {{ t('accueil.engagements.cta') }}
         </router-link>
       </div>
     </section>
@@ -392,10 +382,10 @@ onUnmounted(() => observateurServices?.disconnect())
       <div class="container text-center">
         <span class="section-label" />
         <h2 class="h3 mb-2">
-          Nos formules
+          {{ t('accueil.formules.titre') }}
         </h2>
         <p class="text-muted intro-text mb-4 mx-auto">
-          Un accompagnement mensuel, en plus de la mise en relation gratuite, pour un suivi plus régulier.
+          {{ t('accueil.formules.texte') }}
         </p>
         <FormulesSection />
         <PaiementBandeau />

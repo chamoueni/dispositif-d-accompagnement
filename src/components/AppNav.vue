@@ -9,6 +9,7 @@
 // barre avec des liens de présentation qui ne servent plus à rien à ce stade.
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
+import SelecteurLangue from './SelecteurLangue.vue'
 import { useAccessibility } from '../stores/accessibility'
 import IconBadge from './IconBadge.vue'
 // Logo fourni par l'utilisateur (rond teal, cœur + sourire) : remplace l'icône
@@ -149,6 +150,11 @@ function handleLogout() {
         </ul>
 
         <div class="nav-actions">
+          <!-- Sélecteur de langue en tête des actions : il doit rester atteignable
+               depuis n'importe quelle page, et avant les autres commandes pour
+               quelqu'un qui ne lit pas le français (voir SelecteurLangue.vue). -->
+          <SelecteurLangue />
+
           <!-- Visiteur : "S'inscrire" est l'action principale du site, donc en
                bouton plein, avec Connexion en second plan à côté. -->
           <template v-if="!user">

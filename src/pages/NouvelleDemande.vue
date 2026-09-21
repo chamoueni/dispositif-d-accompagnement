@@ -4,19 +4,19 @@
 // de l'aide, jamais l'inverse dans ce dispositif.
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { findById, addDemande, getDemandesByDemandeur } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import DictateButton from '../components/DictateButton.vue'
 import '../styles/NouvelleDemande.css'
 
-const SERVICE_LABELS = {
-  soins: 'Soins',
-  coursier: 'Coursier',
-  menage: 'Ménage',
-}
-
 const route = useRoute()
+const { t } = useI18n()
+
+// Libellés traduits des services (voir src/locales/). Fonction et non constante :
+// elle doit être réévaluée au changement de langue.
+const libelleService = (code) => t(`demande.service_${code}`)
 const { user } = useAuth()
 
 // Le prestataire ciblé est maintenant chargé de façon asynchrone (Supabase) au
@@ -91,7 +91,7 @@ const acces = computed(() => {
 async function handleSubmit() {
   error.value = ''
   if (!form.typeService) {
-    error.value = 'Merci de choisir un type de service.'
+    error.value = t('demande.erreur_service')
     return
   }
   // Garde-fou en plus du blocage par acces === 'deja-envoyee' : évite qu'un
@@ -127,16 +127,16 @@ async function handleSubmit() {
         v-if="acces === 'chargement'"
         class="text-muted text-center py-5"
       >
-        Chargement…
+        {{ t('demande.chargement') }}
       </p>
 
       <div
         v-else-if="acces === 'introuvable'"
         class="alert alert-warning"
       >
-        Ce profil n'existe pas ou plus.
+        {{ t('demande.introuvable') }}
         <router-link to="/recherche">
-          Retour à la recherche
+          {{ t('demande.retour_recherche') }}
         </router-link>
       </div>
 
@@ -144,17 +144,19 @@ async function handleSubmit() {
         v-else-if="acces === 'role-invalide'"
         class="alert alert-warning"
       >
-        Seules les personnes âgées peuvent envoyer une demande.
+        {{ t('demande.role_invalide') }}
       </div>
 
       <div
         v-else-if="acces === 'deja-envoyee'"
         class="alert alert-warning"
       >
-        Vous avez déjà une demande {{ demandeExistante.statut === 'acceptee' ? 'acceptée' : 'en attente' }}
-        auprès de {{ aidant.nom }}. Attendez sa réponse avant d'en envoyer une nouvelle.
+        {{ t('demande.deja_envoyee', {
+          statut: demandeExistante.statut === 'acceptee' ? t('demande.deja_acceptee') : t('demande.deja_en_attente'),
+          nom: aidant.nom,
+        }) }}
         <router-link to="/mes-demandes">
-          Voir mes demandes
+          {{ t('demande.voir_mes_demandes') }}
         </router-link>
       </div>
 
@@ -163,16 +165,16 @@ async function handleSubmit() {
         class="card p-4 mx-auto confirmation-card text-center"
       >
         <h1 class="h5 mb-2">
-          Demande envoyée
+          {{ t('demande.envoyee_titre') }}
         </h1>
         <p class="text-muted mb-3">
-          {{ aidant.nom }} recevra votre demande et pourra l'accepter ou la refuser.
+          {{ t('demande.envoyee_texte', { nom: aidant.nom }) }}
         </p>
         <router-link
           to="/recherche"
           class="btn btn-primary"
         >
-          Retour à la recherche
+          {{ t('demande.retour_recherche') }}
         </router-link>
       </div>
 
@@ -180,9 +182,9 @@ async function handleSubmit() {
         v-else
         class="card p-4 mx-auto form-card"
       >
-        <span class="text-muted small d-block mb-1">Demande à {{ aidant.nom }} · {{ aidant.ville }}</span>
+        <span class="text-muted small d-block mb-1">{{ t('demande.destinataire', { nom: aidant.nom, ville: aidant.ville }) }}</span>
         <h1 class="h4 mb-3">
-          Envoyer une demande
+          {{ t('demande.titre') }}
         </h1>
 
         <form @submit.prevent="handleSubmit">
@@ -190,7 +192,7 @@ async function handleSubmit() {
             v-if="servicesDisponibles.length > 1"
             class="mb-3"
           >
-            <label class="form-label">Type de service</label>
+            <label class="form-label">{{ t('demande.type_service') }}</label>
             <select
               v-model="form.typeService"
               class="form-select"
@@ -200,13 +202,13 @@ async function handleSubmit() {
                 :key="s"
                 :value="s"
               >
-                {{ SERVICE_LABELS[s] }}
+                {{ libelleService(s) }}
               </option>
             </select>
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Urgence</label>
+            <label class="form-label">{{ t('demande.urgence') }}</label>
             <div
               class="btn-group w-100"
               role="group"
@@ -221,7 +223,7 @@ async function handleSubmit() {
               <label
                 class="btn btn-outline-secondary"
                 for="urgence-normale"
-              >Normale</label>
+              >{{ t('demande.urgence_normale') }}</label>
 
               <input
                 id="urgence-urgente"
@@ -233,7 +235,7 @@ async function handleSubmit() {
               <label
                 class="btn btn-outline-secondary"
                 for="urgence-urgente"
-              >Urgente</label>
+              >{{ t('demande.urgence_urgente') }}</label>
             </div>
           </div>
 
@@ -241,7 +243,7 @@ async function handleSubmit() {
             v-if="aidant.disponibilites.length"
             class="mb-3"
           >
-            <label class="form-label">Créneau souhaité</label>
+            <label class="form-label">{{ t('demande.creneau') }}</label>
             <select
               v-model="form.creneauSouhaite"
               class="form-select"
@@ -251,18 +253,18 @@ async function handleSubmit() {
                 :key="`${slot.jour}-${slot.heureDebut}`"
                 :value="slot"
               >
-                {{ slot.jour }} · {{ slot.heureDebut }} à {{ slot.heureFin }}
+                {{ t('demande.creneau_format', { jour: slot.jour, debut: slot.heureDebut, fin: slot.heureFin }) }}
               </option>
             </select>
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Message (optionnel)</label>
+            <label class="form-label">{{ t('demande.message') }}</label>
             <textarea
               v-model="form.message"
               class="form-control"
               rows="3"
-              placeholder="Précisez votre besoin si nécessaire."
+              :placeholder="t('demande.message_exemple')"
             />
             <DictateButton @dictate="handleDictate" />
           </div>
@@ -279,7 +281,7 @@ async function handleSubmit() {
             class="btn btn-primary w-100"
             :disabled="envoiEnCours"
           >
-            {{ envoiEnCours ? 'Envoi…' : 'Envoyer la demande' }}
+            {{ envoiEnCours ? t('demande.envoi_en_cours') : t('demande.envoyer') }}
           </button>
         </form>
       </div>
