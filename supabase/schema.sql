@@ -39,7 +39,6 @@ alter table profiles add column if not exists adresse text not null default '';
 -- doivent être uniques (le téléphone est de toute façon obligatoire côté
 -- formulaire d'inscription, voir Inscription.vue).
 create unique index if not exists profiles_telephone_unique on profiles (telephone) where telephone <> '';
-
 alter table profiles enable row level security;
 
 -- Tout utilisateur connecté peut consulter les profils (nécessaire pour la page

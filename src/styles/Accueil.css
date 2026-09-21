@@ -77,24 +77,49 @@
   flex-wrap: wrap;
 }
 
-/* Photo ronde : le conteneur impose un carré (aspect-ratio), l'image le remplit
-   en recadrage centré-bas — le soleil est près du bas de la photo d'origine, un
-   recadrage centré tomberait sur le ciel vide. */
+/* Colonne de droite : la photo ronde, puis l'emplacement de la vignette carte
+   en dessous. Une colonne avec un "gap" plutôt qu'une carte posée sur la photo :
+   c'est ce qui garantit que les deux ne se touchent jamais. Un cercle inscrit
+   dans son carré ne laisse qu'environ 0,29 × rayon de libre dans un coin, soit
+   67px ici — bien trop peu pour y loger une carte lisible sans mordre dessus. */
 .hero-media {
   justify-self: center;
-  position: relative;
-  width: min(100%, 460px);
-  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: min(100%, 440px);
 }
 
+/* Le conteneur impose un carré (aspect-ratio), l'image le remplit en recadrage
+   centré-bas — le soleil est près du bas de la photo d'origine, un recadrage
+   centré tomberait sur le ciel vide. */
 .hero-photo {
   display: block;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1;
   object-fit: cover;
   object-position: center bottom;
   border-radius: 50%;
   box-shadow: 0 24px 48px -24px rgba(90, 45, 20, 0.45);
+}
+
+/* Réserve la place de la vignette dans le flux. La vignette est en position
+   absolue à l'intérieur, calée sur le coin HAUT-droit : en grandissant elle
+   s'étend donc vers le bas et vers la gauche, jamais vers le haut — la photo,
+   qui est au-dessus, reste entièrement visible. */
+.carte-emplacement {
+  position: relative;
+  align-self: flex-end;
+  width: 210px;
+  height: 210px;
+}
+
+@media (max-width: 991px) {
+  .carte-emplacement {
+    width: 150px;
+    height: 150px;
+  }
 }
 
 .section {

@@ -1,34 +1,34 @@
-/* Vignette cartographique du hero (voir components/CarteMayotte.vue).
-   Absolue dans .hero-inner : son agrandissement au survol ne pousse donc aucun
-   autre élément de la page, il se contente de passer par dessus.
-   Ancrée en bas à DROITE, sur la photo : à gauche, la vignette repliée venait
-   recouvrir le chapô et les boutons. Ancrée à droite, elle s'agrandit vers la
-   gauche et vers le haut, donc jamais hors de l'écran. */
+/* Vignette cartographique du hero (voir components/CarteMayotte.vue). Absolue
+   dans .carte-emplacement, qui lui reserve sa place sous la photo : son
+   agrandissement ne pousse donc aucun autre element de la page.
+
+   Ancrage sur le coin HAUT-droit (top + right, jamais bottom) : c'est ce qui
+   impose le sens de l'agrandissement. La vignette s'etend vers le BAS et vers
+   la GAUCHE, donc elle ne remonte jamais sur la photo placee au-dessus, et elle
+   ne sort pas de l'ecran par la droite. */
 .carte-mayotte {
   position: absolute;
+  top: 0;
   right: 0;
-  bottom: 0;
-  width: 200px;
-  height: 200px;
+  width: 100%;
+  height: 100%;
   border-radius: 18px;
   border: 3px solid #fff;
-  box-shadow: 0 10px 24px -10px rgba(90, 45, 20, 0.45);
+  box-shadow: 0 10px 24px -10px rgba(90, 45, 20, 0.5);
   overflow: hidden;
   cursor: pointer;
-  /* Durée demandée. `all` couvre aussi bien la taille que l'ombre ; c'est la
-     fin de l'animation de "width" qui déclenche invalidateSize() côté Vue. */
   transition: all 0.4s ease;
   z-index: 3;
 }
 
 .carte-mayotte.est-ouverte {
-  width: 560px;
-  height: 560px;
+  width: 520px;
+  height: 520px;
   border-radius: 22px;
   box-shadow: 0 28px 60px -20px rgba(90, 45, 20, 0.55);
   cursor: default;
-  /* Au-dessus du contenu de la page, mais sous la navbar (1030) et le bouton
-     SOS (1040) : agrandie, la carte ne doit pas masquer la navigation. */
+  /* Au-dessus du contenu, mais sous la navbar (1030) et le bouton SOS (1040) :
+     agrandie, la carte ne doit pas masquer la navigation. */
   z-index: 1020;
 }
 
@@ -43,15 +43,15 @@
   background: var(--bg-alt);
 }
 
-/* Au repos la carte est décorative : on neutralise les évènements pointeur de
-   la zone Leaflet pour que le défilement de la page ne soit jamais capturé.
-   Le conteneur, lui, reste sensible au survol et au clic — c'est lui qui ouvre. */
+/* Repliee, la carte est decorative : on neutralise les evenements pointeur de
+   la zone Leaflet pour que le defilement de la page ne soit jamais capture.
+   Le conteneur, lui, reste sensible au survol et au clic : c'est lui qui ouvre. */
 .carte-mayotte:not(.est-ouverte) .carte-mayotte-zone {
   pointer-events: none;
 }
 
-/* Commandes de zoom et légende : inutiles tant que la vignette est petite (et
-   illisibles à cette taille), elles apparaissent avec l'agrandissement. */
+/* Zoom, selecteur de fond et legende : illisibles a la taille de la vignette,
+   ils apparaissent avec l'agrandissement. */
 .carte-mayotte:not(.est-ouverte) .leaflet-control-container {
   opacity: 0;
 }
@@ -76,10 +76,54 @@
   pointer-events: none;
 }
 
+/* --- Filtre par besoin ----------------------------------------------------- */
+
+/* Barre posee en haut de la carte agrandie. Fond opaque : les libelles doivent
+   rester lisibles quel que soit le fond de carte, plan clair ou satellite. */
+.carte-filtres {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 500;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 12px -4px rgba(18, 36, 33, 0.35);
+}
+
+/* --- Invitation a se connecter --------------------------------------------- */
+
+/* Sans session, la RLS ne renvoie aucun profil : ce voile explique la carte vide
+   au lieu de laisser croire qu'aucun aidant n'est inscrit. */
+.carte-voile-connexion {
+  position: absolute;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(253, 232, 220, 0.92);
+  color: var(--text-h);
+}
+
+.carte-voile-connexion p {
+  margin: 0;
+  max-width: 260px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
 /* --- Marqueurs ------------------------------------------------------------- */
 
-/* Goutte rose foncé avec une maison blanche à l'intérieur. Le fond du divIcon
-   est transparent : sans ça Leaflet pose un carré blanc derrière le dessin. */
+/* Goutte rose fonce avec une maison blanche a l'interieur. Le fond du divIcon
+   est transparent : sans ca Leaflet pose un carre blanc derriere le dessin. */
 .marqueur-aidant {
   background: none;
   border: none;
@@ -97,9 +141,9 @@
   fill: #b5305f;
 }
 
-/* Regroupement : pastille verte numérotée, avec un anneau plus clair pour la
-   détacher du fond de carte. Le chiffre est en 15px gras — à la taille
-   agrandie, il reste lisible sans effort. */
+/* Regroupement : pastille verte numerotee, avec un anneau plus clair pour la
+   detacher du fond de carte. Tous les aidants d'une commune partageant le point
+   du chef-lieu, ce chiffre se lit comme "nombre d'aidants dans la commune". */
 .cluster-aidants {
   display: flex;
   align-items: center;
@@ -108,25 +152,24 @@
   background: #6fa544;
   box-shadow: 0 0 0 6px rgba(111, 165, 68, 0.35);
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
 }
 
 /* --- Infobulle ------------------------------------------------------------- */
 
-/* Texte volontairement plus grand que le défaut Leaflet (11px) : le public visé
-   est âgé, une infobulle illisible ne sert à rien. */
+/* Texte plus grand que le defaut Leaflet (11px) : le public vise est age, une
+   infobulle illisible ne sert a rien. */
 .carte-mayotte .leaflet-popup-content {
   margin: 12px 16px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.35;
   color: var(--text);
 }
 
 .carte-mayotte .popup-nom {
   margin: 0 0 2px;
-  font-size: 15px;
   font-weight: 700;
   color: var(--text-h);
 }
@@ -141,30 +184,32 @@
   margin: 0;
 }
 
-/* --- Petits écrans --------------------------------------------------------- */
+/* Boutons de zoom plus grands que le defaut Leaflet (26px), coherents avec les
+   cibles tactiles confortables du reste du site. */
+.carte-mayotte .leaflet-bar a {
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+/* --- Petits ecrans --------------------------------------------------------- */
 
 /* Pas de survol au doigt : l'ouverture se fait au toucher (voir le composant).
-   La taille agrandie est bornée à la largeur de l'écran pour que la carte ne
-   déborde jamais hors du viewport. */
+   La taille agrandie est bornee a la largeur de l'ecran. */
 @media (max-width: 991px) {
-  .carte-mayotte {
-    right: 8px;
-    bottom: 8px;
-    width: 150px;
-    height: 150px;
-  }
-
   .carte-mayotte.est-ouverte {
     width: min(88vw, 460px);
     height: min(88vw, 460px);
   }
 }
 
-/* Mouvement désactivé côté système : la carte change de taille quasi d'un coup.
-   On garde une transition très courte au lieu de "none" à dessein — sans
-   transition sur "width", aucun évènement transitionend n'est émis, donc
-   invalidateSize() ne serait jamais appelé et la carte s'afficherait tronquée
-   après l'agrandissement. */
+/* Mouvement desactive cote systeme : la carte change de taille quasi d'un coup.
+   On garde une transition tres courte au lieu de "none" a dessein : sans
+   transition sur "width", aucun transitionend n'est emis, donc invalidateSize()
+   ne serait jamais appele et la carte s'afficherait tronquee. Le ResizeObserver
+   du composant couvre de toute facon ce cas. */
 @media (prefers-reduced-motion: reduce) {
   .carte-mayotte {
     transition: width 0.01s linear, height 0.01s linear;

@@ -1,10 +1,15 @@
 <script setup>
-// Vignette cartographique posée dans le hero de l'accueil, à la place de
-// l'ancien emblème décoratif (components/MayotteSymbol.vue) : petite et
-// purement décorative au repos, elle s'agrandit et devient manipulable
-// (déplacement, zoom, clic sur les marqueurs) quand on la survole — ou qu'on
-// la touche, sur un écran tactile où le survol n'existe pas.
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+// Vignette cartographique posée sur la photo du hero. Repliée elle est
+// décorative ; au survol (ou au toucher sur mobile) elle s'agrandit et devient
+// une vraie carte manipulable : déplacement, zoom, fond Plan ou Satellite, et
+// surtout les aidants inscrits posés sur leur commune.
+//
+// Les marqueurs ne s'affichent QU'AUX UTILISATEURS CONNECTÉS. Ce n'est pas un
+// choix esthétique : la policy RLS "profiles_select_authenticated" réserve la
+// lecture des profils aux comptes identifiés — un visiteur anonyme reçoit une
+// liste vide, sans erreur. Cela évite au passage d'exposer la localisation des
+// inscrits sur une page ouverte à tous.
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 // ATTENTION À L'ORDRE DES DEUX IMPORTS CI-DESSOUS. leaflet.markercluster est un
@@ -19,38 +24,51 @@ import 'leaflet.markercluster'
 // "Default" impose des pastilles bleues, or les regroupements doivent être
 // verts (voir .cluster-aidants dans CarteMayotte.css).
 import 'leaflet.markercluster/dist/MarkerCluster.css'
+import { getUsers, getCoordonneesCommune } from '../data/store.js'
+import { useAuth } from '../stores/auth'
 import '../styles/CarteMayotte.css'
 
-// Centre et zoom demandés : Mayotte entière tient dans la vignette.
+// Mayotte entière tient dans ce cadrage.
 const CENTRE = [-12.8275, 45.1662]
 const ZOOM = 10
 
-// Marqueurs d'exemple. C'est le seul endroit à modifier pour brancher de vraies
-// données : même forme d'objet, et la carte suit (regroupements compris).
-const AIDANTS = [
-  { id: 1, nom: 'Fatima A.', service: 'Soins à domicile', commune: 'Mamoudzou', lat: -12.7806, lng: 45.2278 },
-  { id: 2, nom: 'Ahmed M.', service: 'Courses', commune: 'Mamoudzou', lat: -12.7752, lng: 45.2191 },
-  { id: 3, nom: 'Sitti B.', service: 'Ménage', commune: 'Koungou', lat: -12.7333, lng: 45.2033 },
-  { id: 4, nom: 'Nadjima S.', service: 'Service de garde', commune: 'Dzaoudzi', lat: -12.7889, lng: 45.2589 },
-  { id: 5, nom: 'Bacar H.', service: 'Soins à domicile', commune: 'Pamandzi', lat: -12.8000, lng: 45.2833 },
-  { id: 6, nom: 'Zaïna R.', service: 'Ménage', commune: 'Sada', lat: -12.8519, lng: 45.1083 },
-  { id: 7, nom: 'Ibrahim C.', service: 'Courses', commune: 'Chiconi', lat: -12.8333, lng: 45.1000 },
-  { id: 8, nom: 'Anfiati D.', service: 'Suivi psychologique', commune: 'Ouangani', lat: -12.8333, lng: 45.1333 },
-  { id: 9, nom: 'Moussa T.', service: 'Soins à domicile', commune: 'Bandrele', lat: -12.9078, lng: 45.1919 },
-  { id: 10, nom: 'Echati L.', service: 'Service de garde', commune: 'Chirongui', lat: -12.9333, lng: 45.1500 },
-  { id: 11, nom: 'Soilihi K.', service: 'Courses', commune: 'Bouéni', lat: -12.9033, lng: 45.0778 },
-  { id: 12, nom: 'Halima N.', service: 'Ménage', commune: 'Tsingoni', lat: -12.7833, lng: 45.1000 },
+// Mêmes besoins que la page Recherche (voir pages/RecherchePersonnel.vue) : un
+// visiteur qui filtre ici et poursuit sur /recherche retrouve les mêmes
+// catégories, sans avoir à retraduire ce qu'il cherche.
+const BESOINS = [
+  { valeur: 'tous', label: 'Tous' },
+  { valeur: 'sante', label: 'Santé' },
+  { valeur: 'coursier', label: 'Coursier' },
+  { valeur: 'menage', label: 'Ménage' },
 ]
+
+// Fonds de carte IGN (Géoplateforme, accès libre sans clé). Le satellite tient
+// lieu de "vue Google Maps" : les tuiles Google ne peuvent pas être utilisées
+// ici, elles exigent une clé facturée et leurs conditions interdisent de les
+// servir en dehors du SDK Google.
+const MODELE_IGN =
+  'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+  '&LAYER={couche}&STYLE=normal&TILEMATRIXSET=PM' +
+  '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT={format}'
+
+const ATTRIBUTION = '© <a href="https://www.ign.fr/">IGN</a> — Géoplateforme'
+
+const { user, initialized } = useAuth()
 
 const conteneur = ref(null)
 const zoneCarte = ref(null)
 const estOuverte = ref(false)
+const besoin = ref('tous')
+const nombreAffiche = ref(0)
 
 let carte = null
+let regroupements = null
+let observateurTaille = null
+let aidants = []
 
-// Les commandes que l'on coupe au repos : sans ça, la molette zoomerait la
-// carte au lieu de faire défiler la page, ce qui piège le visiteur.
-const COMMANDES = ['dragging', 'scrollWheelZoom', 'doubleClickZoom', 'touchZoom', 'boxZoom', 'keyboard']
+// Commandes coupées tant que la vignette est repliée : sans ça, un clic-glissé
+// sur une carte de 210px gênerait plus qu'il n'aiderait.
+const COMMANDES = ['dragging', 'doubleClickZoom', 'touchZoom', 'boxZoom', 'keyboard']
 
 // Un écran tactile n'a pas de survol : matchMedia répond pour le pointeur
 // principal de l'appareil, et décide donc quel geste ouvre la carte.
@@ -71,12 +89,11 @@ function fermer() {
   if (!estOuverte.value) return
   estOuverte.value = false
   definirCommandes(false)
-  // La carte reprend son cadrage d'origine : après un zoom ou un déplacement,
-  // la vignette repartirait sinon sur un coin d'île sans repère.
+  // Retour au cadrage d'origine : après un zoom, la vignette repartirait sinon
+  // sur un coin d'île sans repère.
   carte?.setView(CENTRE, ZOOM)
 }
 
-// Survol (souris) : ouverture à l'entrée, fermeture à la sortie.
 function surEntreeSouris() {
   if (peutSurvoler()) ouvrir()
 }
@@ -85,9 +102,8 @@ function surSortieSouris() {
   if (peutSurvoler()) fermer()
 }
 
-// Tactile : le toucher ouvre. La fermeture est gérée par le toucher à
-// l'extérieur (voir surPointeurDocument), sinon manipuler la carte ouverte la
-// refermerait aussitôt.
+// Tactile : le toucher ouvre. La fermeture passe par le toucher à l'extérieur
+// (voir surPointeurDocument), sinon manipuler la carte la refermerait aussitôt.
 function surClic() {
   if (!peutSurvoler()) ouvrir()
 }
@@ -98,14 +114,12 @@ function surPointeurDocument(evenement) {
   fermer()
 }
 
-// Clavier : la vignette est atteignable au Tab, s'ouvre à la prise de focus et
-// se referme à Échap ou quand le focus quitte la zone.
 function surSortieFocus(evenement) {
   if (!conteneur.value?.contains(evenement.relatedTarget)) fermer()
 }
 
 // invalidateSize() à la fin de l'agrandissement : Leaflet a mémorisé la taille
-// de la vignette et n'affiche des tuiles que sur cette surface tant qu'on ne
+// de la vignette et ne dessine de tuiles que sur cette surface tant qu'on ne
 // lui signale pas le changement. On filtre sur "width" car `transition: all`
 // déclenche l'évènement une fois par propriété animée.
 function surFinTransition(evenement) {
@@ -118,88 +132,152 @@ function surFinTransition(evenement) {
 function iconeMaison() {
   return L.divIcon({
     className: 'marqueur-aidant',
-    html: `
-      <svg viewBox="0 0 34 44" width="34" height="44" aria-hidden="true">
-        <path d="M17 0C7.6 0 0 7.6 0 17c0 12.4 17 27 17 27s17-14.6 17-27C34 7.6 26.4 0 17 0Z" class="marqueur-goutte"/>
-        <path d="M17 8.5 26 16.5h-2.4V26h-13.2v-9.5H8Z" class="marqueur-toit"/>
-        <rect x="15" y="20" width="4" height="6" class="marqueur-porte"/>
-      </svg>`,
+    html: [
+      '<svg viewBox="0 0 34 44" width="34" height="44" aria-hidden="true">',
+      '<path d="M17 0C7.6 0 0 7.6 0 17c0 12.4 17 27 17 27s17-14.6 17-27C34 7.6 26.4 0 17 0Z" class="marqueur-goutte"/>',
+      '<path d="M17 8.5 26 16.5h-2.4V26h-13.2v-9.5H8Z" class="marqueur-toit"/>',
+      '<rect x="15" y="20" width="4" height="6" class="marqueur-porte"/>',
+      '</svg>',
+    ].join(''),
     iconSize: [34, 44],
     iconAnchor: [17, 44],
     popupAnchor: [0, -38],
   })
 }
 
-// Pastille verte numérotée quand plusieurs marqueurs se touchent.
+// Pastille verte numérotée quand plusieurs aidants se touchent. Comme tous les
+// aidants d'une même commune partagent le point du chef-lieu, ce chiffre se lit
+// naturellement comme "nombre d'aidants dans cette commune".
 function iconeRegroupement(groupe) {
-  const nombre = groupe.getChildCount()
   return L.divIcon({
     className: 'cluster-aidants',
-    html: `<span>${nombre}</span>`,
-    iconSize: [40, 40],
+    html: '<span>' + groupe.getChildCount() + '</span>',
+    iconSize: [42, 42],
   })
 }
+
+// Même logique de filtrage que la page Recherche : "sante" porte sur le rôle,
+// "coursier"/"menage" sur le service coché par un particulier dans son profil.
+function correspondAuBesoin(aidant) {
+  if (besoin.value === 'sante') return aidant.role === 'sante'
+  if (besoin.value === 'tous') return true
+  return aidant.role === 'particulier' && (aidant.services || []).includes(besoin.value)
+}
+
+function libelleAidant(aidant) {
+  if (aidant.role === 'sante') return aidant.specialite || 'Personnel de santé'
+  const services = (aidant.services || [])
+    .map((s) => (s === 'coursier' ? 'Coursier' : s === 'menage' ? 'Ménage' : s))
+    .join(' · ')
+  return services || 'Particulier'
+}
+
+function dessinerMarqueurs() {
+  if (!regroupements) return
+  regroupements.clearLayers()
+
+  let poses = 0
+  aidants.filter(correspondAuBesoin).forEach((aidant) => {
+    const point = getCoordonneesCommune(aidant.ville)
+    // Un profil sans commune connue n'est pas plaçable : on le laisse de côté
+    // plutôt que de l'inventer au centre de l'île.
+    if (!point) return
+
+    L.marker([point.lat, point.lng], {
+      icon: iconeMaison(),
+      alt: libelleAidant(aidant) + ' — ' + aidant.ville,
+    })
+      .bindPopup(
+        [
+          '<p class="popup-nom">' + (aidant.nom || 'Aidant inscrit') + '</p>',
+          '<p class="popup-service">' + libelleAidant(aidant) + '</p>',
+          '<p class="popup-commune">' + aidant.ville + '</p>',
+        ].join(''),
+      )
+      .addTo(regroupements)
+    poses += 1
+  })
+
+  nombreAffiche.value = poses
+}
+
+// Charge les aidants dès qu'une session existe, et vide la carte à la
+// déconnexion. immediate: true couvre le cas d'une session déjà restaurée avant
+// le montage de ce composant.
+watch(
+  user,
+  async (compte) => {
+    if (!compte) {
+      aidants = []
+      dessinerMarqueurs()
+      return
+    }
+    const profils = await getUsers()
+    aidants = profils.filter((u) => u.role === 'sante' || u.role === 'particulier')
+    dessinerMarqueurs()
+  },
+  { immediate: true },
+)
+
+watch(besoin, dessinerMarqueurs)
 
 onMounted(() => {
   carte = L.map(zoneCarte.value, {
     center: CENTRE,
     zoom: ZOOM,
     minZoom: 9,
-    maxZoom: 17,
-    // Au repos la carte est décorative : toutes les commandes sont coupées et
-    // rallumées seulement à l'agrandissement.
+    maxZoom: 18,
     dragging: false,
-    scrollWheelZoom: false,
     doubleClickZoom: false,
     touchZoom: false,
     boxZoom: false,
     keyboard: false,
-    attributionControl: true,
+    // Jamais réactivé, même carte ouverte : sur une carte posée au milieu d'une
+    // page, le zoom molette détourne le défilement. Les boutons +/- suffisent.
+    scrollWheelZoom: false,
   })
 
-  // Fond IGN (Géoplateforme, accès libre sans clé) : le "Plan IGN v2" montre
-  // les communes et le relief de Mayotte, plus parlant qu'un fond générique.
-  L.tileLayer(
-    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
-      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM' +
-      '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png',
-    {
-      attribution: '© <a href="https://www.ign.fr/">IGN</a> — Géoplateforme',
-      minZoom: 9,
-      maxZoom: 17,
-    },
+  const plan = L.tileLayer(
+    MODELE_IGN.replace('{couche}', 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2').replace('{format}', 'image/png'),
+    { attribution: ATTRIBUTION, minZoom: 9, maxZoom: 18 },
   ).addTo(carte)
 
-  const regroupements = L.markerClusterGroup({
+  const satellite = L.tileLayer(
+    MODELE_IGN.replace('{couche}', 'ORTHOIMAGERY.ORTHOPHOTOS').replace('{format}', 'image/jpeg'),
+    { attribution: ATTRIBUTION, minZoom: 9, maxZoom: 18 },
+  )
+
+  L.control.layers({ Plan: plan, Satellite: satellite }, null, { position: 'topright' }).addTo(carte)
+
+  regroupements = L.markerClusterGroup({
     iconCreateFunction: iconeRegroupement,
     showCoverageOnHover: false,
     maxClusterRadius: 45,
   })
-
-  AIDANTS.forEach((aidant) => {
-    L.marker([aidant.lat, aidant.lng], {
-      icon: iconeMaison(),
-      // Le nom sert d'étiquette accessible au marqueur.
-      alt: `${aidant.service} — ${aidant.commune}`,
-      keyboard: false,
-    })
-      .bindPopup(
-        `<p class="popup-nom">${aidant.nom}</p>
-         <p class="popup-service">${aidant.service}</p>
-         <p class="popup-commune">${aidant.commune}</p>`,
-      )
-      .addTo(regroupements)
-  })
-
   regroupements.addTo(carte)
 
+  // Leaflet ne mesure son conteneur qu'à la création et ne dessine de tuiles que
+  // sur la surface mesurée. Toute variation ultérieure — agrandissement au
+  // survol, chargement différé de la feuille de styles, redimensionnement de la
+  // fenêtre, mode confort — laisse sinon une bande vide à côté de la carte.
+  // Le rAF évite l'avertissement "ResizeObserver loop" que provoque une
+  // modification synchrone du layout depuis le callback.
+  observateurTaille = new ResizeObserver(() => {
+    requestAnimationFrame(() => carte?.invalidateSize())
+  })
+  observateurTaille.observe(zoneCarte.value)
+
+  dessinerMarqueurs()
   document.addEventListener('pointerdown', surPointeurDocument)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', surPointeurDocument)
+  observateurTaille?.disconnect()
+  observateurTaille = null
   carte?.remove()
   carte = null
+  regroupements = null
 })
 </script>
 
@@ -224,11 +302,48 @@ onBeforeUnmount(() => {
       ref="zoneCarte"
       class="carte-mayotte-zone"
     />
-    <!-- Reprend l'étiquette de l'ancien emblème, masquée une fois la carte
-         ouverte pour ne pas empiéter sur la légende Leaflet. -->
+
+    <!-- Filtre par besoin : n'apparaît qu'une fois la carte agrandie, il serait
+         illisible et intouchable à la taille de la vignette. -->
+    <div
+      v-show="estOuverte && user"
+      class="carte-filtres"
+      role="group"
+      aria-label="Filtrer les aidants par besoin"
+    >
+      <button
+        v-for="b in BESOINS"
+        :key="b.valeur"
+        type="button"
+        class="btn btn-sm"
+        :class="besoin === b.valeur ? 'btn-primary' : 'btn-outline-secondary'"
+        :aria-pressed="besoin === b.valeur"
+        @click.stop="besoin = b.valeur"
+      >
+        {{ b.label }}
+      </button>
+    </div>
+
+    <!-- Sans session, la base ne renvoie aucun profil (RLS) : mieux vaut le dire
+         que laisser croire qu'aucun aidant n'est inscrit. -->
+    <div
+      v-if="initialized && !user"
+      v-show="estOuverte"
+      class="carte-voile-connexion"
+    >
+      <p>Connectez-vous pour voir les aidants près de chez vous.</p>
+      <router-link
+        to="/connexion"
+        class="btn btn-primary btn-sm"
+        @click.stop
+      >
+        Se connecter
+      </router-link>
+    </div>
+
     <span
       v-show="!estOuverte"
       class="carte-mayotte-label"
-    >Mayotte</span>
+    >{{ user && nombreAffiche ? nombreAffiche + ' aidants' : 'Mayotte' }}</span>
   </div>
 </template>

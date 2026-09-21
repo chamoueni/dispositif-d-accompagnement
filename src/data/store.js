@@ -10,25 +10,42 @@ import { messageErreurProfil } from '../stores/auth'
 // Sert à trier par "proximité" sans vraie géolocalisation (cf. spécificité Mayotte :
 // recherche par village/commune plutôt que géoloc précise). Donnée statique, pas
 // besoin de table Supabase pour ça.
+//
+// lat/lng = coordonnées du chef-lieu de la commune. Elles servent à poser les
+// marqueurs de la carte d'accueil (voir components/CarteMayotte.vue). Volontairement
+// à la maille de la commune et non de l'adresse exacte : "ville" est la seule
+// donnée de localisation structurée que le site collecte (le champ "adresse" est
+// du texte libre, impossible à positionner sans service de géocodage), et afficher
+// publiquement l'adresse précise de personnes âgées poserait un problème évident
+// de vie privée. Plusieurs aidants d'une même commune partagent donc le même point
+// et se regroupent dans une pastille numérotée, ce qui est le comportement voulu.
 export const COMMUNES_MAYOTTE = [
-  { nom: 'Dzaoudzi', zone: 'Petite-Terre' },
-  { nom: 'Pamandzi', zone: 'Petite-Terre' },
-  { nom: 'Acoua', zone: 'Nord' },
-  { nom: 'Bandraboua', zone: 'Nord' },
-  { nom: 'Koungou', zone: 'Nord' },
-  { nom: 'Mtsamboro', zone: 'Nord' },
-  { nom: 'Mtsangamouji', zone: 'Nord' },
-  { nom: 'Mamoudzou', zone: 'Centre' },
-  { nom: 'Dembeni', zone: 'Centre' },
-  { nom: 'Tsingoni', zone: 'Centre' },
-  { nom: 'Ouangani', zone: 'Centre' },
-  { nom: 'Chiconi', zone: 'Centre' },
-  { nom: 'Sada', zone: 'Centre' },
-  { nom: 'Bandrele', zone: 'Sud' },
-  { nom: 'Boueni', zone: 'Sud' },
-  { nom: 'Chirongui', zone: 'Sud' },
-  { nom: 'Kani-Keli', zone: 'Sud' },
+  { nom: 'Dzaoudzi', zone: 'Petite-Terre', lat: -12.7871, lng: 45.2581 },
+  { nom: 'Pamandzi', zone: 'Petite-Terre', lat: -12.7975, lng: 45.2811 },
+  { nom: 'Acoua', zone: 'Nord', lat: -12.7228, lng: 45.0592 },
+  { nom: 'Bandraboua', zone: 'Nord', lat: -12.7047, lng: 45.1225 },
+  { nom: 'Koungou', zone: 'Nord', lat: -12.7342, lng: 45.2050 },
+  { nom: 'Mtsamboro', zone: 'Nord', lat: -12.6919, lng: 45.0703 },
+  { nom: 'Mtsangamouji', zone: 'Nord', lat: -12.7658, lng: 45.0736 },
+  { nom: 'Mamoudzou', zone: 'Centre', lat: -12.7806, lng: 45.2278 },
+  { nom: 'Dembeni', zone: 'Centre', lat: -12.8419, lng: 45.1836 },
+  { nom: 'Tsingoni', zone: 'Centre', lat: -12.7869, lng: 45.1022 },
+  { nom: 'Ouangani', zone: 'Centre', lat: -12.8394, lng: 45.1350 },
+  { nom: 'Chiconi', zone: 'Centre', lat: -12.8317, lng: 45.1017 },
+  { nom: 'Sada', zone: 'Centre', lat: -12.8519, lng: 45.1083 },
+  { nom: 'Bandrele', zone: 'Sud', lat: -12.9078, lng: 45.1919 },
+  { nom: 'Boueni', zone: 'Sud', lat: -12.9033, lng: 45.0778 },
+  { nom: 'Chirongui', zone: 'Sud', lat: -12.9333, lng: 45.1500 },
+  { nom: 'Kani-Keli', zone: 'Sud', lat: -12.9594, lng: 45.1053 },
 ]
+
+// Retrouve les coordonnées d'une commune à partir de son nom tel qu'il est stocké
+// dans profiles.ville (les formulaires n'acceptent que des noms de COMMUNES_MAYOTTE,
+// la comparaison peut donc rester stricte).
+export function getCoordonneesCommune(nomCommune) {
+  const commune = COMMUNES_MAYOTTE.find((c) => c.nom === nomCommune)
+  return commune ? { lat: commune.lat, lng: commune.lng } : null
+}
 
 // Retrouve la zone d'une commune (utilisé pour le tri par proximité des demandes).
 export function getZoneCommune(nomCommune) {

@@ -7,8 +7,8 @@ import IconBadge from '../components/IconBadge.vue'
 import ReefDivider from '../components/ReefDivider.vue'
 import FormulesSection from '../components/FormulesSection.vue'
 import PaiementBandeau from '../components/PaiementBandeau.vue'
-// Vignette cartographique interactive du hero : remplace l'ancien emblème
-// décoratif (components/MayotteSymbol.vue, désormais inutilisé).
+// Vignette carte des aidants inscrits, posée sur la photo du hero. Remplace
+// l'ancien emblème décoratif (components/MayotteSymbol.vue, désormais inutilisé).
 import CarteMayotte from '../components/CarteMayotte.vue'
 // Effet "dégradé animé" sur les mots-clés du titre (voir components/HighlightWord.vue) :
 // réutilisable sur n'importe quel titre, pas seulement celui-ci.
@@ -157,16 +157,15 @@ onUnmounted(() => observateurServices?.disconnect())
             alt="Coucher de soleil sur le lagon de Mayotte"
             class="hero-photo"
           >
+          <!-- Emplacement réservé à la vignette carte, sous la photo et aligné à
+               droite. Ce conteneur occupe la place dans le flux (la vignette,
+               elle, est en absolu dedans) : la photo et la carte ne peuvent donc
+               jamais se toucher, et l'agrandissement au survol ne décale rien.
+               Voir components/CarteMayotte.vue. -->
+          <div class="carte-emplacement">
+            <CarteMayotte />
+          </div>
         </div>
-
-        <!-- Carte des aidants, posée en bas à droite sur la photo, à la place
-             qu'occupait l'ancien emblème. Placée ici (dans le conteneur, et non
-             dans la section) pour que son bord droit s'aligne sur la colonne de
-             la photo plutôt que sur le bord de l'écran. Côté droit à dessein :
-             à gauche, repliée, elle recouvrait le chapô et les boutons.
-             Au survol elle s'agrandit par-dessus le contenu (voir
-             components/CarteMayotte.vue). -->
-        <CarteMayotte />
       </div>
     </section>
 
