@@ -2,10 +2,13 @@
 // Bouton micro : dicte du texte à voix haute plutôt que de le taper (utile pour
 // formuler une demande sans clavier). Émet "dictate" avec le texte reconnu ;
 // invisible si la reconnaissance vocale n'est pas supportée par le navigateur.
+import { useI18n } from 'vue-i18n'
 import { useVoiceInput } from '../composables/useVoiceInput'
 import '../styles/DictateButton.css'
 
 const emit = defineEmits(['dictate'])
+
+const { t } = useI18n()
 
 const { supported, listening, start } = useVoiceInput()
 
@@ -20,7 +23,7 @@ function handleClick() {
     type="button"
     class="dictate-button"
     :class="{ 'dictate-button-active': listening }"
-    :aria-label="listening ? 'Écoute en cours' : 'Dicter le message'"
+    :aria-label="listening ? t('vocal.ecoute_aria') : t('vocal.dicter_aria')"
     @click="handleClick"
   >
     <svg
@@ -40,6 +43,6 @@ function handleClick() {
       />
       <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
     </svg>
-    {{ listening ? 'Je vous écoute…' : 'Dicter' }}
+    {{ listening ? t('vocal.dictee_en_cours') : t('vocal.dicter') }}
   </button>
 </template>

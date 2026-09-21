@@ -150,3 +150,73 @@
   font-weight: 700;
   letter-spacing: 0.08em;
 }
+
+/* --- Commande vocale du menu ------------------------------------------------
+   Permet d'atteindre l'assistant, l'urgence ou le signalement d'un probleme en
+   parlant. Le bouton est volontairement large et place en tete : pour le public
+   vise, viser une petite cible est souvent plus difficile que parler. */
+.sos-parler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--couleur-bouton);
+  color: var(--couleur-bouton-texte);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sos-parler svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sos-parler:hover {
+  background: var(--couleur-bouton-survol);
+}
+
+.sos-parler:focus-visible {
+  outline: 3px solid var(--couleur-bouton-survol);
+  outline-offset: 2px;
+}
+
+/* Ecoute en cours : pulsation lente, pour montrer que le micro est ouvert sans
+   dependre uniquement d'un changement de libelle. */
+.sos-parler-actif {
+  animation: sos-parler-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes sos-parler-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sos-parler-actif {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
+  }
+}
+
+.sos-vocal-aide {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+/* Entree designee par la voix : encadree, jamais declenchee automatiquement.
+   Un appel aux secours parti sur une reconnaissance vocale erronee mobiliserait
+   des moyens reels, la personne confirme donc d'un geste. */
+.sos-menu-item-signale {
+  outline: 3px solid var(--danger);
+  outline-offset: 2px;
+}

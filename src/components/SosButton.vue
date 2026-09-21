@@ -8,6 +8,8 @@
 import { nextTick, ref } from 'vue'
 import { useAuth } from '../stores/auth'
 import { useI18n } from 'vue-i18n'
+import { useVoiceInput } from '../composables/useVoiceInput'
+import DictateButton from './DictateButton.vue'
 import { addMessageContact } from '../data/store'
 import { API_BASE_URL } from '../lib/apiBase'
 import '../styles/SosButton.css'
@@ -19,6 +21,70 @@ const { t } = useI18n()
 const ouvert = ref(false)
 // vue : 'menu' (choix initial), 'formulaire' (message) ou 'chat'.
 const vue = ref('menu')
+
+// --- Commande vocale du menu ------------------------------------------------
+// Permet d'atteindre l'assistant, l'urgence ou le signalement d'un probleme en
+// parlant, sans avoir a viser un bouton. Pensé pour le public âgé : c'est le
+// geste de pointage, pas la lecture, qui bloque le plus souvent.
+const { supported: vocalSupporte, listening: ecouteMenu, start: ecouter } = useVoiceInput()
+const retourVocal = ref('')
+// Met en évidence l'entrée Urgence quand elle a été demandée à la voix.
+const urgenceEnAvant = ref(false)
+
+// Mots-clés par destination. L'ordre du parcours compte : "urgence" est testé en
+// premier pour qu'une demande de secours ne soit jamais happée par un autre mot
+// présent dans la même phrase.
+const MOTS_CLES = [
+  ['urgence', ['urgence', 'urgent', 'secours', 'pompier', 'ambulance', 'malade', 'danger', '112', 'samu']],
+  ['probleme', ['probleme', 'bug', 'panne', 'erreur', 'marche pas', 'fonctionne pas', 'site', 'bloque']],
+  ['assistant', ['assistant', 'question', 'renseignement', 'information', 'demander', 'parler', 'aide', 'savoir']],
+]
+
+// Accents et majuscules retirés avant comparaison : la reconnaissance vocale
+// renvoie "problème" ou "Problème" selon les cas.
+function normaliser(texte) {
+  return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
+
+function routerCommande(transcript) {
+  const dit = normaliser(transcript)
+  const trouve = MOTS_CLES.find(([, mots]) => mots.some((m) => dit.includes(m)))
+
+  if (!trouve) {
+    retourVocal.value = t('sos.non_compris')
+    return
+  }
+
+  const [destination] = trouve
+  if (destination === 'assistant') {
+    retourVocal.value = ''
+    ouvrirChat()
+    return
+  }
+  if (destination === 'probleme') {
+    retourVocal.value = ''
+    ouvrirFormulaire()
+    return
+  }
+
+  // Urgence : on met le 112 en avant, mais on NE DECLENCHE PAS l'appel.
+  // Une reconnaissance vocale se trompe, et un appel aux secours parti par
+  // erreur mobilise des moyens réels. La personne confirme d'un geste.
+  urgenceEnAvant.value = true
+  retourVocal.value = t('sos.urgence_confirmer')
+}
+
+function lancerEcoute() {
+  retourVocal.value = ''
+  urgenceEnAvant.value = false
+  ecouter(routerCommande)
+}
+
+// Dictée dans une zone de texte : on ajoute à la suite plutôt que d'écraser,
+// pour permettre plusieurs dictées successives.
+function ajouterDictee(transcript) {
+  message.value = message.value ? message.value + ' ' + transcript : transcript
+}
 const message = ref('')
 const envoi = ref(false)
 const envoye = ref(false)
@@ -71,6 +137,8 @@ function fermer() {
     envoye.value = false
     erreur.value = ''
     historique.value = []
+    retourVocal.value = ''
+    urgenceEnAvant.value = false
   }, 200)
 }
 
@@ -162,6 +230,42 @@ async function envoyerMessage() {
       class="sos-menu"
     >
       <template v-if="vue === 'menu'">
+        <!-- Commande vocale : atteindre l'assistant, l'urgence ou le signalement
+             d'un probleme en parlant. Masquee si le navigateur ne sait pas
+             reconnaitre la parole, pour ne pas laisser un bouton sans effet. -->
+        <button
+          v-if="vocalSupporte"
+          type="button"
+          class="sos-parler"
+          :class="{ 'sos-parler-actif': ecouteMenu }"
+          @click="lancerEcoute"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect
+              x="9"
+              y="3"
+              width="6"
+              height="11"
+              rx="3"
+            />
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+          </svg>
+          {{ ecouteMenu ? t('sos.ecoute') : t('sos.parler') }}
+        </button>
+        <p
+          v-if="vocalSupporte"
+          class="sos-vocal-aide"
+        >
+          {{ retourVocal || t('sos.vocal_aide') }}
+        </p>
+
         <button
           type="button"
           class="sos-menu-item"
@@ -185,6 +289,7 @@ async function envoyerMessage() {
         <a
           href="tel:112"
           class="sos-menu-item sos-menu-item-urgence"
+          :class="{ 'sos-menu-item-signale': urgenceEnAvant }"
         >
           <svg
             viewBox="0 0 24 24"
@@ -271,6 +376,8 @@ async function envoyerMessage() {
               :placeholder="t('sos.chat_exemple')"
               :disabled="reponseEnCours"
             />
+            <!-- Dicter plutot que taper : la question part au micro. -->
+            <DictateButton @dictate="ajouterDictee" />
             <button
               type="submit"
               class="btn btn-primary btn-sm w-100 mt-2"
@@ -311,6 +418,7 @@ async function envoyerMessage() {
           rows="4"
           :placeholder="t('sos.contact_exemple')"
         />
+        <DictateButton @dictate="ajouterDictee" />
         <p
           v-if="erreur"
           class="text-danger small mt-2 mb-0"

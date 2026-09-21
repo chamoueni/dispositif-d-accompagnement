@@ -130,10 +130,19 @@
     "contact_envoye": "À TRADUIRE : Message envoyé, merci. On vous répondra dès que possible.",
     "envoi_en_cours": "À TRADUIRE : Envoi…",
     "envoyer": "À TRADUIRE : Envoyer",
-    "fermer": "À TRADUIRE : Fermer"
+    "fermer": "À TRADUIRE : Fermer",
+    "parler": "À TRADUIRE : Parler",
+    "ecoute": "À TRADUIRE : Je vous écoute…",
+    "vocal_aide": "À TRADUIRE : Dites : assistant, urgence, ou problème.",
+    "non_compris": "À TRADUIRE : Je n'ai pas compris. Dites : assistant, urgence, ou problème. Vous pouvez aussi toucher un bouton ci-dessous.",
+    "urgence_confirmer": "À TRADUIRE : Pour appeler le 112, touchez le bouton Urgence ci-dessous."
   },
   "vocal": {
     "ecouter": "À TRADUIRE : Écouter",
-    "aria": "À TRADUIRE : Écouter cette fiche"
+    "aria": "À TRADUIRE : Écouter cette fiche",
+    "dicter": "À TRADUIRE : Dicter",
+    "dictee_en_cours": "À TRADUIRE : Je vous écoute…",
+    "dicter_aria": "À TRADUIRE : Dicter le message",
+    "ecoute_aria": "À TRADUIRE : Écoute en cours"
   }
 }

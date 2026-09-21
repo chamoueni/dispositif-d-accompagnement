@@ -130,10 +130,19 @@
     "contact_envoye": "Message envoyé, merci. On vous répondra dès que possible.",
     "envoi_en_cours": "Envoi…",
     "envoyer": "Envoyer",
-    "fermer": "Fermer"
+    "fermer": "Fermer",
+    "parler": "Parler",
+    "ecoute": "Je vous écoute…",
+    "vocal_aide": "Dites : assistant, urgence, ou problème.",
+    "non_compris": "Je n'ai pas compris. Dites : assistant, urgence, ou problème. Vous pouvez aussi toucher un bouton ci-dessous.",
+    "urgence_confirmer": "Pour appeler le 112, touchez le bouton Urgence ci-dessous."
   },
   "vocal": {
     "ecouter": "Écouter",
-    "aria": "Écouter cette fiche"
+    "aria": "Écouter cette fiche",
+    "dicter": "Dicter",
+    "dictee_en_cours": "Je vous écoute…",
+    "dicter_aria": "Dicter le message",
+    "ecoute_aria": "Écoute en cours"
   }
 }
