@@ -1,14 +1,56 @@
 /* Selecteur de langue (voir components/SelecteurLangue.vue). Gros boutons
    lisibles : le public vise est age, les cibles tactiles etroites et les libelles
    en petit corps sont les premiers obstacles rencontres. */
+/* Bande etroite que l'on fait glisser : les trois langues restent cliquables
+   d'un seul geste, sans occuper toute la largeur de la barre de navigation.
+   flex-wrap: nowrap est essentiel — avec le retour a la ligne par defaut, les
+   boutons s'empileraient au lieu de defiler. */
 .selecteur-langue {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   align-items: center;
+  max-width: 215px;
+  overflow-x: auto;
+  /* Le doigt s'arrete sur un bouton entier plutot qu'a moitie dessus.
+     "proximity" et non "mandatory" : on ne force pas un recalage a chaque
+     micro-mouvement, ce qui donnerait une bande nerveuse a manipuler. */
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  padding-bottom: 6px;
+}
+
+/* Barre de defilement volontairement VISIBLE, et non masquee : c'est le seul
+   indice qu'il y a d'autres langues a droite. La masquer ferait plus propre et
+   laisserait croire qu'il n'y a que "Francais". */
+.selecteur-langue::-webkit-scrollbar {
+  height: 6px;
+}
+
+.selecteur-langue::-webkit-scrollbar-track {
+  background: rgba(37, 99, 235, 0.12);
+  border-radius: 3px;
+}
+
+.selecteur-langue::-webkit-scrollbar-thumb {
+  background: var(--couleur-bouton);
+  border-radius: 3px;
+}
+
+/* Firefox : meme intention, avec la seule API disponible. */
+@supports (scrollbar-width: thin) {
+  .selecteur-langue {
+    scrollbar-width: thin;
+    scrollbar-color: var(--couleur-bouton) rgba(37, 99, 235, 0.12);
+  }
 }
 
 .langue-bouton {
+  /* Ni retrecissement ni retour a la ligne : le bouton garde sa largeur et sort
+     du cadre visible, c'est la bande qui defile. */
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  white-space: nowrap;
   /* 44px de haut minimum : meme regle que les boutons du site (voir ui.css). */
   min-height: 44px;
   padding: 8px 18px;
@@ -51,6 +93,10 @@
 }
 
 @media (max-width: 991px) {
+  .selecteur-langue {
+    max-width: 175px;
+  }
+
   .langue-bouton {
     padding: 8px 14px;
     font-size: 15px;
