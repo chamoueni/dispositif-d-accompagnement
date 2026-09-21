@@ -22,6 +22,20 @@
   --shadow:
     rgba(10, 40, 36, 0.1) 0 10px 15px -3px, rgba(10, 40, 36, 0.06) 0 4px 6px -2px;
 
+  /* --- Couleurs modifiables en un seul endroit ----------------------------
+     Regroupées ici (plutôt qu'écrites en dur dans les feuilles de style) pour
+     pouvoir changer l'ambiance du site en éditant uniquement ces 5 lignes.
+     - le fond de l'accueil est un dégradé rose pêche -> presque blanc ;
+     - les boutons principaux (inscription, connexion, recherche, contact)
+       sont bleus avec un texte blanc, un bleu plus foncé au survol.
+     Le texte, lui, reste volontairement foncé (var(--text) / var(--text-h))
+     pour rester bien lisible par un public âgé. */
+  --couleur-fond: #fde8dc; /* haut du dégradé : rose pêche clair */
+  --couleur-fond-clair: #fff5ef; /* bas du dégradé : blanc cassé rosé */
+  --couleur-bouton: #2563eb; /* fond des boutons principaux */
+  --couleur-bouton-survol: #1d4ed8; /* même bleu, plus foncé, au survol/appui */
+  --couleur-bouton-texte: #ffffff; /* libellé des boutons principaux */
+
   --sans: 'Inter', system-ui, Roboto, sans-serif;
   --heading: 'Fraunces', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;

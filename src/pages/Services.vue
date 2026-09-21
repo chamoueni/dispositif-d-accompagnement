@@ -92,7 +92,7 @@ const SERVICES = [
       <div class="text-center mt-5">
         <router-link
           to="/recherche"
-          class="btn btn-secondary btn-lg me-2"
+          class="btn btn-primary btn-lg me-2"
         >
           Chercher de l'aide
         </router-link>

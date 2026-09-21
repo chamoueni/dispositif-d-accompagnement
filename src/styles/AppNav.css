@@ -156,9 +156,9 @@
    visible sans avoir à lire le texte (utile pour un public qui active le confort
    justement parce que lire est difficile). */
 .confort-toggle[aria-pressed='true'] {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
+  background: var(--couleur-bouton);
+  color: var(--couleur-bouton-texte);
+  border-color: var(--couleur-bouton);
 }
 
 @media (min-width: 992px) {

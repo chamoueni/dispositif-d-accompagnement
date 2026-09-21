@@ -14,9 +14,10 @@
 /* --- Boutons ---------------------------------------------------------------
    Réglages communs à tous les boutons Bootstrap du site, pour deux raisons
    mesurées sur la page :
-   1. lisibilité : le texte or de .btn-outline-secondary (Connexion, Commencer,
+   1. lisibilité : le libellé de .btn-outline-secondary (Connexion, Commencer,
       Choisir une formule... : la variante la plus utilisée du site) ressortait
-      à 2,1:1 sur le fond crème, très loin du minimum lisible de 4,5:1 ;
+      à 2,1:1 quand il était doré, très loin du minimum lisible de 4,5:1 ; il est
+      depuis passé au bleu foncé de la charte (voir plus bas) ;
    2. confort tactile : les .btn-sm tombaient à 35px de haut, trop petit comme
       cible pour le public visé (personnes âgées), même hors mode confort. */
 
@@ -37,19 +38,65 @@
     transform 0.15s ease;
 }
 
-/* Contour or : libellé en texte foncé (la bordure, elle, garde l'identité
-   dorée), et remplissage or au survol plutôt qu'un simple changement de teinte. */
-.btn-outline-secondary {
-  color: var(--text-h);
-  border-color: var(--accent-2);
+/* Boutons principaux (inscription, connexion, recherche, contact) : fond bleu
+   plein et libellé blanc. Les teintes viennent des variables déclarées dans
+   index.css, donc changer de couleur ne demande de toucher qu'à ce fichier-là.
+
+   On réécrit les variables --bs-btn-* de Bootstrap plutôt que background-color
+   et compagnie : Bootstrap 5.3 pilote *tous* les états du bouton (survol, appui,
+   désactivé) à travers ces variables, et ses sélecteurs d'appui
+   (.btn:first-child:active) sont plus spécifiques que les nôtres. Passer par les
+   variables évite qu'un bouton enfoncé reparte sur l'ancienne couleur compilée. */
+.btn-primary {
+  --bs-btn-bg: var(--couleur-bouton);
+  --bs-btn-border-color: var(--couleur-bouton);
+  --bs-btn-color: var(--couleur-bouton-texte);
+  --bs-btn-hover-bg: var(--couleur-bouton-survol);
+  --bs-btn-hover-border-color: var(--couleur-bouton-survol);
+  --bs-btn-hover-color: var(--couleur-bouton-texte);
+  --bs-btn-active-bg: var(--couleur-bouton-survol);
+  --bs-btn-active-border-color: var(--couleur-bouton-survol);
+  --bs-btn-active-color: var(--couleur-bouton-texte);
+  --bs-btn-disabled-bg: var(--couleur-bouton);
+  --bs-btn-disabled-border-color: var(--couleur-bouton);
+  --bs-btn-disabled-color: var(--couleur-bouton-texte);
 }
 
-.btn-outline-secondary:hover,
-.btn-outline-secondary:active,
-.btn-outline-secondary:focus-visible {
-  color: var(--text-h);
-  background-color: var(--accent-2);
-  border-color: var(--accent-2);
+/* Variante en contour (bouton "Connexion" de la navbar, "S'inscrire" en bas des
+   pages...) : même bleu, en bordure + libellé, et remplissage plein au survol.
+   Le libellé prend le bleu foncé (--couleur-bouton-survol) : sur fond clair il
+   ressort autour de 6,8:1, bien au-dessus du minimum de 4,5:1 attendu pour un
+   texte lisible, ce qui compte pour le public âgé visé. */
+.btn-outline-secondary,
+.btn-outline-primary {
+  --bs-btn-color: var(--couleur-bouton-survol);
+  --bs-btn-border-color: var(--couleur-bouton);
+  --bs-btn-hover-bg: var(--couleur-bouton);
+  --bs-btn-hover-border-color: var(--couleur-bouton);
+  --bs-btn-hover-color: var(--couleur-bouton-texte);
+  --bs-btn-active-bg: var(--couleur-bouton-survol);
+  --bs-btn-active-border-color: var(--couleur-bouton-survol);
+  --bs-btn-active-color: var(--couleur-bouton-texte);
+  --bs-btn-disabled-color: var(--couleur-bouton-survol);
+  --bs-btn-disabled-border-color: var(--couleur-bouton);
+}
+
+/* Boutons secondaires pleins ("Appeler" sur une fiche, actions du profil...) :
+   même famille de bleu en version douce, pour rester visiblement en dessous du
+   bouton principal sans introduire une troisième couleur. */
+.btn-secondary {
+  --bs-btn-bg: #eaf1fe;
+  --bs-btn-border-color: var(--couleur-bouton);
+  --bs-btn-color: var(--couleur-bouton-survol);
+  --bs-btn-hover-bg: var(--couleur-bouton);
+  --bs-btn-hover-border-color: var(--couleur-bouton);
+  --bs-btn-hover-color: var(--couleur-bouton-texte);
+  --bs-btn-active-bg: var(--couleur-bouton-survol);
+  --bs-btn-active-border-color: var(--couleur-bouton-survol);
+  --bs-btn-active-color: var(--couleur-bouton-texte);
+  --bs-btn-disabled-bg: #eaf1fe;
+  --bs-btn-disabled-border-color: var(--couleur-bouton);
+  --bs-btn-disabled-color: var(--couleur-bouton-survol);
 }
 
 /* Survol : léger soulèvement + ombre, pour que l'état cliquable se voie sans
@@ -67,7 +114,7 @@
 
 /* Navigation au clavier : anneau net et contrasté, jamais masqué par l'ombre. */
 .btn:focus-visible {
-  outline: 3px solid var(--accent-2-deep);
+  outline: 3px solid var(--couleur-bouton-survol);
   outline-offset: 2px;
   box-shadow: none;
 }

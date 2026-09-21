@@ -1,3 +1,17 @@
+/* Fond de la page d'accueil : dégradé vertical rose pêche -> blanc cassé rosé
+   (voir --couleur-fond / --couleur-fond-clair dans index.css). Posé sur toute la
+   page d'accueil uniquement : le reste du site garde le fond crème habituel.
+   no-repeat + fixed en hauteur totale pour que le dégradé se déroule une seule
+   fois du haut au bas de la page, et non section par section. */
+.landing {
+  background: linear-gradient(
+    180deg,
+    var(--couleur-fond) 0%,
+    var(--couleur-fond-clair) 55%,
+    var(--couleur-fond-clair) 100%
+  );
+}
+
 .hero {
   position: relative;
   border-bottom: 1px solid var(--border);
@@ -80,6 +94,12 @@
   fill: var(--bg);
 }
 
+/* Sur l'accueil, la section juste sous la photo est rose pêche : la vague doit
+   prendre cette teinte-là pour rester invisible en tant que forme rapportée. */
+.landing .hero-wave {
+  fill: var(--couleur-fond);
+}
+
 .hero-inner {
   position: relative;
 }
@@ -125,6 +145,14 @@
   background: var(--bg-alt);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+}
+
+/* Sur l'accueil, une bande de couleur pleine couperait le dégradé en deux : on
+   garde l'alternance visuelle avec un voile blanc translucide, qui éclaircit la
+   bande tout en laissant le rose pêche transparaître dessous. */
+.landing .section-alt {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 .intro-text {
@@ -240,4 +268,12 @@
 
 .teaser-link:hover {
   text-decoration: underline;
+}
+
+/* Sur le dégradé rose pêche, le gris "muted" de Bootstrap (le texte du site à
+   75% d'opacité) tombe juste au minimum lisible : sur l'accueil on lui rend sa
+   couleur pleine, plus confortable pour un public âgé. Les paragraphes gardent
+   leur rôle de texte secondaire via leur taille, pas via un gris pâle. */
+.landing .text-muted {
+  color: var(--text) !important;
 }
