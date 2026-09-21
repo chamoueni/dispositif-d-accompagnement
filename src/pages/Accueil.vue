@@ -7,7 +7,9 @@ import IconBadge from '../components/IconBadge.vue'
 import ReefDivider from '../components/ReefDivider.vue'
 import FormulesSection from '../components/FormulesSection.vue'
 import PaiementBandeau from '../components/PaiementBandeau.vue'
-import MayotteSymbol from '../components/MayotteSymbol.vue'
+// Vignette cartographique interactive du hero : remplace l'ancien emblème
+// décoratif (components/MayotteSymbol.vue, désormais inutilisé).
+import CarteMayotte from '../components/CarteMayotte.vue'
 // Effet "dégradé animé" sur les mots-clés du titre (voir components/HighlightWord.vue) :
 // réutilisable sur n'importe quel titre, pas seulement celui-ci.
 import HighlightWord from '../components/HighlightWord.vue'
@@ -114,17 +116,12 @@ onUnmounted(() => observateurServices?.disconnect())
   <div class="landing">
     <!-- Photo en fond plein écran (plus une petite vignette) : image + voile sombre
          dégradé pour que le texte reste lisible par-dessus, comme demandé. -->
-    <section class="hero hero-photo-bg">
-      <img
-        :src="heroPhoto"
-        alt="Coucher de soleil sur le lagon de Mayotte"
-        class="hero-bg-image"
-      >
-      <div
-        class="hero-scrim"
-        aria-hidden="true"
-      />
-
+    <!-- Hero en deux colonnes : texte à gauche sur le fond rose pêche, photo
+         ronde à droite (mise en page demandée, sur le modèle de la référence
+         fournie). Remplace l'ancienne photo en fond plein écran + voile sombre :
+         le texte n'est plus posé sur l'image, il passe donc en couleur foncée,
+         nettement plus lisible pour le public âgé visé. -->
+    <section class="hero hero-clair">
       <div class="container hero-inner">
         <div class="hero-text">
           <span class="badge text-bg-secondary mb-3">Aide aux personnes âgées à Mayotte</span>
@@ -143,42 +140,34 @@ onUnmounted(() => observateurServices?.disconnect())
             >
               Je cherche de l'aide
             </router-link>
+            <!-- Était en "outline-light" quand le bouton se détachait sur la photo
+                 sombre : sur le fond clair, il serait devenu invisible. -->
             <router-link
               to="/inscription"
-              class="btn btn-outline-light btn-lg"
+              class="btn btn-outline-secondary btn-lg"
             >
               Je souhaite aider
             </router-link>
           </div>
         </div>
-      </div>
 
-      <!-- Symbole de Mayotte, posé d'un seul côté (en bas à droite, loin du texte
-           et des boutons à gauche) pour ancrer visuellement la page dans l'île. -->
-      <div
-        class="hero-mayotte"
-        aria-hidden="true"
-      >
-        <MayotteSymbol />
-        <span class="hero-mayotte-label">Mayotte</span>
-      </div>
+        <div class="hero-media">
+          <img
+            :src="heroPhoto"
+            alt="Coucher de soleil sur le lagon de Mayotte"
+            class="hero-photo"
+          >
+        </div>
 
-      <!-- Vague "découpée" dans le bas de la photo (même couleur que le fond de
-           page juste en dessous) : contrairement à ReefDivider (une ligne posée
-           entre deux sections déjà de la même couleur), ici la forme doit se
-           fondre directement dans la photo, sans bande de fond visible entre
-           les deux. D'où un SVG rempli et positionné en absolu par-dessus le
-           bas de l'image plutôt que le composant ReefDivider habituel. -->
-      <svg
-        class="hero-wave"
-        viewBox="0 0 1440 60"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M0,30 Q60,10 120,30 T240,30 T360,30 T480,30 T600,30 T720,30 T840,30 T960,30 T1080,30 T1200,30 T1320,30 T1440,30 L1440,60 L0,60 Z"
-        />
-      </svg>
+        <!-- Carte des aidants, posée en bas à droite sur la photo, à la place
+             qu'occupait l'ancien emblème. Placée ici (dans le conteneur, et non
+             dans la section) pour que son bord droit s'aligne sur la colonne de
+             la photo plutôt que sur le bord de l'écran. Côté droit à dessein :
+             à gauche, repliée, elle recouvrait le chapô et les boutons.
+             Au survol elle s'agrandit par-dessus le contenu (voir
+             components/CarteMayotte.vue). -->
+        <CarteMayotte />
+      </div>
     </section>
 
     <section class="section">

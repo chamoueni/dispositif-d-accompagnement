@@ -1,0 +1,172 @@
+/* Vignette cartographique du hero (voir components/CarteMayotte.vue).
+   Absolue dans .hero-inner : son agrandissement au survol ne pousse donc aucun
+   autre élément de la page, il se contente de passer par dessus.
+   Ancrée en bas à DROITE, sur la photo : à gauche, la vignette repliée venait
+   recouvrir le chapô et les boutons. Ancrée à droite, elle s'agrandit vers la
+   gauche et vers le haut, donc jamais hors de l'écran. */
+.carte-mayotte {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 200px;
+  height: 200px;
+  border-radius: 18px;
+  border: 3px solid #fff;
+  box-shadow: 0 10px 24px -10px rgba(90, 45, 20, 0.45);
+  overflow: hidden;
+  cursor: pointer;
+  /* Durée demandée. `all` couvre aussi bien la taille que l'ombre ; c'est la
+     fin de l'animation de "width" qui déclenche invalidateSize() côté Vue. */
+  transition: all 0.4s ease;
+  z-index: 3;
+}
+
+.carte-mayotte.est-ouverte {
+  width: 560px;
+  height: 560px;
+  border-radius: 22px;
+  box-shadow: 0 28px 60px -20px rgba(90, 45, 20, 0.55);
+  cursor: default;
+  /* Au-dessus du contenu de la page, mais sous la navbar (1030) et le bouton
+     SOS (1040) : agrandie, la carte ne doit pas masquer la navigation. */
+  z-index: 1020;
+}
+
+.carte-mayotte:focus-visible {
+  outline: 3px solid var(--couleur-bouton-survol);
+  outline-offset: 3px;
+}
+
+.carte-mayotte-zone {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-alt);
+}
+
+/* Au repos la carte est décorative : on neutralise les évènements pointeur de
+   la zone Leaflet pour que le défilement de la page ne soit jamais capturé.
+   Le conteneur, lui, reste sensible au survol et au clic — c'est lui qui ouvre. */
+.carte-mayotte:not(.est-ouverte) .carte-mayotte-zone {
+  pointer-events: none;
+}
+
+/* Commandes de zoom et légende : inutiles tant que la vignette est petite (et
+   illisibles à cette taille), elles apparaissent avec l'agrandissement. */
+.carte-mayotte:not(.est-ouverte) .leaflet-control-container {
+  opacity: 0;
+}
+
+.carte-mayotte .leaflet-control-container {
+  transition: opacity 0.3s ease;
+}
+
+.carte-mayotte-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 5px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(18, 36, 33, 0.72);
+  pointer-events: none;
+}
+
+/* --- Marqueurs ------------------------------------------------------------- */
+
+/* Goutte rose foncé avec une maison blanche à l'intérieur. Le fond du divIcon
+   est transparent : sans ça Leaflet pose un carré blanc derrière le dessin. */
+.marqueur-aidant {
+  background: none;
+  border: none;
+}
+
+.marqueur-goutte {
+  fill: #b5305f;
+}
+
+.marqueur-toit {
+  fill: #fff;
+}
+
+.marqueur-porte {
+  fill: #b5305f;
+}
+
+/* Regroupement : pastille verte numérotée, avec un anneau plus clair pour la
+   détacher du fond de carte. Le chiffre est en 15px gras — à la taille
+   agrandie, il reste lisible sans effort. */
+.cluster-aidants {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #6fa544;
+  box-shadow: 0 0 0 6px rgba(111, 165, 68, 0.35);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* --- Infobulle ------------------------------------------------------------- */
+
+/* Texte volontairement plus grand que le défaut Leaflet (11px) : le public visé
+   est âgé, une infobulle illisible ne sert à rien. */
+.carte-mayotte .leaflet-popup-content {
+  margin: 12px 16px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.carte-mayotte .popup-nom {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.carte-mayotte .popup-service {
+  margin: 0;
+  font-weight: 600;
+  color: var(--couleur-bouton-survol);
+}
+
+.carte-mayotte .popup-commune {
+  margin: 0;
+}
+
+/* --- Petits écrans --------------------------------------------------------- */
+
+/* Pas de survol au doigt : l'ouverture se fait au toucher (voir le composant).
+   La taille agrandie est bornée à la largeur de l'écran pour que la carte ne
+   déborde jamais hors du viewport. */
+@media (max-width: 991px) {
+  .carte-mayotte {
+    right: 8px;
+    bottom: 8px;
+    width: 150px;
+    height: 150px;
+  }
+
+  .carte-mayotte.est-ouverte {
+    width: min(88vw, 460px);
+    height: min(88vw, 460px);
+  }
+}
+
+/* Mouvement désactivé côté système : la carte change de taille quasi d'un coup.
+   On garde une transition très courte au lieu de "none" à dessein — sans
+   transition sur "width", aucun évènement transitionend n'est émis, donc
+   invalidateSize() ne serait jamais appelé et la carte s'afficherait tronquée
+   après l'agrandissement. */
+@media (prefers-reduced-motion: reduce) {
+  .carte-mayotte {
+    transition: width 0.01s linear, height 0.01s linear;
+  }
+}

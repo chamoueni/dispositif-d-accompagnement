@@ -4,13 +4,19 @@
    continu, sans le clignotement qu'aurait une transition de couleur discrète. */
 .highlight-word {
   font-style: italic;
+  /* Dégradé dans le bleu de la charte (voir --couleur-bouton dans index.css).
+     L'ancienne version allait du doré à un jaune très clair : elle était pensée
+     pour un titre blanc sur photo sombre. Depuis que le hero est clair, ce jaune
+     tombait sous 2:1 sur le fond rose pêche. Les trois teintes retenues restent
+     toutes au-dessus de 3:1 (seuil des grands textes), la plus claire comprise,
+     donc le mot reste lisible à tout moment de l'animation. */
   background-image: linear-gradient(
     100deg,
-    var(--accent-2-deep) 0%,
-    var(--accent-2) 25%,
-    #ffe9b0 50%,
-    var(--accent-2) 75%,
-    var(--accent-2-deep) 100%
+    var(--couleur-bouton-survol) 0%,
+    var(--couleur-bouton) 25%,
+    #3b82f6 50%,
+    var(--couleur-bouton) 75%,
+    var(--couleur-bouton-survol) 100%
   );
   background-size: 300% 100%;
   -webkit-background-clip: text;
