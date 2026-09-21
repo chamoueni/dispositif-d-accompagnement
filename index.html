@@ -7,13 +7,17 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dispositif d'accompagnement personnalisé</title>
-    <!-- Fraunces (titres, style éditorial) + Inter (texte) + IBM Plex Mono (petits
-         labels/tags) : inspiré de la maquette Mlezi pour une identité plus marquée
-         que la police système par défaut. -->
+    <!-- Fraunces (titres, style éditorial) + Inter (texte) : inspiré de la maquette
+         Mlezi pour une identité plus marquée que la police système par défaut.
+         IBM Plex Mono a été retirée : la seule règle qui s'en servait vise <code>,
+         balise qu'aucune page du site n'utilise — c'étaient deux fichiers de
+         police téléchargés pour rien, ce qui compte sur une connexion lente.
+         "display=swap" est conservé : le texte s'affiche tout de suite dans une
+         police de repli au lieu de rester invisible pendant le chargement. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>

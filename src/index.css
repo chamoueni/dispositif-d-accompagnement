@@ -38,7 +38,7 @@
 
   --sans: 'Inter', system-ui, Roboto, sans-serif;
   --heading: 'Fraunces', Georgia, serif;
-  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --mono: ui-monospace, Consolas, monospace; /* voir index.html : IBM Plex Mono n'est plus chargée */
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
