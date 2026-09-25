@@ -262,3 +262,40 @@
 .landing .text-muted {
   color: var(--text) !important;
 }
+
+/* --- Compteur "pres de chez vous" -------------------------------------------
+   Nombre d'intervenants disponibles autour de la personne, sous les boutons du
+   hero. Le chiffre est detache et tres gros : c'est l'information utile, le
+   reste de la phrase ne fait que la qualifier. */
+.hero-compteur {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border);
+  font-size: 15px;
+  color: var(--text-h);
+  max-width: 480px;
+}
+
+.hero-compteur-nombre {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--couleur-bouton-survol);
+}
+
+.hero-compteur-lien {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--couleur-bouton-survol);
+  white-space: nowrap;
+}
+
+.mode-confort .hero-compteur-nombre {
+  font-size: 32px;
+}

@@ -2,29 +2,33 @@
 // Page dédiée "Pour qui" : présente les 3 profils du dispositif.
 // Photos Unsplash (licence gratuite), crédit affiché sous chaque carte.
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BackLink from '../components/BackLink.vue'
 import { useAuth } from '../stores/auth'
 import { addAvis, deleteAvis, getAvis } from '../data/store'
 import '../styles/PourQui.css'
 
+const { t } = useI18n()
 const { user, isAdmin } = useAuth()
 
+// titleKey/textKey pointent vers accueil.pour_qui.* : mêmes traductions que le
+// bloc "Pour qui" de l'accueil, pas de doublon à maintenir.
 const PUBLICS = [
   {
-    title: 'Personnes âgées',
-    text: "Vous cherchez un coup de main pour les soins, les courses ou le ménage, sans avoir à démarcher vous-même.",
+    titleKey: 'agees_titre',
+    textKey: 'agees_texte',
     photo: 'https://images.unsplash.com/photo-1752084794888-0b27a762b6fd?w=600&h=400&fit=crop&auto=format&q=80',
     credit: 'Chanika Dulnitha',
   },
   {
-    title: 'Personnel de santé',
-    text: 'Vous êtes infirmier, aide-soignant ou kiné et souhaitez proposer vos soins à domicile selon vos disponibilités.',
+    titleKey: 'sante_titre',
+    textKey: 'sante_texte',
     photo: 'https://images.unsplash.com/photo-1762955911431-4c44c7c3f408?w=600&h=400&fit=crop&auto=format&q=80',
     credit: 'Age Cymru',
   },
   {
-    title: 'Particuliers',
-    text: 'Vous voulez rendre service comme coursier ou pour du ménage, près de chez vous et à votre rythme.',
+    titleKey: 'particuliers_titre',
+    textKey: 'particuliers_texte',
     photo: 'https://images.unsplash.com/photo-1572195577046-2f25894c06fc?w=600&h=400&fit=crop&auto=format&q=80',
     credit: 'Lucian Alexe',
   },
@@ -47,7 +51,7 @@ onMounted(async () => {
 async function handleAjouterAvis() {
   erreurAvis.value = ''
   if (!nouvelAvis.value.trim()) {
-    erreurAvis.value = "Merci d'écrire un avis avant d'envoyer."
+    erreurAvis.value = t('pour_qui_page.avis_erreur_vide')
     return
   }
   envoiAvis.value = true
@@ -85,34 +89,34 @@ async function handleSupprimerAvis(id) {
       <BackLink />
       <span class="section-label" />
       <h1 class="h3 mb-2">
-        À qui s'adresse ce dispositif
+        {{ t('pour_qui_page.titre') }}
       </h1>
       <p class="text-muted intro-text mb-4">
-        Trois profils différents, chacun avec son propre parcours d'inscription.
+        {{ t('pour_qui_page.intro') }}
       </p>
 
       <div class="row g-4">
         <div
           v-for="p in PUBLICS"
-          :key="p.title"
+          :key="p.titleKey"
           class="col-md-4"
         >
           <div class="card h-100 audience-card">
             <img
               :src="p.photo"
-              :alt="p.title"
+              :alt="t(`accueil.pour_qui.${p.titleKey}`)"
               class="audience-photo"
               loading="lazy"
             >
             <div class="p-4">
               <h2 class="h6">
-                {{ p.title }}
+                {{ t(`accueil.pour_qui.${p.titleKey}`) }}
               </h2>
               <p class="text-muted small mb-2">
-                {{ p.text }}
+                {{ t(`accueil.pour_qui.${p.textKey}`) }}
               </p>
               <p class="photo-credit mb-0">
-                Photo : {{ p.credit }} / Unsplash
+                {{ t('pour_qui_page.photo_credit', { credit: p.credit }) }}
               </p>
             </div>
           </div>
@@ -121,7 +125,7 @@ async function handleSupprimerAvis(id) {
 
       <div class="mt-5">
         <h2 class="h5 mb-3">
-          Témoignages
+          {{ t('pour_qui_page.temoignages_titre') }}
         </h2>
 
         <form
@@ -132,13 +136,13 @@ async function handleSupprimerAvis(id) {
           <label
             class="form-label"
             for="nouvel-avis"
-          >Partagez votre expérience</label>
+          >{{ t('pour_qui_page.avis_label') }}</label>
           <textarea
             id="nouvel-avis"
             v-model="nouvelAvis"
             class="form-control"
             rows="3"
-            placeholder="Votre avis sur le dispositif..."
+            :placeholder="t('pour_qui_page.avis_placeholder')"
           />
           <p
             v-if="erreurAvis"
@@ -151,7 +155,7 @@ async function handleSupprimerAvis(id) {
             class="btn btn-primary mt-2"
             :disabled="envoiAvis"
           >
-            {{ envoiAvis ? 'Envoi…' : 'Publier mon avis' }}
+            {{ envoiAvis ? t('demande.envoi_en_cours') : t('pour_qui_page.avis_publier') }}
           </button>
         </form>
         <p
@@ -159,15 +163,15 @@ async function handleSupprimerAvis(id) {
           class="text-muted small mb-4"
         >
           <router-link to="/connexion">
-            Connectez-vous
-          </router-link> pour laisser un avis.
+            {{ t('pour_qui_page.avis_connexion_lien') }}
+          </router-link> {{ t('pour_qui_page.avis_connexion_suite') }}
         </p>
 
         <p
           v-if="chargementAvis"
           class="text-muted small"
         >
-          Chargement des avis…
+          {{ t('pour_qui_page.avis_chargement') }}
         </p>
 
         <div
@@ -191,7 +195,7 @@ async function handleSupprimerAvis(id) {
                   class="btn btn-link btn-sm text-danger p-0"
                   @click="handleSupprimerAvis(a.id)"
                 >
-                  Supprimer
+                  {{ t('pour_qui_page.avis_supprimer') }}
                 </button>
               </footer>
             </blockquote>
@@ -201,7 +205,7 @@ async function handleSupprimerAvis(id) {
           v-else
           class="text-muted small"
         >
-          Aucun avis pour le moment. Soyez le premier à en laisser un !
+          {{ t('pour_qui_page.avis_aucun') }}
         </p>
       </div>
 
@@ -210,7 +214,7 @@ async function handleSupprimerAvis(id) {
           to="/inscription"
           class="btn btn-primary btn-lg"
         >
-          S'inscrire
+          {{ t('nav.inscription') }}
         </router-link>
       </div>
     </div>

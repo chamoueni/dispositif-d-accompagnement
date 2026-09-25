@@ -3,18 +3,29 @@
 // vers la recherche (personne âgée), soit la gestion des disponibilités
 // (personnel de santé / particulier).
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import BackLink from '../components/BackLink.vue'
 import '../styles/Profil.css'
 
-const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-const SPECIALITES = ['Infirmier(ère)', 'Aide-soignant(e)', 'Médecin', 'Kinésithérapeute', 'Autre']
-const ROLE_LABELS = {
-  senior: 'Personne âgée',
-  sante: 'Personnel de santé',
-  particulier: 'Particulier',
+const { t } = useI18n()
+
+// "jour" est stocké en base en français ("Lundi", "Mardi"...), quelle que soit
+// la langue affichée : changer de langue ne doit ni réécrire les disponibilités
+// déjà enregistrées, ni les rendre invisibles à un profil resté en français.
+// JOURS_STOCKAGE reste donc la valeur envoyée à updateProfile() / comparée aux
+// données existantes ; JOUR_KEYS (même ordre) ne sert qu'à choisir le libellé
+// traduit affiché à l'écran.
+const JOURS_STOCKAGE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+const JOUR_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+const JOURS = computed(() => JOURS_STOCKAGE.map((jour, i) => ({ jour, label: t(`jours.${JOUR_KEYS[i]}`) })))
+const SPECIALITE_KEYS = ['infirmier', 'aide_soignant', 'medecin', 'kine', 'autre']
+const ROLE_LABEL_KEYS = {
+  senior: 'role_senior',
+  sante: 'role_sante',
+  particulier: 'role_particulier',
 }
 
 const { user, updateProfile, changerMotDePasse } = useAuth()
@@ -38,7 +49,7 @@ const form = reactive({
   ville: user.value.ville,
   adresse: user.value.adresse,
   bio: user.value.bio,
-  specialite: user.value.specialite || SPECIALITES[0],
+  specialite: user.value.specialite || t(`specialites.${SPECIALITE_KEYS[0]}`),
   services: [...(user.value.services || [])],
 })
 
@@ -54,11 +65,11 @@ function toggleService(service) {
 // Calendrier de disponibilité : 3 créneaux fixes par jour plutôt qu'un champ
 // horaire libre, pour que ça se présente vraiment comme une grille cliquable
 // (calendrier) au lieu d'un simple formulaire jour + heure de début/fin.
-const CRENEAUX = [
-  { id: 'matin', label: 'Matin', heureDebut: '08:00', heureFin: '12:00' },
-  { id: 'apres-midi', label: 'Après-midi', heureDebut: '12:00', heureFin: '17:00' },
-  { id: 'soir', label: 'Soir', heureDebut: '17:00', heureFin: '20:00' },
-]
+const CRENEAUX = computed(() => [
+  { id: 'matin', label: t('profil_page.matin'), heureDebut: '08:00', heureFin: '12:00' },
+  { id: 'apres-midi', label: t('profil_page.apres_midi'), heureDebut: '12:00', heureFin: '17:00' },
+  { id: 'soir', label: t('profil_page.soir'), heureDebut: '17:00', heureFin: '20:00' },
+])
 
 function estActif(jour, creneau) {
   return user.value.disponibilites.some(
@@ -90,7 +101,7 @@ async function toggleCreneau(jour, creneau) {
 const autresCreneaux = computed(() =>
   user.value.disponibilites
     .map((slot, index) => ({ slot, index }))
-    .filter(({ slot }) => !CRENEAUX.some((c) => c.heureDebut === slot.heureDebut && c.heureFin === slot.heureFin)),
+    .filter(({ slot }) => !CRENEAUX.value.some((c) => c.heureDebut === slot.heureDebut && c.heureFin === slot.heureFin)),
 )
 
 async function removeSlot(index) {
@@ -108,7 +119,7 @@ async function handleSave() {
     specialite: user.value.role === 'sante' ? form.specialite : '',
     services: user.value.role === 'particulier' ? [...form.services] : [],
   })
-  savedMessage.value = 'Profil mis à jour.'
+  savedMessage.value = t('profil_page.enregistre_message')
   setTimeout(() => (savedMessage.value = ''), 2500)
 }
 
@@ -124,18 +135,18 @@ async function handleChangerMotDePasse() {
   motDePasseMessage.value = ''
 
   if (motDePasse.nouveau.length < 6) {
-    motDePasseErreur.value = 'Le mot de passe doit contenir au moins 6 caractères.'
+    motDePasseErreur.value = t('profil_page.erreur_court')
     return
   }
   if (motDePasse.nouveau !== motDePasse.confirmation) {
-    motDePasseErreur.value = 'Les deux mots de passe ne correspondent pas.'
+    motDePasseErreur.value = t('profil_page.erreur_diff')
     return
   }
 
   motDePasseEnCours.value = true
   try {
     await changerMotDePasse(motDePasse.nouveau)
-    motDePasseMessage.value = 'Mot de passe mis à jour.'
+    motDePasseMessage.value = t('profil_page.mdp_mis_a_jour')
     motDePasse.nouveau = ''
     motDePasse.confirmation = ''
     setTimeout(() => (motDePasseMessage.value = ''), 2500)
@@ -153,21 +164,21 @@ async function handleChangerMotDePasse() {
       <BackLink />
       <div class="d-flex align-items-center gap-2 mb-4">
         <h1 class="h3 mb-0">
-          Mon profil
+          {{ t('profil_page.titre') }}
         </h1>
-        <span class="badge text-bg-light border badge-role">{{ ROLE_LABELS[user.role] }}</span>
+        <span class="badge text-bg-light border badge-role">{{ t(`inscription_page.${ROLE_LABEL_KEYS[user.role]}`) }}</span>
       </div>
 
       <div class="row g-4">
         <div class="col-lg-7">
           <div class="card p-4">
             <h2 class="h5 mb-3">
-              Informations
+              {{ t('profil_page.informations') }}
             </h2>
             <form @submit.prevent="handleSave">
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Prénom</label>
+                  <label class="form-label">{{ t('profil_page.prenom') }}</label>
                   <input
                     v-model="form.prenom"
                     type="text"
@@ -175,7 +186,7 @@ async function handleChangerMotDePasse() {
                   >
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Nom</label>
+                  <label class="form-label">{{ t('profil_page.nom') }}</label>
                   <input
                     v-model="form.nomFamille"
                     type="text"
@@ -186,7 +197,7 @@ async function handleChangerMotDePasse() {
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Téléphone</label>
+                  <label class="form-label">{{ t('profil_page.telephone') }}</label>
                   <input
                     v-model="form.telephone"
                     type="tel"
@@ -194,7 +205,7 @@ async function handleChangerMotDePasse() {
                   >
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Commune</label>
+                  <label class="form-label">{{ t('profil_page.commune') }}</label>
                   <select
                     v-model="form.ville"
                     class="form-select"
@@ -211,12 +222,12 @@ async function handleChangerMotDePasse() {
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Adresse postale</label>
+                <label class="form-label">{{ t('profil_page.adresse') }}</label>
                 <input
                   v-model="form.adresse"
                   type="text"
                   class="form-control"
-                  placeholder="N°, rue, lieu-dit..."
+                  :placeholder="t('profil_page.adresse_placeholder')"
                 >
               </div>
 
@@ -224,17 +235,17 @@ async function handleChangerMotDePasse() {
                 v-if="user.role === 'sante'"
                 class="mb-3"
               >
-                <label class="form-label">Spécialité</label>
+                <label class="form-label">{{ t('profil_page.specialite') }}</label>
                 <select
                   v-model="form.specialite"
                   class="form-select"
                 >
                   <option
-                    v-for="s in SPECIALITES"
+                    v-for="s in SPECIALITE_KEYS"
                     :key="s"
-                    :value="s"
+                    :value="t(`specialites.${s}`)"
                   >
-                    {{ s }}
+                    {{ t(`specialites.${s}`) }}
                   </option>
                 </select>
               </div>
@@ -243,7 +254,7 @@ async function handleChangerMotDePasse() {
                 v-if="user.role === 'particulier'"
                 class="mb-3"
               >
-                <label class="form-label">Services proposés</label>
+                <label class="form-label">{{ t('profil_page.services') }}</label>
                 <div class="form-check">
                   <input
                     id="svc-coursier"
@@ -255,7 +266,7 @@ async function handleChangerMotDePasse() {
                   <label
                     class="form-check-label"
                     for="svc-coursier"
-                  >Coursier</label>
+                  >{{ t('profil_page.coursier') }}</label>
                 </div>
                 <div class="form-check">
                   <input
@@ -268,7 +279,7 @@ async function handleChangerMotDePasse() {
                   <label
                     class="form-check-label"
                     for="svc-menage"
-                  >Ménage</label>
+                  >{{ t('profil_page.menage') }}</label>
                 </div>
               </div>
 
@@ -276,7 +287,7 @@ async function handleChangerMotDePasse() {
                 v-if="user.role !== 'senior'"
                 class="mb-3"
               >
-                <label class="form-label">Présentation <span class="text-muted small">(facultatif)</span></label>
+                <label class="form-label">{{ t('profil_page.presentation') }} <span class="text-muted small">{{ t('profil_page.facultatif') }}</span></label>
                 <textarea
                   v-model="form.bio"
                   class="form-control"
@@ -288,7 +299,7 @@ async function handleChangerMotDePasse() {
                 type="submit"
                 class="btn btn-primary"
               >
-                Enregistrer
+                {{ t('profil_page.enregistrer') }}
               </button>
               <span
                 v-if="savedMessage"
@@ -299,12 +310,12 @@ async function handleChangerMotDePasse() {
 
           <div class="card p-4 mt-4">
             <h2 class="h5 mb-3">
-              Sécurité
+              {{ t('profil_page.securite') }}
             </h2>
             <form @submit.prevent="handleChangerMotDePasse">
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Nouveau mot de passe</label>
+                  <label class="form-label">{{ t('profil_page.nouveau_mdp') }}</label>
                   <ChampMotDePasse
                     id="nouveau-mot-de-passe"
                     v-model="motDePasse.nouveau"
@@ -312,7 +323,7 @@ async function handleChangerMotDePasse() {
                   />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Confirmer le mot de passe</label>
+                  <label class="form-label">{{ t('profil_page.confirmer_mdp') }}</label>
                   <ChampMotDePasse
                     id="confirmation-mot-de-passe"
                     v-model="motDePasse.confirmation"
@@ -325,7 +336,7 @@ async function handleChangerMotDePasse() {
                 class="btn btn-primary"
                 :disabled="motDePasseEnCours"
               >
-                {{ motDePasseEnCours ? 'Enregistrement…' : 'Changer le mot de passe' }}
+                {{ motDePasseEnCours ? t('commun.enregistrement_en_cours') : t('profil_page.changer_mdp') }}
               </button>
               <span
                 v-if="motDePasseMessage"
@@ -347,10 +358,10 @@ async function handleChangerMotDePasse() {
             class="card p-4 text-center senior-cta"
           >
             <h2 class="h5 mb-2">
-              Besoin d'aide ?
+              {{ t('profil_page.besoin_aide_titre') }}
             </h2>
             <p class="text-muted mb-3">
-              Choisissez ce dont vous avez besoin, la recherche s'ouvre déjà filtrée.
+              {{ t('profil_page.besoin_aide_texte') }}
             </p>
             <!-- Chaque bouton mène à /recherche préfiltrée sur ce service (voir
                  route.query.type dans RecherchePersonnel.vue), pour éviter à la
@@ -360,19 +371,19 @@ async function handleChangerMotDePasse() {
                 to="/recherche?type=sante"
                 class="btn btn-secondary"
               >
-                Personnel de santé
+                {{ t('profil_page.cta_sante') }}
               </router-link>
               <router-link
                 to="/recherche?type=coursier"
                 class="btn btn-secondary"
               >
-                Coursier
+                {{ t('profil_page.cta_coursier') }}
               </router-link>
               <router-link
                 to="/recherche?type=menage"
                 class="btn btn-secondary"
               >
-                Ménage
+                {{ t('profil_page.cta_menage') }}
               </router-link>
             </div>
           </div>
@@ -382,10 +393,10 @@ async function handleChangerMotDePasse() {
             class="card p-4"
           >
             <h2 class="h5 mb-1">
-              Mon calendrier de disponibilité
+              {{ t('profil_page.calendrier_titre') }}
             </h2>
             <p class="text-muted small mb-3">
-              Cliquez sur un créneau pour le proposer ou le retirer.
+              {{ t('profil_page.calendrier_texte') }}
             </p>
 
             <div class="dispo-calendrier">
@@ -393,8 +404,8 @@ async function handleChangerMotDePasse() {
                 <span />
                 <span
                   v-for="j in JOURS"
-                  :key="j"
-                >{{ j.slice(0, 3) }}</span>
+                  :key="j.jour"
+                >{{ j.label.slice(0, 3) }}</span>
               </div>
               <div
                 v-for="creneau in CRENEAUX"
@@ -404,13 +415,13 @@ async function handleChangerMotDePasse() {
                 <span class="dispo-calendrier-label">{{ creneau.label }}</span>
                 <button
                   v-for="j in JOURS"
-                  :key="`${creneau.id}-${j}`"
+                  :key="`${creneau.id}-${j.jour}`"
                   type="button"
                   class="dispo-case"
-                  :class="{ 'dispo-case-active': estActif(j, creneau) }"
-                  :aria-pressed="estActif(j, creneau)"
-                  :aria-label="`${creneau.label} ${j}`"
-                  @click="toggleCreneau(j, creneau)"
+                  :class="{ 'dispo-case-active': estActif(j.jour, creneau) }"
+                  :aria-pressed="estActif(j.jour, creneau)"
+                  :aria-label="`${creneau.label} ${j.label}`"
+                  @click="toggleCreneau(j.jour, creneau)"
                 />
               </div>
             </div>
@@ -429,7 +440,7 @@ async function handleChangerMotDePasse() {
               class="mt-3"
             >
               <p class="text-muted small mb-2">
-                Autres créneaux enregistrés :
+                {{ t('profil_page.autres_creneaux') }}
               </p>
               <ul class="slot-list">
                 <li
@@ -442,7 +453,7 @@ async function handleChangerMotDePasse() {
                     class="btn btn-sm btn-outline-secondary"
                     @click="removeSlot(index)"
                   >
-                    Retirer
+                    {{ t('commun.retirer') }}
                   </button>
                 </li>
               </ul>

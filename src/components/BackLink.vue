@@ -4,9 +4,11 @@
 // Utilise l'historique du navigateur (router.back()) plutôt qu'un lien fixe vers
 // l'accueil, pour revenir exactement là d'où l'utilisateur vient.
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import '../styles/BackLink.css'
 
 const router = useRouter()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -25,6 +27,6 @@ const router = useRouter()
     >
       <path d="M19 12H5M11 18l-6-6 6-6" />
     </svg>
-    Retour
+    {{ t('commun.retour') }}
   </button>
 </template>

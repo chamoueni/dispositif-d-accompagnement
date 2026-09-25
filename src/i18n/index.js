@@ -1,10 +1,12 @@
 // Configuration vue-i18n : français, shimaoré et kibushi, les trois langues
 // parlées par le public du dispositif à Mayotte.
 //
-// Les traductions shimaoré et kibushi sont des GABARITS provisoires, marqués
-// "À TRADUIRE", à remplacer par de vraies traductions faites par des locuteurs.
-// Aucune traduction automatique n'est utilisée : sur des consignes destinées à
-// des personnes âgées, un contresens machine serait pire que du français.
+// Les traductions shimaoré et kibushi sont un premier jet, rédigé à la main
+// (pas de traduction automatique) pour éviter tout contresens machine sur des
+// consignes destinées à des personnes âgées, y compris pour les pages
+// sensibles (SOS, urgence, santé). Elles n'ont toutefois pas encore été
+// relues par un locuteur natif de chaque langue : cette relecture reste à
+// faire avant toute mise en production réelle.
 import { createI18n } from 'vue-i18n'
 import fr from '../locales/fr.json'
 import shi from '../locales/shi.json'

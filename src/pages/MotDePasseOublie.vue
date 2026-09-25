@@ -2,9 +2,11 @@
 // Demande de réinitialisation de mot de passe (utilisateur déconnecté).
 // Envoie un email Supabase avec un lien vers /reinitialiser-mot-de-passe.
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import '../styles/Connexion.css'
 
+const { t } = useI18n()
 const { demanderReinitialisationMotDePasse } = useAuth()
 
 const email = ref('')
@@ -34,21 +36,21 @@ async function handleSubmit() {
       <div class="login-card card mx-auto">
         <span class="section-label" />
         <h1 class="h3 mb-1">
-          Mot de passe oublié
+          {{ t('mdp_oublie_page.titre') }}
         </h1>
         <p class="text-muted mb-4">
-          Indiquez votre email, vous recevrez un lien pour choisir un nouveau mot de passe.
+          {{ t('mdp_oublie_page.intro') }}
         </p>
 
         <div v-if="envoye">
           <p class="text-success small mb-3">
-            Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.
+            {{ t('mdp_oublie_page.envoye_texte') }}
           </p>
           <router-link
             to="/connexion"
             class="btn btn-outline-secondary w-100"
           >
-            Retour à la connexion
+            {{ t('mdp_oublie_page.retour_connexion') }}
           </router-link>
         </div>
 
@@ -60,7 +62,7 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="email"
-            >Email</label>
+            >{{ t('mdp_oublie_page.email_label') }}</label>
             <input
               id="email"
               v-model="email"
@@ -82,7 +84,7 @@ async function handleSubmit() {
             class="btn btn-primary w-100"
             :disabled="envoi"
           >
-            {{ envoi ? 'Envoi…' : 'Envoyer le lien' }}
+            {{ envoi ? t('demande.envoi_en_cours') : t('mdp_oublie_page.cta_envoyer') }}
           </button>
         </form>
 
@@ -91,7 +93,7 @@ async function handleSubmit() {
           class="text-center text-muted small mt-3 mb-0"
         >
           <router-link to="/connexion">
-            Retour à la connexion
+            {{ t('mdp_oublie_page.retour_connexion') }}
           </router-link>
         </p>
       </div>

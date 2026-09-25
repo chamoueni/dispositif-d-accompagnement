@@ -5,11 +5,13 @@
 // requiresAuth ici, on vérifie nous-mêmes qu'une session valide existe, car le
 // routeur global pourrait tester avant que cette session soit établie.
 import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../stores/auth'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Connexion.css'
 
+const { t } = useI18n()
 const { changerMotDePasse, logout } = useAuth()
 
 const verification = ref(true)
@@ -40,11 +42,11 @@ async function handleSubmit() {
   erreur.value = ''
 
   if (form.nouveau.length < 6) {
-    erreur.value = 'Le mot de passe doit contenir au moins 6 caractères.'
+    erreur.value = t('reinit_mdp_page.erreur_court')
     return
   }
   if (form.nouveau !== form.confirmation) {
-    erreur.value = 'Les deux mots de passe ne correspondent pas.'
+    erreur.value = t('reinit_mdp_page.erreur_diff')
     return
   }
 
@@ -69,37 +71,37 @@ async function handleSubmit() {
       <div class="login-card card mx-auto">
         <span class="section-label" />
         <h1 class="h3 mb-1">
-          Nouveau mot de passe
+          {{ t('reinit_mdp_page.titre') }}
         </h1>
 
         <p
           v-if="verification"
           class="text-muted"
         >
-          Vérification du lien…
+          {{ t('reinit_mdp_page.verification') }}
         </p>
 
         <template v-else-if="reussi">
           <p class="text-success small mb-3">
-            Mot de passe modifié. Vous pouvez maintenant vous connecter.
+            {{ t('reinit_mdp_page.reussi_texte') }}
           </p>
           <router-link
             to="/connexion"
             class="btn btn-primary w-100"
           >
-            Aller à la connexion
+            {{ t('reinit_mdp_page.aller_connexion') }}
           </router-link>
         </template>
 
         <template v-else-if="!lienValide">
           <p class="text-danger small mb-3">
-            Ce lien de réinitialisation est invalide ou a expiré.
+            {{ t('reinit_mdp_page.lien_invalide') }}
           </p>
           <router-link
             to="/mot-de-passe-oublie"
             class="btn btn-outline-secondary w-100"
           >
-            Redemander un lien
+            {{ t('reinit_mdp_page.redemander') }}
           </router-link>
         </template>
 
@@ -111,7 +113,7 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="nouveau"
-            >Nouveau mot de passe</label>
+            >{{ t('reinit_mdp_page.nouveau_label') }}</label>
             <ChampMotDePasse
               id="nouveau"
               v-model="form.nouveau"
@@ -123,7 +125,7 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="confirmation"
-            >Confirmer le mot de passe</label>
+            >{{ t('reinit_mdp_page.confirmer_label') }}</label>
             <ChampMotDePasse
               id="confirmation"
               v-model="form.confirmation"
@@ -144,7 +146,7 @@ async function handleSubmit() {
             class="btn btn-primary w-100"
             :disabled="enCours"
           >
-            {{ enCours ? 'Enregistrement…' : 'Valider le nouveau mot de passe' }}
+            {{ enCours ? t('commun.enregistrement_en_cours') : t('reinit_mdp_page.cta_valider') }}
           </button>
         </form>
       </div>

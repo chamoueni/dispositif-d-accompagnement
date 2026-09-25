@@ -4,6 +4,7 @@
 // dans data/store.js). Permet de marquer une mission terminée/annulée, ce qui
 // met aussi à jour la demande liée pour qu'elle apparaisse dans l'Historique.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   getMisesEnRelation,
   getDemandesByDemandeur,
@@ -17,10 +18,14 @@ import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import '../styles/MesAccompagnements.css'
 
-const SERVICE_LABELS = {
-  soins: 'Soins',
-  coursier: 'Coursier',
-  menage: 'Ménage',
+const { t } = useI18n()
+
+// typeService reste stocké tel quel en base : seul l'affichage est traduit,
+// via les mêmes clés que le formulaire de demande (demande.service_*).
+const SERVICE_KEYS = {
+  soins: 'service_soins',
+  coursier: 'service_coursier',
+  menage: 'service_menage',
 }
 
 const { user } = useAuth()
@@ -79,7 +84,8 @@ function autrePartie(mission) {
 
 function serviceDe(mission) {
   const demande = demandesParId.value[mission.demandeId]
-  return demande ? SERVICE_LABELS[demande.typeService] || demande.typeService : '—'
+  const cle = demande ? SERVICE_KEYS[demande.typeService] : null
+  return cle ? t(`demande.${cle}`) : demande?.typeService || '—'
 }
 
 function formatDate(iso) {
@@ -105,7 +111,7 @@ async function terminer(mission) {
 }
 
 async function annulerMission(mission) {
-  if (!confirm('Annuler cet accompagnement ?')) return
+  if (!confirm(t('mes_accompagnements_page.confirm_annuler'))) return
   actionEnCours.value = mission.id
   try {
     await updateMiseEnRelationStatut(mission.id, 'annulee')
@@ -122,17 +128,17 @@ async function annulerMission(mission) {
     <div class="container">
       <BackLink />
       <h1 class="h3 mb-2">
-        📅 Mes accompagnements
+        {{ t('mes_accompagnements_page.titre') }}
       </h1>
       <p class="text-muted small mb-4">
-        Vos accompagnements à venir ou en cours.
+        {{ t('mes_accompagnements_page.sous_titre') }}
       </p>
 
       <p
         v-if="chargement"
         class="text-muted text-center py-5"
       >
-        Chargement…
+        {{ t('commun.chargement') }}
       </p>
 
       <template v-else>
@@ -140,7 +146,7 @@ async function annulerMission(mission) {
           v-if="!missionsAffichees.length"
           class="text-muted text-center py-5"
         >
-          Aucun accompagnement en cours pour le moment.
+          {{ t('mes_accompagnements_page.aucun') }}
         </p>
 
         <div
@@ -150,10 +156,10 @@ async function annulerMission(mission) {
         >
           <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
-              <strong>{{ autrePartie(mission)?.nom || 'Profil supprimé' }}</strong>
+              <strong>{{ autrePartie(mission)?.nom || t('commun.profil_supprime') }}</strong>
               <p class="text-muted small mb-0">
                 {{ serviceDe(mission) }} · {{ autrePartie(mission)?.ville || '—' }}
-                · débuté le {{ formatDate(mission.dateDebut) }}
+                · {{ t('mes_accompagnements_page.debute_le', { date: formatDate(mission.dateDebut) }) }}
               </p>
             </div>
             <div class="d-flex gap-2 flex-shrink-0">
@@ -162,7 +168,7 @@ async function annulerMission(mission) {
                 class="btn btn-outline-secondary btn-sm"
                 @click="toggleDetails(mission.id)"
               >
-                {{ missionOuverte === mission.id ? 'Masquer' : 'Voir les détails' }}
+                {{ missionOuverte === mission.id ? t('commun.masquer') : t('commun.voir_details') }}
               </button>
               <button
                 type="button"
@@ -170,7 +176,7 @@ async function annulerMission(mission) {
                 :disabled="actionEnCours === mission.id"
                 @click="terminer(mission)"
               >
-                Terminer
+                {{ t('commun.terminer') }}
               </button>
               <button
                 type="button"
@@ -178,7 +184,7 @@ async function annulerMission(mission) {
                 :disabled="actionEnCours === mission.id"
                 @click="annulerMission(mission)"
               >
-                Annuler
+                {{ t('commun.annuler') }}
               </button>
             </div>
           </div>
@@ -188,7 +194,7 @@ async function annulerMission(mission) {
             class="mission-details"
           >
             <p class="mb-1">
-              <strong>Téléphone :</strong>
+              <strong>{{ t('mes_accompagnements_page.telephone_label') }}</strong>
               <a :href="`tel:${autrePartie(mission)?.telephone}`">{{ autrePartie(mission)?.telephone || '—' }}</a>
             </p>
             <p

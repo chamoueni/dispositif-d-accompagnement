@@ -6,15 +6,21 @@
 // mettent aussi à jour la demande liée).
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getDemandesByDemandeur, getDemandesByAidant, getUsers } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import '../styles/Historique.css'
 
-const SERVICE_LABELS = {
-  soins: 'Soins',
-  coursier: 'Coursier',
-  menage: 'Ménage',
+const { t } = useI18n()
+
+// typeService (soins/coursier/menage) reste stocké tel quel en base : on ne
+// traduit que l'affichage, via les mêmes clés que le formulaire de demande
+// (demande.service_*).
+const SERVICE_KEYS = {
+  soins: 'service_soins',
+  coursier: 'service_coursier',
+  menage: 'service_menage',
 }
 
 const { user } = useAuth()
@@ -41,6 +47,11 @@ onMounted(async () => {
 function autrePartie(demande) {
   const id = user.value.role === 'senior' ? demande.aidantId : demande.demandeurId
   return profilsParId.value[id]
+}
+
+function libelleService(typeService) {
+  const cle = SERVICE_KEYS[typeService]
+  return cle ? t(`demande.${cle}`) : typeService
 }
 
 const filtres = reactive({
@@ -90,69 +101,69 @@ function refaire(demande) {
     <div class="container">
       <BackLink />
       <h1 class="h3 mb-4">
-        🧾 Historique de mes accompagnements
+        {{ t('historique_page.titre') }}
       </h1>
 
       <div class="card p-3 mb-4 historique-filters">
         <div class="row g-3">
           <div class="col-sm-3">
-            <label class="form-label small">Période</label>
+            <label class="form-label small">{{ t('historique_page.periode_label') }}</label>
             <select
               v-model="filtres.periode"
               class="form-select form-select-sm"
             >
               <option value="">
-                Toutes
+                {{ t('commun.toutes') }}
               </option>
               <option value="30j">
-                30 derniers jours
+                {{ t('historique_page.j30') }}
               </option>
               <option value="90j">
-                90 derniers jours
+                {{ t('historique_page.j90') }}
               </option>
             </select>
           </div>
           <div class="col-sm-3">
-            <label class="form-label small">Type de service</label>
+            <label class="form-label small">{{ t('historique_page.service_label') }}</label>
             <select
               v-model="filtres.service"
               class="form-select form-select-sm"
             >
               <option value="">
-                Tous
+                {{ t('commun.tous') }}
               </option>
               <option
-                v-for="(label, value) in SERVICE_LABELS"
-                :key="value"
-                :value="value"
+                v-for="(cle, valeur) in SERVICE_KEYS"
+                :key="valeur"
+                :value="valeur"
               >
-                {{ label }}
+                {{ t(`demande.${cle}`) }}
               </option>
             </select>
           </div>
           <div class="col-sm-3">
-            <label class="form-label small">Accompagnant</label>
+            <label class="form-label small">{{ t('historique_page.accompagnant_label') }}</label>
             <input
               v-model="filtres.accompagnant"
               type="text"
               class="form-control form-control-sm"
-              placeholder="Rechercher un nom"
+              :placeholder="t('historique_page.accompagnant_placeholder')"
             >
           </div>
           <div class="col-sm-3">
-            <label class="form-label small">Statut</label>
+            <label class="form-label small">{{ t('historique_page.statut_label') }}</label>
             <select
               v-model="filtres.statut"
               class="form-select form-select-sm"
             >
               <option value="">
-                Tous
+                {{ t('commun.tous') }}
               </option>
               <option value="terminee">
-                Terminé
+                {{ t('statut.terminee') }}
               </option>
               <option value="annulee">
-                Annulé
+                {{ t('statut.annulee') }}
               </option>
             </select>
           </div>
@@ -163,7 +174,7 @@ function refaire(demande) {
         v-if="chargement"
         class="text-muted text-center py-5"
       >
-        Chargement…
+        {{ t('commun.chargement') }}
       </p>
 
       <template v-else>
@@ -171,7 +182,7 @@ function refaire(demande) {
           v-if="!resultats.length"
           class="text-muted text-center py-5"
         >
-          Aucune mission dans l'historique pour ces critères.
+          {{ t('historique_page.aucune_mission') }}
         </p>
 
         <div
@@ -184,13 +195,13 @@ function refaire(demande) {
               <div class="d-flex align-items-center gap-2 mb-1">
                 <span>{{ formatDate(demande.dateMiseAJour) }}</span>
                 <span>·</span>
-                <strong>{{ SERVICE_LABELS[demande.typeService] || demande.typeService }}</strong>
+                <strong>{{ libelleService(demande.typeService) }}</strong>
                 <span>·</span>
-                <span>{{ autrePartie(demande)?.nom || 'Profil supprimé' }}</span>
+                <span>{{ autrePartie(demande)?.nom || t('commun.profil_supprime') }}</span>
                 <span
                   :class="['badge', demande.statut === 'terminee' ? 'text-bg-success' : 'badge-neutral']"
                 >
-                  {{ demande.statut === 'terminee' ? 'Terminé' : 'Annulé' }}
+                  {{ demande.statut === 'terminee' ? t('statut.terminee') : t('statut.annulee') }}
                 </span>
               </div>
             </div>
@@ -200,7 +211,7 @@ function refaire(demande) {
                 class="btn btn-outline-secondary btn-sm"
                 @click="toggleDetail(demande.id)"
               >
-                {{ detailOuvert === demande.id ? 'Masquer' : 'Voir les détails' }}
+                {{ detailOuvert === demande.id ? t('commun.masquer') : t('commun.voir_details') }}
               </button>
               <button
                 v-if="user.role === 'senior' && demande.statut === 'terminee'"
@@ -208,7 +219,7 @@ function refaire(demande) {
                 class="btn btn-outline-primary btn-sm"
                 @click="refaire(demande)"
               >
-                🔄 Refaire cette demande
+                {{ t('historique_page.refaire') }}
               </button>
             </div>
           </div>
@@ -218,13 +229,13 @@ function refaire(demande) {
             class="historique-details"
           >
             <p class="mb-1 small">
-              <strong>Commune :</strong> {{ autrePartie(demande)?.ville || '—' }}
+              <strong>{{ t('historique_page.commune_label') }}</strong> {{ autrePartie(demande)?.ville || '—' }}
             </p>
             <p
               v-if="demande.message"
               class="mb-0 small"
             >
-              <strong>Message :</strong> « {{ demande.message }} »
+              <strong>{{ t('historique_page.message_label') }}</strong> « {{ demande.message }} »
             </p>
           </div>
         </div>

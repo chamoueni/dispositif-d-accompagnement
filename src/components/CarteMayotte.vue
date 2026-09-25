@@ -25,7 +25,8 @@ import 'leaflet.markercluster'
 // verts (voir .cluster-aidants dans CarteMayotte.css).
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import { useI18n } from 'vue-i18n'
-import { getUsers, getCoordonneesCommune } from '../data/store.js'
+import { getCoordonneesCommune } from '../data/store.js'
+import { useAidants } from '../composables/useAidants'
 import { useAuth } from '../stores/auth'
 import '../styles/CarteMayotte.css'
 
@@ -60,10 +61,13 @@ const estOuverte = ref(false)
 const besoin = ref('tous')
 const nombreAffiche = ref(0)
 
+// Liste partagee avec le compteur du hero : une seule requete pour les deux
+// (voir composables/useAidants.js).
+const { aidants } = useAidants()
+
 let carte = null
 let regroupements = null
 let observateurTaille = null
-let aidants = []
 
 // Commandes coupées tant que la vignette est repliée : sans ça, un clic-glissé
 // sur une carte de 210px gênerait plus qu'il n'aiderait.
@@ -176,7 +180,7 @@ function dessinerMarqueurs() {
   regroupements.clearLayers()
 
   let poses = 0
-  aidants.filter(correspondAuBesoin).forEach((aidant) => {
+  aidants.value.filter(correspondAuBesoin).forEach((aidant) => {
     const point = getCoordonneesCommune(aidant.ville)
     // Un profil sans commune connue n'est pas plaçable : on le laisse de côté
     // plutôt que de l'inventer au centre de l'île.
@@ -200,23 +204,9 @@ function dessinerMarqueurs() {
   nombreAffiche.value = poses
 }
 
-// Charge les aidants dès qu'une session existe, et vide la carte à la
-// déconnexion. immediate: true couvre le cas d'une session déjà restaurée avant
-// le montage de ce composant.
-watch(
-  user,
-  async (compte) => {
-    if (!compte) {
-      aidants = []
-      dessinerMarqueurs()
-      return
-    }
-    const profils = await getUsers()
-    aidants = profils.filter((u) => u.role === 'sante' || u.role === 'particulier')
-    dessinerMarqueurs()
-  },
-  { immediate: true },
-)
+// Le composable recharge la liste au gre de la session : on se contente de
+// redessiner quand elle change.
+watch(aidants, dessinerMarqueurs)
 
 watch(besoin, dessinerMarqueurs)
 

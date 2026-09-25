@@ -6,11 +6,13 @@
 // données, pour ne jamais mener vers une page vide.
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { FORMULES } from '../data/store'
 import IconBadge from '../components/IconBadge.vue'
 import '../styles/MonCompte.css'
 
+const { t } = useI18n()
 const { user, logout } = useAuth()
 const router = useRouter()
 
@@ -24,20 +26,20 @@ const formuleActive = computed(() => FORMULES.find((f) => f.id === user.value?.a
 const LIENS = computed(() => {
   if (user.value?.role === 'senior') {
     return [
-      { to: '/recherche', icon: 'search', titre: "Trouver de l'aide", texte: 'Cherchez un aidant par commune et par service.' },
-      { to: '/profil', icon: 'profile', titre: 'Mon profil', texte: 'Vos informations personnelles.' },
-      { to: '/mes-demandes', icon: 'connect', titre: 'Mes demandes', texte: 'Demandes envoyées et leur statut.' },
-      { to: '/mes-accompagnements', icon: 'calendar', titre: 'Mes accompagnements', texte: "Aides en cours auprès de vous." },
-      { to: '/historique', icon: 'shield-check', titre: 'Historique', texte: 'Missions terminées ou annulées.' },
+      { to: '/recherche', icon: 'search', titre: t('mon_compte_page.senior_recherche_titre'), texte: t('mon_compte_page.senior_recherche_texte') },
+      { to: '/profil', icon: 'profile', titre: t('mon_compte_page.profil_titre'), texte: t('mon_compte_page.profil_texte_senior') },
+      { to: '/mes-demandes', icon: 'connect', titre: t('mon_compte_page.demandes_titre_senior'), texte: t('mon_compte_page.demandes_texte_senior') },
+      { to: '/mes-accompagnements', icon: 'calendar', titre: t('mon_compte_page.accompagnements_titre_senior'), texte: t('mon_compte_page.accompagnements_texte_senior') },
+      { to: '/historique', icon: 'shield-check', titre: t('mon_compte_page.historique_titre'), texte: t('mon_compte_page.historique_texte') },
     ]
   }
   // Personnel de santé / particulier : ce sont eux qui reçoivent les demandes
   // et proposent des créneaux, d'où des intitulés tournés vers l'offre d'aide.
   return [
-    { to: '/profil', icon: 'profile', titre: 'Mon profil', texte: 'Vos informations et vos disponibilités.' },
-    { to: '/mes-demandes', icon: 'connect', titre: 'Demandes reçues', texte: 'Demandes de personnes âgées, à accepter ou refuser.' },
-    { to: '/mes-accompagnements', icon: 'calendar', titre: 'Mes missions', texte: 'Accompagnements en cours.' },
-    { to: '/historique', icon: 'shield-check', titre: 'Historique', texte: 'Missions terminées ou annulées.' },
+    { to: '/profil', icon: 'profile', titre: t('mon_compte_page.profil_titre'), texte: t('mon_compte_page.profil_texte_aidant') },
+    { to: '/mes-demandes', icon: 'connect', titre: t('mon_compte_page.demandes_titre_aidant'), texte: t('mon_compte_page.demandes_texte_aidant') },
+    { to: '/mes-accompagnements', icon: 'calendar', titre: t('mon_compte_page.accompagnements_titre_aidant'), texte: t('mon_compte_page.accompagnements_texte_aidant') },
+    { to: '/historique', icon: 'shield-check', titre: t('mon_compte_page.historique_titre'), texte: t('mon_compte_page.historique_texte') },
   ]
 })
 
@@ -52,7 +54,7 @@ async function seDeconnecter() {
     <div class="container">
       <div class="d-flex align-items-center gap-2 mb-4">
         <h1 class="h3 mb-0">
-          Mon compte
+          {{ t('mon_compte_page.titre') }}
         </h1>
         <span class="text-muted">— {{ user?.nom || user?.email }}</span>
       </div>
@@ -64,22 +66,22 @@ async function seDeconnecter() {
         class="card p-3 mb-4 d-flex flex-row align-items-center justify-content-between flex-wrap gap-2 abonnement-statut"
       >
         <span v-if="formuleActive">
-          Formule active : <strong>{{ formuleActive.nom }}</strong>
+          {{ t('mon_compte_page.formule_active') }} <strong>{{ formuleActive.nom }}</strong>
           <span class="text-muted">
-            ({{ formuleActive.prix === 0 ? 'gratuite' : `${formuleActive.prix} €/mois` }})
+            ({{ formuleActive.prix === 0 ? t('mon_compte_page.gratuite') : t('mon_compte_page.prix_mois', { prix: formuleActive.prix }) }})
           </span>
         </span>
         <span
           v-else
           class="text-muted"
         >
-          Aucun abonnement actif pour le moment.
+          {{ t('mon_compte_page.aucun_abonnement') }}
         </span>
         <router-link
           to="/#nos-formules"
           class="btn btn-outline-secondary btn-sm"
         >
-          {{ formuleActive ? 'Changer de formule' : 'Voir les formules' }}
+          {{ formuleActive ? t('mon_compte_page.changer_formule') : t('mon_compte_page.voir_formules') }}
         </router-link>
       </div>
 
@@ -109,7 +111,7 @@ async function seDeconnecter() {
         class="btn btn-outline-secondary mt-4"
         @click="seDeconnecter"
       >
-        Déconnexion
+        {{ t('nav.deconnexion') }}
       </button>
     </div>
   </section>

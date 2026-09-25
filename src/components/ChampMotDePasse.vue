@@ -3,6 +3,9 @@
 // bouton (état local `visible`) dans chaque formulaire (Connexion, Inscription,
 // Profil, Réinitialisation) qui a besoin d'un champ mot de passe.
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 defineProps({
   modelValue: { type: String, default: '' },
@@ -29,10 +32,10 @@ const visible = ref(false)
     <button
       type="button"
       class="btn btn-outline-secondary"
-      :aria-label="visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+      :aria-label="visible ? t('champ_mdp.masquer_aria') : t('champ_mdp.afficher_aria')"
       @click="visible = !visible"
     >
-      {{ visible ? 'Masquer' : 'Afficher' }}
+      {{ visible ? t('champ_mdp.masquer') : t('champ_mdp.afficher') }}
     </button>
   </div>
 </template>

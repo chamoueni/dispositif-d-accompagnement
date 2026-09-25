@@ -2,10 +2,12 @@
 // Connexion email/mot de passe via Supabase Auth (voir stores/auth.js).
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Connexion.css'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const { login } = useAuth()
@@ -33,10 +35,10 @@ async function handleSubmit() {
       <div class="login-card card mx-auto">
         <span class="section-label" />
         <h1 class="h3 mb-1">
-          Connexion
+          {{ t('connexion_page.titre') }}
         </h1>
         <p class="text-muted mb-4">
-          {{ route.query.redirect ? 'Connectez-vous pour continuer.' : 'Accédez à votre espace.' }}
+          {{ route.query.redirect ? t('connexion_page.sous_titre_redirect') : t('connexion_page.sous_titre_defaut') }}
         </p>
 
         <form @submit.prevent="handleSubmit">
@@ -44,7 +46,7 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="email"
-            >Email</label>
+            >{{ t('connexion_page.email_label') }}</label>
             <input
               id="email"
               v-model="form.email"
@@ -57,7 +59,7 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="password"
-            >Mot de passe</label>
+            >{{ t('connexion_page.password_label') }}</label>
             <ChampMotDePasse
               id="password"
               v-model="form.password"
@@ -76,19 +78,19 @@ async function handleSubmit() {
             type="submit"
             class="btn btn-primary w-100"
           >
-            Se connecter
+            {{ t('connexion_page.cta') }}
           </button>
         </form>
 
         <p class="text-center small mt-3 mb-0">
           <router-link to="/mot-de-passe-oublie">
-            Mot de passe oublié ?
+            {{ t('connexion_page.mdp_oublie') }}
           </router-link>
         </p>
 
         <p class="text-center text-muted small mt-2 mb-0">
-          Pas encore de compte ? <router-link to="/inscription">
-            S'inscrire
+          {{ t('connexion_page.pas_de_compte') }} <router-link to="/inscription">
+            {{ t('nav.inscription') }}
           </router-link>
         </p>
       </div>

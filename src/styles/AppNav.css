@@ -1,5 +1,35 @@
-/* Barre flottante : sortie du flux (position: fixed), donc App.vue compense
-   avec un padding-top sur .app-main pour que le contenu ne passe pas dessous. */
+/* Barre de navigation en deux bandes (voir components/AppNav.vue) :
+   .nav-bande-principale (logo, liens, compte) puis .nav-bande-langues (choix de
+   la langue), empilées dans une même carte flottante .app-nav. */
+
+/* Lien d'évitement : hors écran tant qu'il n'a pas le focus, il se pose par
+   dessus la barre dès qu'on l'atteint en tabulant. Il n'est pas caché avec
+   display: none ni visibility: hidden, qui le retireraient aussi de l'ordre de
+   tabulation et le rendraient donc inatteignable. */
+.lien-evitement {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -200%);
+  z-index: 1040;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: var(--couleur-bouton);
+  color: var(--couleur-bouton-texte);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.lien-evitement:focus {
+  transform: translate(-50%, 0);
+}
+
+/* Carte flottante : sortie du flux (position: fixed), donc App.vue compense avec
+   un padding-top sur .app-main pour que le contenu ne passe pas dessous. Cette
+   compensation lit --hauteur-nav, publiée par le composant après mesure réelle.
+   overflow: hidden pour que la bande des langues, collée en bas, soit rognée par
+   les coins arrondis de la carte au lieu de déborder de ses angles. */
 .app-nav {
   position: fixed;
   top: 16px;
@@ -8,45 +38,145 @@
   width: min(1100px, calc(100% - 32px));
   z-index: 1030;
   border-radius: 24px;
+  overflow: hidden;
   border: 1px solid var(--border);
   background: rgba(253, 249, 242, 0.7);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow);
-  padding-top: 10px;
-  padding-bottom: 10px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Page défilée : la barre se densifie (fond quasi opaque, ombre plus marquée).
+   Tant qu'on est en haut de l'accueil, elle repose sur le dégradé clair du hero
+   et peut rester très translucide ; dès que du contenu (photos, cartes, carte de
+   Mayotte) se met à défiler dessous, ce même fond laissait passer assez de
+   matière pour que les liens deviennent pénibles à lire. */
+.app-nav-defile {
+  background: rgba(253, 249, 242, 0.94);
+  border-color: rgba(217, 211, 196, 0.9);
+  box-shadow: rgba(10, 40, 36, 0.14) 0 12px 24px -10px;
 }
 
 .app-nav .container {
   max-width: 100%;
 }
 
+/* --- Bande 1 : navigation et compte -------------------------------------- */
+
+.nav-bande-principale {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* --- Bande 2 : la langue -------------------------------------------------- */
+
+/* Légèrement teintée et séparée par un filet : la bande doit se lire comme un
+   étage distinct de la barre, pas comme la suite de la rangée du dessus. */
+.nav-bande-langues {
+  border-top: 1px solid var(--border);
+  background: var(--social-bg);
+  padding: 6px 0;
+}
+
+.nav-langues {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nav-langues-globe {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+/* La bande occupe toute la largeur de la barre : le sélecteur n'a plus besoin de
+   se comprimer dans les 215px qui lui restaient à côté des autres boutons (voir
+   SelecteurLangue.css), les trois langues tiennent côte à côte sans défilement.
+   La bande de défilement reste en place pour les écrans étroits, où elle sert
+   encore. */
+.nav-langues .selecteur-langue {
+  max-width: 100%;
+  padding-bottom: 0;
+}
+
+/* Barre de défilement du sélecteur masquée ici : sans débordement, elle
+   n'indiquait plus rien et laissait un trait bleu résiduel sous les boutons. */
+.nav-langues .selecteur-langue::-webkit-scrollbar {
+  height: 4px;
+}
+
+/* --- Petits écrans -------------------------------------------------------- */
+
 /* Sur petit écran, la barre passe souvent au-dessus de la photo du hero (fond
    sombre) : le fond très translucide (0.7 + flou) prend alors une teinte
    grisâtre inégale selon ce qu'il y a dessous, et le bouton "burger" peut
-   sembler flotter séparément. Fond opaque (sans flou) tant que le menu peut
-   être en mode déroulant (jusqu'à 991px, seuil où navbar-expand-lg bascule en
-   mode "burger" : couvre donc aussi bien téléphone que tablette).
-   Le backdrop-filter est aussi désactivé ici : une fois le fond quasi opaque,
-   le flou n'apporte plus rien et certains navigateurs (Safari iOS) le
-   repeignent mal quand le menu déroulant change de hauteur à l'ouverture,
-   laissant transparaître des fragments de la page derrière le menu. */
+   sembler flotter séparément. Fond opaque (sans flou) tant que le menu peut être
+   en mode déroulant (jusqu'à 991px, seuil où navbar-expand-lg bascule en mode
+   "burger" : couvre donc aussi bien téléphone que tablette).
+   Le backdrop-filter est aussi désactivé ici : une fois le fond quasi opaque, le
+   flou n'apporte plus rien et certains navigateurs (Safari iOS) le repeignent mal
+   quand le menu déroulant change de hauteur à l'ouverture, laissant transparaître
+   des fragments de la page derrière le menu. */
 @media (max-width: 991px) {
   .app-nav {
     background: var(--bg);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+
+  /* Menu ouvert : la barre peut devenir plus haute que l'écran (4 liens + les
+     boutons de compte). On la rend défilable plutôt que de laisser les derniers
+     boutons sortir du cadre, hors d'atteinte. */
+  .app-nav-ouvert {
+    max-height: calc(100svh - 32px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 }
 
-/* Filet de sécurité : le panneau déroulant lui-même (liens + bouton Aa) garde
-   un fond opaque explicite une fois ouvert, indépendamment du fond de la barre
-   ci-dessus, pour ne jamais laisser passer le contenu de la page en dessous. */
-#navMain.show,
-#navMain.collapsing {
+/* Filet de sécurité : le panneau déroulant lui-même garde un fond opaque
+   explicite une fois ouvert, indépendamment du fond de la barre ci-dessus, pour
+   ne jamais laisser passer le contenu de la page en dessous. */
+#navMain.show {
   background: var(--bg);
-  border-radius: 0 0 14px 14px;
+  /* Léger déroulé à l'ouverture. Bootstrap animait la hauteur via son JS ; le
+     menu étant désormais piloté par Vue (voir AppNav.vue), on se contente d'une
+     apparition en fondu, qui ne dépend d'aucune mesure de hauteur. */
+  animation: nav-deroule 0.18s ease-out;
 }
+
+@keyframes nav-deroule {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation coupée pour qui a demandé moins de mouvement dans son système. */
+@media (prefers-reduced-motion: reduce) {
+  #navMain.show {
+    animation: none;
+  }
+
+  .app-nav,
+  .lien-evitement {
+    transition: none;
+  }
+}
+
+/* --- Marque --------------------------------------------------------------- */
 
 .app-nav .navbar-brand {
   display: inline-flex;
@@ -56,6 +186,9 @@
   /* Autorise le titre à se comprimer plutôt qu'à pousser le bouton burger sur
      une 2e ligne (la barre faisait deux étages sur téléphone). */
   min-width: 0;
+  /* Et à être rogné net plutôt qu'à déborder : sans ça, sur une largeur
+     intermédiaire, le titre passait par-dessus le premier lien du menu. */
+  overflow: hidden;
 }
 
 .brand-text {
@@ -66,6 +199,13 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* Coupé par des points de suspension si la place manque vraiment. Le logo, lui,
+     reste toujours visible : c'est lui qui identifie le site et porte le lien
+     vers l'accueil. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Téléphone : titre plus petit et sur 2 lignes si besoin, pour que logo + titre
@@ -85,7 +225,9 @@
   .brand-text {
     font-size: 15px;
     line-height: 1.15;
+    /* Ici la place manque trop pour rogner : le titre passe sur 2 lignes. */
     white-space: normal;
+    overflow: visible;
   }
 }
 
@@ -97,6 +239,38 @@
   flex-shrink: 0;
 }
 
+/* --- Bouton burger -------------------------------------------------------- */
+
+/* Cible tactile de 44px comme le reste du site (voir ui.css), et anneau de focus
+   net plutôt que l'ombre diffuse de Bootstrap. */
+.app-nav .navbar-toggler {
+  min-width: 48px;
+  min-height: 44px;
+  border-color: var(--border);
+}
+
+.app-nav .navbar-toggler:focus {
+  box-shadow: none;
+}
+
+.app-nav .navbar-toggler:focus-visible {
+  outline: 3px solid var(--couleur-bouton-survol);
+  outline-offset: 2px;
+}
+
+/* Menu ouvert : le burger prend la couleur d'action, pour que l'état se lise au
+   premier coup d'œil sans dépendre du seul panneau en dessous. */
+.app-nav-ouvert .navbar-toggler {
+  background: var(--couleur-bouton);
+  border-color: var(--couleur-bouton);
+}
+
+.app-nav-ouvert .navbar-toggler .navbar-toggler-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* --- Liens ---------------------------------------------------------------- */
+
 .app-nav .nav-link {
   position: relative;
   display: inline-flex;
@@ -106,14 +280,27 @@
   /* Un lien ne doit jamais casser au milieu ("Comment ça / marche") : il passe
      entier à la ligne suivante plutôt que de couper les mots. */
   white-space: nowrap;
+  border-radius: 10px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
+/* Survol : léger aplat coloré en plus du changement de couleur du texte. La
+   couleur seule est un repère faible quand on a une vision altérée, et la zone
+   cliquable devient visible au lieu d'être devinée. */
 .app-nav .nav-link:hover {
   color: var(--accent);
+  background: var(--accent-bg);
 }
 
 .app-nav .nav-link.router-link-active {
   color: var(--accent);
+}
+
+.app-nav .nav-link:focus-visible {
+  outline: 3px solid var(--couleur-bouton-survol);
+  outline-offset: 2px;
 }
 
 /* Soulignement sous la page courante : la couleur seule ne suffisait pas à
@@ -131,6 +318,31 @@
   }
 }
 
+/* Menu déroulant (téléphone / tablette) : les liens deviennent des rangées
+   pleine largeur. Sur une cible tactile, viser le seul libellé d'un lien aligné
+   à gauche demande de la précision ; toute la rangée est cliquable ici, et la
+   page courante se repère à son aplat coloré (le soulignement ci-dessus n'est
+   posé qu'à partir de 992px). */
+@media (max-width: 991px) {
+  .app-nav .navbar-nav {
+    padding-top: 8px;
+    gap: 2px;
+  }
+
+  .app-nav .nav-link {
+    display: flex;
+    min-height: 48px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .app-nav .nav-link.router-link-active {
+    background: var(--accent-bg);
+  }
+}
+
+/* --- Actions (mode confort, compte) --------------------------------------- */
+
 .nav-actions {
   display: flex;
   align-items: center;
@@ -146,10 +358,41 @@
   white-space: nowrap;
 }
 
-@media (min-width: 992px) {
+/* Séparateur entre le réglage d'affichage (Aa) et les actions de compte : un
+   simple filet vertical sur grand écran. */
+.nav-separateur {
+  width: 1px;
+  align-self: stretch;
+  min-height: 24px;
+  background: var(--border);
+}
+
+/* En mode déroulant, les actions sont empilées : un filet vertical n'a plus de
+   sens, il devient une ligne de séparation horizontale. */
+@media (max-width: 991px) {
   .nav-actions {
-    margin-left: auto;
+    justify-content: flex-start;
+    padding-bottom: 8px;
   }
+
+  .nav-separateur {
+    width: 100%;
+    height: 1px;
+    min-height: 0;
+    margin: 4px 0;
+  }
+}
+
+/* Badge du prénom : aligné sur la hauteur des boutons voisins, sinon il flottait
+   plus petit au milieu de la rangée. */
+.nav-actions .badge-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 50rem;
+  font-size: 14px;
+  color: var(--text-h);
 }
 
 /* Bouton "Aa" (mode confort) : surligné dès qu'il est actif, pour que l'état soit
@@ -163,6 +406,7 @@
 
 @media (min-width: 992px) {
   .nav-actions {
+    margin-left: auto;
     margin-top: 0;
   }
 }

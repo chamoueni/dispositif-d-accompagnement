@@ -2,11 +2,13 @@
 // Coquille commune à toutes les pages : menu + zone de contenu (router-view) + pied de page.
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import AppNav from './components/AppNav.vue'
 import SosButton from './components/SosButton.vue'
 // Même logo que la navbar (voir AppNav.vue), pour une identité cohérente jusqu'en bas de page.
 import logo from './assets/logo.png'
 
+const { t } = useI18n()
 const route = useRoute()
 
 // L'espace admin (tableau de bord + sa connexion dédiée) construit sa propre
@@ -20,6 +22,7 @@ const anneeCourante = new Date().getFullYear()
 <template>
   <AppNav v-if="!estEspaceAdmin" />
   <main
+    id="contenu"
     class="app-main"
     :class="{ 'app-main-admin': estEspaceAdmin }"
   >
@@ -40,64 +43,63 @@ const anneeCourante = new Date().getFullYear()
           <span class="brand-text">Dispositif d’accompagnement</span>
         </span>
         <p class="text-muted small mb-0">
-          Aide aux personnes âgées à Mayotte : soins, courses, ménage et service de garde,
-          avec du personnel de santé et des particuliers de confiance.
+          {{ t('footer.description') }}
         </p>
       </div>
 
       <nav
         class="footer-col"
-        aria-label="Le dispositif"
+        :aria-label="t('footer.dispositif_titre')"
       >
         <p class="footer-col-title">
-          Le dispositif
+          {{ t('footer.dispositif_titre') }}
         </p>
         <router-link to="/pourquoi">
-          Pourquoi ce dispositif
+          {{ t('footer.pourquoi') }}
         </router-link>
         <router-link to="/services">
-          Nos services
+          {{ t('footer.services') }}
         </router-link>
         <router-link to="/pour-qui">
-          Pour qui
+          {{ t('footer.pour_qui') }}
         </router-link>
         <router-link to="/atouts">
-          Nos engagements
+          {{ t('footer.engagements') }}
         </router-link>
       </nav>
 
       <nav
         class="footer-col"
-        aria-label="Votre compte"
+        :aria-label="t('footer.compte_titre')"
       >
         <p class="footer-col-title">
-          Votre compte
+          {{ t('footer.compte_titre') }}
         </p>
         <router-link to="/inscription">
-          S'inscrire
+          {{ t('nav.inscription') }}
         </router-link>
         <router-link to="/connexion">
-          Connexion
+          {{ t('nav.connexion') }}
         </router-link>
       </nav>
 
       <div class="footer-col">
         <p class="footer-col-title">
-          Besoin d'aide
+          {{ t('footer.aide_titre') }}
         </p>
         <a
           href="tel:112"
           class="footer-urgence"
-        >Urgence : 112</a>
+        >{{ t('footer.urgence') }}</a>
         <p class="text-muted small mb-0">
-          Un souci avec le site ? Utilisez le bouton SOS en bas de l'écran.
+          {{ t('footer.probleme') }}
         </p>
       </div>
     </div>
 
     <div class="footer-bottom">
       <div class="container text-center text-muted small">
-        © {{ anneeCourante }} Dispositif d'accompagnement personnalisé — Mayotte
+        {{ t('footer.copyright', { annee: anneeCourante }) }}
       </div>
     </div>
   </footer>
@@ -111,8 +113,21 @@ const anneeCourante = new Date().getFullYear()
 <style scoped>
 .app-main {
   flex: 1 1 auto;
-  /* Compense la navbar en position: fixed (sortie du flux normal). */
-  padding-top: 96px;
+  /* Compense la navbar en position: fixed (sortie du flux normal). La hauteur
+     n'est plus codée en dur : AppNav.vue mesure la barre et publie le résultat
+     dans --hauteur-nav. Elle varie avec la seconde bande (langues), le mode
+     confort et le repli du titre sur deux lignes ; une valeur fixe laissait
+     selon les cas un grand vide ou un titre de page masqué par la barre.
+     Les 32px ajoutés reprennent les 16px dont la barre est décollée du haut,
+     plus 16px d'air entre elle et le contenu. Le repli à 96px sert le temps du
+     tout premier rendu, avant que la mesure ne soit faite. */
+  padding-top: calc(var(--hauteur-nav, 96px) + 32px);
+}
+
+/* Cible du lien d'évitement : sans cette marge, le haut du contenu atterrirait
+   sous la barre flottante après le saut. */
+.app-main {
+  scroll-margin-top: calc(var(--hauteur-nav, 96px) + 24px);
 }
 
 .app-main-admin {

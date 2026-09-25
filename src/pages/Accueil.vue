@@ -3,6 +3,8 @@
 // Chaque section garde un lien "En savoir plus" vers sa page dédiée pour le détail complet.
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAidants } from '../composables/useAidants'
+import { useAuth } from '../stores/auth'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import IconBadge from '../components/IconBadge.vue'
 import ReefDivider from '../components/ReefDivider.vue'
@@ -32,6 +34,13 @@ import particulierPhoto from '../assets/particuliers.jpg'
 import '../styles/Accueil.css'
 
 const { t } = useI18n()
+
+// Compteur "pres de chez vous" du hero. La liste vient du meme composable que
+// la carte : une seule requete pour les deux (voir composables/useAidants.js).
+// Rien ne s'affiche sans session : la RLS renvoie une liste vide a un visiteur
+// anonyme, annoncer "0 intervenant" serait faux.
+const { user } = useAuth()
+const { pres } = useAidants()
 
 // Ces tableaux ne contiennent plus que des identifiants : les libelles sont
 // resolus dans le template avec t(), sinon ils resteraient figes dans la langue
@@ -140,6 +149,34 @@ onUnmounted(() => observateurServices?.disconnect())
               {{ t('accueil.hero.cta_aider') }}
             </router-link>
           </div>
+
+          <!-- Nombre d'intervenants reellement disponibles autour de la personne,
+               recalcule des que la liste change. Le lien mene a la recherche
+               pre-filtree sur sa commune. -->
+          <p
+            v-if="user"
+            class="hero-compteur"
+          >
+            <span
+              v-if="pres.liste.length"
+              class="hero-compteur-nombre"
+            >{{ pres.liste.length }}</span>
+            <span>
+              <template v-if="pres.liste.length">
+                {{ t('accueil.compteur.' + pres.portee, pres.liste.length, { n: pres.liste.length, lieu: pres.lieu }) }}
+              </template>
+              <template v-else>
+                {{ t('accueil.compteur.aucun', { lieu: pres.lieu }) }}
+              </template>
+            </span>
+            <router-link
+              v-if="pres.liste.length"
+              :to="{ path: '/recherche', query: pres.portee === 'commune' ? { ville: pres.lieu } : {} }"
+              class="hero-compteur-lien"
+            >
+              {{ t('accueil.compteur.lien') }} &rarr;
+            </router-link>
+          </p>
         </div>
 
         <div class="hero-media">

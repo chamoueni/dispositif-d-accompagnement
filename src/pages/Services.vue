@@ -1,5 +1,6 @@
 <script setup>
 // Page dédiée "Ce que vous pouvez trouver" (liée depuis la landing et le menu).
+import { useI18n } from 'vue-i18n'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import BackLink from '../components/BackLink.vue'
 // Photos fournies par l'utilisateur (voir src/assets), une par service.
@@ -10,37 +11,42 @@ import gardePhoto from '../assets/service de garde .jpg'
 import psychologiquePhoto from '../assets/psychologique.jpg'
 import '../styles/Services.css'
 
+const { t } = useI18n()
+
+// titleKey/textKey pointent vers les clés déjà utilisées pour ces mêmes services
+// sur l'accueil (accueil.services.*) : une seule traduction à tenir à jour dans
+// les 3 langues plutôt qu'un doublon par page.
 const SERVICES = [
   {
     icon: 'soins',
-    title: 'Soins à domicile',
-    text: "Mettez-vous en relation avec des infirmiers, aides-soignants ou kinésithérapeutes disponibles près de chez vous pour un suivi médical régulier.",
+    titleKey: 'soins_titre',
+    textKey: 'soins_texte',
     photo: soinsPhoto,
   },
   {
     icon: 'courses',
-    title: 'Courses',
-    text: 'Un coursier de confiance se charge de vos achats du quotidien quand se déplacer devient compliqué.',
+    titleKey: 'courses_titre',
+    textKey: 'courses_texte',
     photo: coursesPhoto,
   },
   {
     icon: 'menage',
-    title: 'Ménage',
-    text: "Faites appel à une aide à domicile pour l'entretien de votre logement, au rythme qui vous convient.",
+    titleKey: 'menage_titre',
+    textKey: 'menage_texte',
     photo: menagePhoto,
   },
   {
     icon: 'garde',
-    title: 'Service de garde',
-    text: "Une présence rassurante à domicile quelques heures, pour éviter de rester seul(e) trop longtemps.",
+    titleKey: 'garde_titre',
+    textKey: 'garde_texte',
     photo: gardePhoto,
   },
   // Besoin transversal plutôt qu'un service au même titre que les 4 précédents
   // (cf. cahier des charges), mais a désormais sa propre photo comme les autres.
   {
     icon: 'psychologique',
-    title: 'Suivi psychologique',
-    text: 'Un accompagnement humain, pas seulement matériel, pour rompre l’isolement.',
+    titleKey: 'psy_titre',
+    textKey: 'psy_texte',
     photo: psychologiquePhoto,
   },
 ]
@@ -52,16 +58,16 @@ const SERVICES = [
       <BackLink />
       <span class="section-label" />
       <h1 class="h3 mb-2">
-        Ce que vous pouvez trouver
+        {{ t('accueil.services.titre') }}
       </h1>
       <p class="text-muted intro-text mb-4">
-        Des services concrets, et les besoins plus larges auxquels ils répondent.
+        {{ t('services_page.intro') }}
       </p>
 
       <div class="row g-4">
         <div
           v-for="s in SERVICES"
-          :key="s.title"
+          :key="s.titleKey"
           class="col-md-6 col-lg-4"
         >
           <!-- photo optionnelle par service (toutes les 4 en ont une actuellement,
@@ -73,16 +79,16 @@ const SERVICES = [
             <img
               v-if="s.photo"
               :src="s.photo"
-              :alt="s.title"
+              :alt="t(`accueil.services.${s.titleKey}`)"
               class="service-photo"
             >
             <div class="p-4">
               <ServiceIcon :type="s.icon" />
               <h2 class="h6">
-                {{ s.title }}
+                {{ t(`accueil.services.${s.titleKey}`) }}
               </h2>
               <p class="text-muted small mb-0">
-                {{ s.text }}
+                {{ t(`accueil.services.${s.textKey}`) }}
               </p>
             </div>
           </div>
@@ -94,13 +100,13 @@ const SERVICES = [
           to="/recherche"
           class="btn btn-primary btn-lg me-2"
         >
-          Chercher de l'aide
+          {{ t('services_page.cta_chercher') }}
         </router-link>
         <router-link
           to="/inscription"
           class="btn btn-outline-secondary btn-lg"
         >
-          S'inscrire
+          {{ t('nav.inscription') }}
         </router-link>
       </div>
     </div>

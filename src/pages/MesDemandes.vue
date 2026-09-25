@@ -6,6 +6,7 @@
 // mais jamais appelé nulle part dans l'app).
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   getDemandesByDemandeur,
   getDemandesByAidant,
@@ -18,10 +19,14 @@ import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import '../styles/MesDemandes.css'
 
-const SERVICE_LABELS = {
-  soins: 'Soins',
-  coursier: 'Coursier',
-  menage: 'Ménage',
+const { t } = useI18n()
+
+// typeService reste stocké tel quel en base : seul l'affichage est traduit,
+// via les mêmes clés que le formulaire de demande (demande.service_*).
+const SERVICE_KEYS = {
+  soins: 'service_soins',
+  coursier: 'service_coursier',
+  menage: 'service_menage',
 }
 
 const { user } = useAuth()
@@ -79,20 +84,25 @@ function autrePartie(demande) {
 }
 
 function statutAffiche(demande) {
-  if (demande.statut === 'en_attente') return { label: 'En attente', classe: 'text-bg-warning' }
-  if (demande.statut === 'refusee') return { label: 'Refusée', classe: 'text-bg-danger' }
-  if (demande.statut === 'terminee') return { label: 'Terminée', classe: 'text-bg-success' }
-  if (demande.statut === 'annulee') return { label: 'Annulée', classe: 'badge-neutral' }
+  if (demande.statut === 'en_attente') return { label: t('statut.en_attente'), classe: 'text-bg-warning' }
+  if (demande.statut === 'refusee') return { label: t('statut.refusee'), classe: 'text-bg-danger' }
+  if (demande.statut === 'terminee') return { label: t('statut.terminee'), classe: 'text-bg-success' }
+  if (demande.statut === 'annulee') return { label: t('statut.annulee'), classe: 'badge-neutral' }
   // 'acceptee' : d'abord "Acceptée" (mise en relation toute fraîche), puis "En
   // cours" automatiquement après quelques minutes (voir missionDemarree),
   // tant que la mission ne dit pas le contraire.
   const mission = missionsParDemande.value[demande.id]
-  if (mission?.statutMission === 'terminee') return { label: 'Terminée', classe: 'text-bg-success' }
-  if (mission?.statutMission === 'annulee') return { label: 'Annulée', classe: 'badge-neutral' }
+  if (mission?.statutMission === 'terminee') return { label: t('statut.terminee'), classe: 'text-bg-success' }
+  if (mission?.statutMission === 'annulee') return { label: t('statut.annulee'), classe: 'badge-neutral' }
   if (mission && missionDemarree(mission, maintenant.value)) {
-    return { label: 'En cours', classe: 'text-bg-primary' }
+    return { label: t('statut.en_cours'), classe: 'text-bg-primary' }
   }
-  return { label: 'Acceptée', classe: 'text-bg-info' }
+  return { label: t('statut.acceptee'), classe: 'text-bg-info' }
+}
+
+function libelleService(typeService) {
+  const cle = SERVICE_KEYS[typeService]
+  return cle ? t(`demande.${cle}`) : typeService
 }
 
 function formatDate(iso) {
@@ -120,7 +130,7 @@ async function refuser(demande) {
 }
 
 async function annuler(demande) {
-  if (!confirm('Annuler cette demande ?')) return
+  if (!confirm(t('mes_demandes_page.confirm_annuler'))) return
   actionEnCours.value = demande.id
   try {
     await updateDemandeStatut(demande.id, 'annulee')
@@ -147,14 +157,14 @@ function refaire(demande) {
     <div class="container">
       <BackLink />
       <h1 class="h3 mb-4">
-        Mes demandes
+        {{ t('mes_demandes_page.titre') }}
       </h1>
 
       <p
         v-if="chargement"
         class="text-muted text-center py-5"
       >
-        Chargement…
+        {{ t('commun.chargement') }}
       </p>
 
       <template v-else>
@@ -162,7 +172,7 @@ function refaire(demande) {
           v-if="!demandes.length"
           class="text-muted text-center py-5"
         >
-          Aucune demande pour le moment.
+          {{ t('mes_demandes_page.aucune') }}
         </p>
 
         <div
@@ -173,13 +183,13 @@ function refaire(demande) {
           <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
               <div class="d-flex align-items-center gap-2 mb-1">
-                <strong>{{ autrePartie(demande)?.nom || 'Profil supprimé' }}</strong>
+                <strong>{{ autrePartie(demande)?.nom || t('commun.profil_supprime') }}</strong>
                 <span :class="['badge', statutAffiche(demande).classe]">
                   {{ statutAffiche(demande).label }}
                 </span>
               </div>
               <p class="text-muted small mb-1">
-                {{ SERVICE_LABELS[demande.typeService] || demande.typeService }}
+                {{ libelleService(demande.typeService) }}
                 · {{ autrePartie(demande)?.ville || '—' }}
                 · {{ formatDate(demande.dateCreation) }}
               </p>
@@ -202,12 +212,10 @@ function refaire(demande) {
               >
                 <span class="code-arrivee-libelle">
                   <template v-if="user.role === 'senior'">
-                    À son arrivée, {{ autrePartie(demande)?.nom || 'l’intervenant' }} doit
-                    vous annoncer ce code. S’il ne le connaît pas, n’ouvrez pas.
+                    {{ t('mes_demandes_page.code_arrivee_senior', { nom: autrePartie(demande)?.nom || t('mes_demandes_page.intervenant_defaut') }) }}
                   </template>
                   <template v-else>
-                    Annoncez ce code en arrivant chez
-                    {{ autrePartie(demande)?.nom || 'la personne' }}.
+                    {{ t('mes_demandes_page.code_arrivee_aidant', { nom: autrePartie(demande)?.nom || t('mes_demandes_page.personne_defaut') }) }}
                   </template>
                 </span>
                 <strong class="code-arrivee-valeur">{{ demande.codeArrivee }}</strong>
@@ -223,7 +231,7 @@ function refaire(demande) {
                   :disabled="actionEnCours === demande.id"
                   @click="accepter(demande)"
                 >
-                  Accepter
+                  {{ t('commun.accepter') }}
                 </button>
                 <button
                   type="button"
@@ -231,7 +239,7 @@ function refaire(demande) {
                   :disabled="actionEnCours === demande.id"
                   @click="refuser(demande)"
                 >
-                  Refuser
+                  {{ t('commun.refuser') }}
                 </button>
               </template>
 
@@ -243,18 +251,18 @@ function refaire(demande) {
                 :disabled="actionEnCours === demande.id"
                 @click="annuler(demande)"
               >
-                Annuler
+                {{ t('commun.annuler') }}
               </button>
 
               <!-- Refaire la demande : uniquement côté personne âgée, sur une
                    demande terminée. -->
               <button
-                v-if="user.role === 'senior' && statutAffiche(demande).label === 'Terminée'"
+                v-if="user.role === 'senior' && demande.statut === 'terminee'"
                 type="button"
                 class="btn btn-outline-primary btn-sm"
                 @click="refaire(demande)"
               >
-                🔄 Refaire cette demande
+                {{ t('mes_demandes_page.refaire') }}
               </button>
             </div>
           </div>

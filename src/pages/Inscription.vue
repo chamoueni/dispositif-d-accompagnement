@@ -4,12 +4,16 @@
 // reste dans le même <form> pour un parcours en une seule étape.
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Inscription.css'
 
-const SPECIALITES = ['Infirmier(ère)', 'Aide-soignant(e)', 'Médecin', 'Kinésithérapeute', 'Autre']
+const { t } = useI18n()
+
+// Clés vers specialites.* (voir locales) : mêmes libellés que sur Profil.vue.
+const SPECIALITE_KEYS = ['infirmier', 'aide_soignant', 'medecin', 'kine', 'autre']
 
 // Format email basique (au-delà du type="email" du navigateur, qui laisse
 // passer des choses comme "a@b" sans domaine complet).
@@ -30,7 +34,7 @@ const form = reactive({
   ville: COMMUNES_MAYOTTE[0].nom,
   adresse: '',
   role: 'senior',
-  specialite: SPECIALITES[0],
+  specialite: t(`specialites.${SPECIALITE_KEYS[0]}`),
   services: [],
   bio: '',
 })
@@ -49,20 +53,19 @@ async function handleSubmit() {
   error.value = ''
 
   if (!form.nom || !form.email || !form.password || !form.telephone || !form.ville || !form.adresse) {
-    error.value = 'Merci de remplir tous les champs obligatoires.'
+    error.value = t('inscription_page.erreur_champs')
     return
   }
   if (!EMAIL_REGEX.test(form.email.trim())) {
-    error.value = 'Merci de renseigner une adresse email valide.'
+    error.value = t('inscription_page.erreur_email')
     return
   }
   if (!TELEPHONE_REGEX.test(form.telephone.replace(/[\s.-]/g, ''))) {
-    error.value =
-      'Merci de renseigner un numéro de téléphone valide (France, Réunion ou Mayotte), au format 06 12 34 56 78 ou +262 6 12 34 56 78.'
+    error.value = t('inscription_page.erreur_telephone')
     return
   }
   if (form.password.length < 6) {
-    error.value = 'Le mot de passe doit contenir au moins 6 caractères.'
+    error.value = t('inscription_page.erreur_password')
     return
   }
 
@@ -98,15 +101,15 @@ async function handleSubmit() {
       <div class="signup-card card mx-auto">
         <span class="section-label" />
         <h1 class="h3 mb-1">
-          Créer un compte
+          {{ t('inscription_page.titre') }}
         </h1>
         <p class="text-muted mb-4">
-          Trouvez ou proposez de l'aide en quelques minutes.
+          {{ t('inscription_page.sous_titre') }}
         </p>
 
         <form @submit.prevent="handleSubmit">
           <div class="mb-3">
-            <label class="form-label">Je suis…</label>
+            <label class="form-label">{{ t('inscription_page.je_suis') }}</label>
             <div class="role-choices">
               <label
                 class="role-choice"
@@ -117,7 +120,7 @@ async function handleSubmit() {
                   type="radio"
                   value="senior"
                 >
-                Personne âgée
+                {{ t('inscription_page.role_senior') }}
               </label>
               <label
                 class="role-choice"
@@ -128,7 +131,7 @@ async function handleSubmit() {
                   type="radio"
                   value="sante"
                 >
-                Personnel de santé
+                {{ t('inscription_page.role_sante') }}
               </label>
               <label
                 class="role-choice"
@@ -139,7 +142,7 @@ async function handleSubmit() {
                   type="radio"
                   value="particulier"
                 >
-                Particulier
+                {{ t('inscription_page.role_particulier') }}
               </label>
             </div>
           </div>
@@ -149,7 +152,7 @@ async function handleSubmit() {
               <label
                 class="form-label"
                 for="nom"
-              >Nom complet</label>
+              >{{ t('inscription_page.nom_label') }}</label>
               <input
                 id="nom"
                 v-model="form.nom"
@@ -162,7 +165,7 @@ async function handleSubmit() {
               <label
                 class="form-label"
                 for="email"
-              >Email</label>
+              >{{ t('inscription_page.email_label') }}</label>
               <input
                 id="email"
                 v-model="form.email"
@@ -178,7 +181,7 @@ async function handleSubmit() {
               <label
                 class="form-label"
                 for="password"
-              >Mot de passe</label>
+              >{{ t('inscription_page.password_label') }}</label>
               <ChampMotDePasse
                 id="password"
                 v-model="form.password"
@@ -190,7 +193,7 @@ async function handleSubmit() {
               <label
                 class="form-label"
                 for="telephone"
-              >Téléphone</label>
+              >{{ t('inscription_page.telephone_label') }}</label>
               <input
                 id="telephone"
                 v-model="form.telephone"
@@ -206,7 +209,7 @@ async function handleSubmit() {
               <label
                 class="form-label"
                 for="ville"
-              >Commune</label>
+              >{{ t('inscription_page.commune_label') }}</label>
               <select
                 id="ville"
                 v-model="form.ville"
@@ -225,13 +228,13 @@ async function handleSubmit() {
               <label
                 class="form-label"
                 for="adresse"
-              >Adresse postale</label>
+              >{{ t('inscription_page.adresse_label') }}</label>
               <input
                 id="adresse"
                 v-model="form.adresse"
                 type="text"
                 class="form-control"
-                placeholder="N°, rue, lieu-dit..."
+                :placeholder="t('inscription_page.adresse_placeholder')"
                 required
               >
             </div>
@@ -244,18 +247,18 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="specialite"
-            >Spécialité</label>
+            >{{ t('inscription_page.specialite_label') }}</label>
             <select
               id="specialite"
               v-model="form.specialite"
               class="form-select"
             >
               <option
-                v-for="s in SPECIALITES"
+                v-for="s in SPECIALITE_KEYS"
                 :key="s"
-                :value="s"
+                :value="t(`specialites.${s}`)"
               >
-                {{ s }}
+                {{ t(`specialites.${s}`) }}
               </option>
             </select>
           </div>
@@ -264,7 +267,7 @@ async function handleSubmit() {
             v-if="form.role === 'particulier'"
             class="mb-3"
           >
-            <label class="form-label">Services proposés</label>
+            <label class="form-label">{{ t('inscription_page.services_label') }}</label>
             <div class="form-check">
               <input
                 id="svc-coursier"
@@ -276,7 +279,7 @@ async function handleSubmit() {
               <label
                 class="form-check-label"
                 for="svc-coursier"
-              >Coursier</label>
+              >{{ t('inscription_page.coursier') }}</label>
             </div>
             <div class="form-check">
               <input
@@ -289,7 +292,7 @@ async function handleSubmit() {
               <label
                 class="form-check-label"
                 for="svc-menage"
-              >Ménage</label>
+              >{{ t('inscription_page.menage') }}</label>
             </div>
           </div>
 
@@ -300,13 +303,13 @@ async function handleSubmit() {
             <label
               class="form-label"
               for="bio"
-            >Présentation <span class="text-muted small">(facultatif)</span></label>
+            >{{ t('inscription_page.bio_label') }} <span class="text-muted small">{{ t('inscription_page.bio_facultatif') }}</span></label>
             <textarea
               id="bio"
               v-model="form.bio"
               class="form-control"
               rows="3"
-              placeholder="Quelques mots sur votre expérience et vos disponibilités générales."
+              :placeholder="t('inscription_page.bio_placeholder')"
             />
           </div>
 
@@ -322,13 +325,13 @@ async function handleSubmit() {
             class="btn btn-primary w-100"
             :disabled="submitting"
           >
-            Créer mon compte
+            {{ t('inscription_page.cta') }}
           </button>
         </form>
 
         <p class="text-center text-muted small mt-3 mb-0">
-          Déjà inscrit ? <router-link to="/connexion">
-            Se connecter
+          {{ t('inscription_page.deja_inscrit') }} <router-link to="/connexion">
+            {{ t('inscription_page.se_connecter') }}
           </router-link>
         </p>
       </div>

@@ -5,6 +5,7 @@
 // résultats : plus simple, cohérent avec le reste du site qui garde formulaire
 // + confirmation dans une seule page, voir NouvelleDemande.vue).
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { COMMUNES_MAYOTTE, getUsers } from '../data/store.js'
 import { useAuth } from '../stores/auth'
 import ProviderCard from '../components/ProviderCard.vue'
@@ -13,10 +14,16 @@ import SpeakButton from '../components/SpeakButton.vue'
 import BackLink from '../components/BackLink.vue'
 import '../styles/AssistantBesoin.css'
 
+const { t } = useI18n()
 const { user } = useAuth()
 
+// Zones géographiques de Mayotte : noms propres, non traduits (comme les noms
+// de commune ailleurs sur le site).
 const ZONES = ['Petite-Terre', 'Nord', 'Centre', 'Sud']
+// "jour" reste stocké/comparé en français (voir Profil.vue) : JOURS sert au
+// calcul interne (jourDemande), JOUR_KEYS uniquement à son affichage traduit.
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+const JOUR_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
 
 // disponible: false pour les besoins pas encore rattachés à un vrai service
 // réservable côté données (voir data/store.js : seuls role "sante" et les
@@ -24,19 +31,19 @@ const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dim
 // le questionnaire pour être honnête sur la couverture actuelle du dispositif,
 // plutôt que masqués — la carte reste visible mais désactivée avec ce message.
 const TYPES_AIDE = [
-  { value: 'domicile', label: 'Aide à domicile', icon: 'menage', disponible: false },
-  { value: 'sante', label: 'Santé / soins', icon: 'soins', disponible: true },
-  { value: 'deplacement', label: 'Déplacement', icon: 'deplacement', disponible: false },
-  { value: 'compagnie', label: 'Compagnie / soutien moral', icon: 'psychologique', disponible: false },
-  { value: 'courses', label: 'Courses', icon: 'courses', disponible: true },
-  { value: 'menage', label: 'Ménage', icon: 'menage', disponible: true },
-  { value: 'garde', label: 'Garde / présence à domicile', icon: 'garde', disponible: false },
+  { value: 'domicile', labelKey: 'type_aide_domicile', icon: 'menage', disponible: false },
+  { value: 'sante', labelKey: 'type_sante_soins', icon: 'soins', disponible: true },
+  { value: 'deplacement', labelKey: 'type_deplacement', icon: 'deplacement', disponible: false },
+  { value: 'compagnie', labelKey: 'type_compagnie', icon: 'psychologique', disponible: false },
+  { value: 'courses', labelKey: 'type_courses', icon: 'courses', disponible: true },
+  { value: 'menage', labelKey: 'type_menage', icon: 'menage', disponible: true },
+  { value: 'garde', labelKey: 'type_garde', icon: 'garde', disponible: false },
 ]
 
 const URGENCES = [
-  { value: 'normal', label: 'Normal' },
-  { value: 'important', label: 'Important' },
-  { value: 'urgent', label: 'Urgent' },
+  { value: 'normal', labelKey: 'urgence_normal' },
+  { value: 'important', labelKey: 'urgence_important' },
+  { value: 'urgent', labelKey: 'urgence_urgent' },
 ]
 
 // step : 1 à 4 pendant le questionnaire, puis 'resultats'.
@@ -64,7 +71,7 @@ function choisirZone(zone) {
   }
 }
 
-const typeAideChoisi = computed(() => TYPES_AIDE.find((t) => t.value === answers.typeAide))
+const typeAideChoisi = computed(() => TYPES_AIDE.find((t2) => t2.value === answers.typeAide))
 
 const peutContinuer = computed(() => {
   if (step.value === 1) return Boolean(answers.pourQui)
@@ -137,6 +144,13 @@ const jourDemande = computed(() => {
   return JOURS[idx]
 })
 
+// Libellé traduit du jour demandé, pour l'affichage uniquement (jourDemande
+// reste la valeur française utilisée dans le filtre ci-dessous).
+const jourDemandeLabel = computed(() => {
+  const idx = JOURS.indexOf(jourDemande.value)
+  return idx === -1 ? '' : t(`jours.${JOUR_KEYS[idx]}`)
+})
+
 const resultats = computed(() => {
   if (!rechercheLancee.value || !typeAideChoisi.value?.disponible) return []
   return users.value.filter((u) => {
@@ -161,10 +175,16 @@ const resultats = computed(() => {
 })
 
 const recapTexte = computed(() => {
-  const pour = answers.pourQui === 'moi' ? 'vous-même' : 'un proche'
-  const aide = typeAideChoisi.value?.label || ''
-  const quand = answers.date ? `le ${answers.date} de ${answers.heureDebut} à ${answers.heureFin}` : ''
-  return `Recherche pour ${pour}, ${aide}, à ${answers.commune}, ${quand}.`
+  const pour = answers.pourQui === 'moi' ? t('assistant_page.pour_vous_meme') : t('assistant_page.pour_un_proche')
+  const aide = typeAideChoisi.value ? t(`assistant_page.${typeAideChoisi.value.labelKey}`) : ''
+  return t('assistant_page.recap_texte', {
+    pour,
+    aide,
+    commune: answers.commune,
+    date: answers.date,
+    debut: answers.heureDebut,
+    fin: answers.heureFin,
+  })
 })
 </script>
 
@@ -176,10 +196,10 @@ const recapTexte = computed(() => {
       <header class="assistant-header">
         <span class="section-label" />
         <h1 class="h3 mb-2">
-          Trouvons l'accompagnement qui vous correspond
+          {{ t('assistant_page.titre') }}
         </h1>
         <p class="text-muted intro-text mb-0">
-          Répondez à 4 questions simples.
+          {{ t('assistant_page.sous_titre') }}
         </p>
       </header>
 
@@ -187,7 +207,7 @@ const recapTexte = computed(() => {
       <ol
         v-if="step !== 'resultats'"
         class="assistant-progress"
-        aria-label="Progression du questionnaire"
+        :aria-label="t('assistant_page.progression_aria')"
       >
         <li
           v-for="n in 4"
@@ -202,7 +222,7 @@ const recapTexte = computed(() => {
         v-if="step !== 'resultats'"
         class="text-muted small text-center mb-4"
       >
-        Étape {{ step }} sur 4
+        {{ t('assistant_page.etape_sur_4', { n: step }) }}
       </p>
 
       <!-- ÉTAPE 1 — Pour qui -->
@@ -212,9 +232,9 @@ const recapTexte = computed(() => {
       >
         <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
           <h2 class="h5 mb-0">
-            Pour qui recherchez-vous un accompagnement ?
+            {{ t('assistant_page.step1_titre') }}
           </h2>
-          <SpeakButton text="Pour qui recherchez-vous un accompagnement ? Moi-même, ou un proche ?" />
+          <SpeakButton :text="t('assistant_page.step1_vocal')" />
         </div>
         <div class="choice-grid choice-grid-2">
           <button
@@ -223,8 +243,8 @@ const recapTexte = computed(() => {
             :class="{ 'choice-tile-selected': answers.pourQui === 'moi' }"
             @click="answers.pourQui = 'moi'"
           >
-            <strong>Moi-même</strong>
-            <span class="text-muted small">Je cherche de l'aide pour moi</span>
+            <strong>{{ t('assistant_page.moi_meme') }}</strong>
+            <span class="text-muted small">{{ t('assistant_page.moi_meme_texte') }}</span>
           </button>
           <button
             type="button"
@@ -232,8 +252,8 @@ const recapTexte = computed(() => {
             :class="{ 'choice-tile-selected': answers.pourQui === 'proche' }"
             @click="answers.pourQui = 'proche'"
           >
-            <strong>Un proche</strong>
-            <span class="text-muted small">Je cherche de l'aide pour un proche</span>
+            <strong>{{ t('assistant_page.un_proche') }}</strong>
+            <span class="text-muted small">{{ t('assistant_page.un_proche_texte') }}</span>
           </button>
         </div>
         <div class="assistant-actions">
@@ -244,7 +264,7 @@ const recapTexte = computed(() => {
             :disabled="!peutContinuer"
             @click="suivant"
           >
-            Continuer →
+            {{ t('assistant_page.continuer') }}
           </button>
         </div>
       </div>
@@ -256,24 +276,24 @@ const recapTexte = computed(() => {
       >
         <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
           <h2 class="h5 mb-0">
-            Quel type d'aide recherchez-vous ?
+            {{ t('assistant_page.step2_titre') }}
           </h2>
-          <SpeakButton text="Quel type d'aide recherchez-vous ?" />
+          <SpeakButton :text="t('assistant_page.step2_vocal')" />
         </div>
         <div class="choice-grid choice-grid-4">
           <button
-            v-for="t in TYPES_AIDE"
-            :key="t.value"
+            v-for="t2 in TYPES_AIDE"
+            :key="t2.value"
             type="button"
             class="choice-tile choice-tile-compact"
             :class="{
-              'choice-tile-selected': answers.typeAide === t.value,
-              'choice-tile-disabled': !t.disponible,
+              'choice-tile-selected': answers.typeAide === t2.value,
+              'choice-tile-disabled': !t2.disponible,
             }"
-            @click="answers.typeAide = t.value"
+            @click="answers.typeAide = t2.value"
           >
             <svg
-              v-if="t.icon === 'deplacement'"
+              v-if="t2.icon === 'deplacement'"
               class="assistant-icon"
               viewBox="0 0 24 24"
               fill="none"
@@ -303,22 +323,20 @@ const recapTexte = computed(() => {
             </svg>
             <ServiceIcon
               v-else
-              :type="t.icon"
+              :type="t2.icon"
             />
-            <strong>{{ t.label }}</strong>
+            <strong>{{ t(`assistant_page.${t2.labelKey}`) }}</strong>
             <span
-              v-if="!t.disponible"
+              v-if="!t2.disponible"
               class="badge text-bg-light border choice-tile-badge"
-            >Bientôt disponible</span>
+            >{{ t('assistant_page.bientot_disponible') }}</span>
           </button>
         </div>
         <p
           v-if="typeAideChoisi && !typeAideChoisi.disponible"
           class="text-muted small mt-3 mb-0"
         >
-          Cette catégorie n'est pas encore rattachée à des profils réservables sur le
-          dispositif. Vous pouvez tout de même continuer : nous vous orienterons vers le
-          bouton SOS si besoin.
+          {{ t('assistant_page.note_indisponible') }}
         </p>
         <div class="assistant-actions">
           <button
@@ -326,7 +344,7 @@ const recapTexte = computed(() => {
             class="btn btn-outline-secondary"
             @click="precedent"
           >
-            ← Retour
+            {{ t('assistant_page.retour') }}
           </button>
           <button
             type="button"
@@ -334,7 +352,7 @@ const recapTexte = computed(() => {
             :disabled="!peutContinuer"
             @click="suivant"
           >
-            Continuer →
+            {{ t('assistant_page.continuer') }}
           </button>
         </div>
       </div>
@@ -346,13 +364,12 @@ const recapTexte = computed(() => {
       >
         <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
           <h2 class="h5 mb-0">
-            Où habitez-vous ?
+            {{ t('assistant_page.step3_titre') }}
           </h2>
-          <SpeakButton text="Où habitez-vous ? Sélectionnez votre commune." />
+          <SpeakButton :text="t('assistant_page.step3_vocal')" />
         </div>
         <p class="text-muted small mb-3">
-          Sélectionnez votre commune. La recherche se fait par commune, pas par
-          géolocalisation précise.
+          {{ t('assistant_page.step3_texte') }}
         </p>
 
         <div class="zone-tabs mb-3">
@@ -371,14 +388,14 @@ const recapTexte = computed(() => {
         <label
           class="form-label"
           for="assistant-commune"
-        >Commune</label>
+        >{{ t('assistant_page.commune_label') }}</label>
         <select
           id="assistant-commune"
           v-model="answers.commune"
           class="form-select"
         >
           <option value="">
-            Choisir une commune
+            {{ t('assistant_page.choisir_commune') }}
           </option>
           <option
             v-for="c in communesDeLaZone"
@@ -395,7 +412,7 @@ const recapTexte = computed(() => {
             class="btn btn-outline-secondary"
             @click="precedent"
           >
-            ← Retour
+            {{ t('assistant_page.retour') }}
           </button>
           <button
             type="button"
@@ -403,7 +420,7 @@ const recapTexte = computed(() => {
             :disabled="!peutContinuer"
             @click="suivant"
           >
-            Continuer →
+            {{ t('assistant_page.continuer') }}
           </button>
         </div>
       </div>
@@ -415,9 +432,9 @@ const recapTexte = computed(() => {
       >
         <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
           <h2 class="h5 mb-0">
-            Quand avez-vous besoin d'aide ?
+            {{ t('assistant_page.step4_titre') }}
           </h2>
-          <SpeakButton text="Quand avez-vous besoin d'aide ? Indiquez une date, une heure de début et une heure de fin." />
+          <SpeakButton :text="t('assistant_page.step4_vocal')" />
         </div>
 
         <div class="row g-3 mb-3">
@@ -425,7 +442,7 @@ const recapTexte = computed(() => {
             <label
               class="form-label"
               for="assistant-date"
-            >Date</label>
+            >{{ t('assistant_page.date_label') }}</label>
             <input
               id="assistant-date"
               v-model="answers.date"
@@ -437,7 +454,7 @@ const recapTexte = computed(() => {
             <label
               class="form-label"
               for="assistant-debut"
-            >Heure de début</label>
+            >{{ t('assistant_page.heure_debut_label') }}</label>
             <input
               id="assistant-debut"
               v-model="answers.heureDebut"
@@ -449,7 +466,7 @@ const recapTexte = computed(() => {
             <label
               class="form-label"
               for="assistant-fin"
-            >Heure de fin</label>
+            >{{ t('assistant_page.heure_fin_label') }}</label>
             <input
               id="assistant-fin"
               v-model="answers.heureFin"
@@ -459,7 +476,7 @@ const recapTexte = computed(() => {
           </div>
         </div>
 
-        <label class="form-label d-block">Niveau d'urgence</label>
+        <label class="form-label d-block">{{ t('assistant_page.urgence_label') }}</label>
         <div class="urgence-choices mb-3">
           <button
             v-for="u in URGENCES"
@@ -469,7 +486,7 @@ const recapTexte = computed(() => {
             :class="[`urgence-tile-${u.value}`, { 'urgence-tile-selected': answers.urgence === u.value }]"
             @click="answers.urgence = u.value"
           >
-            {{ u.label }}
+            {{ t(`assistant_page.${u.labelKey}`) }}
           </button>
         </div>
 
@@ -479,7 +496,7 @@ const recapTexte = computed(() => {
             class="btn btn-outline-secondary"
             @click="precedent"
           >
-            ← Retour
+            {{ t('assistant_page.retour') }}
           </button>
           <button
             type="button"
@@ -487,7 +504,7 @@ const recapTexte = computed(() => {
             :disabled="!peutContinuer"
             @click="suivant"
           >
-            Voir les résultats 🔎
+            {{ t('assistant_page.voir_resultats') }}
           </button>
         </div>
       </div>
@@ -500,10 +517,10 @@ const recapTexte = computed(() => {
               <p class="mb-1">
                 <strong v-if="!chargement">
                   {{ typeAideChoisi?.disponible
-                    ? `Nous avons trouvé ${resultats.length} accompagnement${resultats.length > 1 ? 's' : ''} correspondant à votre recherche à ${answers.commune}.`
-                    : `Aucun accompagnement réservable pour "${typeAideChoisi?.label}" pour le moment à ${answers.commune}.` }}
+                    ? t('assistant_page.trouve', { commune: answers.commune }, resultats.length)
+                    : t('assistant_page.aucun_reservable', { label: t(`assistant_page.${typeAideChoisi?.labelKey}`), commune: answers.commune }) }}
                 </strong>
-                <strong v-else>Recherche en cours…</strong>
+                <strong v-else>{{ t('assistant_page.recherche_en_cours') }}</strong>
               </p>
               <p class="text-muted small mb-0">
                 {{ recapTexte }}
@@ -515,14 +532,14 @@ const recapTexte = computed(() => {
                 class="btn btn-outline-secondary btn-sm"
                 @click="modifierReponses"
               >
-                ✎ Modifier ma réponse
+                {{ t('assistant_page.modifier_reponse') }}
               </button>
               <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm"
                 @click="recommencer"
               >
-                Recommencer
+                {{ t('assistant_page.recommencer') }}
               </button>
             </div>
           </div>
@@ -533,26 +550,26 @@ const recapTexte = computed(() => {
           class="alert alert-info"
         >
           <router-link to="/connexion">
-            Connectez-vous
+            {{ t('assistant_page.connectez_vous') }}
           </router-link>
-          ou
+          {{ t('assistant_page.ou') }}
           <router-link to="/inscription">
-            inscrivez-vous
+            {{ t('assistant_page.inscrivez_vous') }}
           </router-link>
-          pour pouvoir envoyer une demande à un accompagnant.
+          {{ t('assistant_page.pour_envoyer') }}
         </div>
 
         <template v-if="typeAideChoisi?.disponible">
           <div class="results-filters card p-3 mb-4">
             <div class="row g-3">
               <div class="col-sm-4">
-                <label class="form-label small">Filtrer par commune</label>
+                <label class="form-label small">{{ t('assistant_page.filtrer_commune') }}</label>
                 <select
                   v-model="resultFilters.commune"
                   class="form-select form-select-sm"
                 >
                   <option value="">
-                    Toutes les communes
+                    {{ t('commun.toutes_communes') }}
                   </option>
                   <option
                     v-for="c in COMMUNES_MAYOTTE"
@@ -564,22 +581,22 @@ const recapTexte = computed(() => {
                 </select>
               </div>
               <div class="col-sm-4">
-                <label class="form-label small">Type de service</label>
+                <label class="form-label small">{{ t('assistant_page.type_service') }}</label>
                 <select
                   v-model="resultFilters.service"
                   class="form-select form-select-sm"
                 >
                   <option value="">
-                    Tous
+                    {{ t('commun.tous') }}
                   </option>
                   <option value="sante">
-                    Santé / soins
+                    {{ t('assistant_page.type_sante_option') }}
                   </option>
                   <option value="coursier">
-                    Courses
+                    {{ t('assistant_page.type_courses_option') }}
                   </option>
                   <option value="menage">
-                    Ménage
+                    {{ t('assistant_page.type_menage_option') }}
                   </option>
                 </select>
               </div>
@@ -595,7 +612,7 @@ const recapTexte = computed(() => {
                     class="form-check-label small"
                     for="assistant-filtre-dispo"
                   >
-                    Disponible le {{ jourDemande }}
+                    {{ t('assistant_page.disponible_le', { jour: jourDemandeLabel }) }}
                   </label>
                 </div>
               </div>
@@ -606,7 +623,7 @@ const recapTexte = computed(() => {
             v-if="chargement"
             class="text-muted text-center py-5"
           >
-            Chargement…
+            {{ t('commun.chargement') }}
           </p>
           <div
             v-else
@@ -624,7 +641,7 @@ const recapTexte = computed(() => {
             v-if="!chargement && !resultats.length"
             class="text-muted text-center py-5"
           >
-            Aucun résultat pour ces critères. Essayez une autre commune ou un autre filtre.
+            {{ t('assistant_page.aucun_resultat_filtre') }}
           </p>
         </template>
 
@@ -633,16 +650,14 @@ const recapTexte = computed(() => {
           class="card p-4 text-center"
         >
           <p class="text-muted mb-3">
-            Ce besoin n'est pas encore couvert par une catégorie réservable sur le
-            dispositif. Contactez-nous via le bouton SOS pour être orienté, ou choisissez
-            une autre catégorie.
+            {{ t('assistant_page.non_couvert_message') }}
           </p>
           <button
             type="button"
             class="btn btn-primary mx-auto"
             @click="modifierReponses"
           >
-            Modifier ma réponse
+            {{ t('assistant_page.modifier_reponse_simple') }}
           </button>
         </div>
       </div>

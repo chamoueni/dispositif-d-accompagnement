@@ -7,11 +7,13 @@
 // vraies données de carte bancaire sans prestataire de paiement réel derrière).
 import { computed, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { FORMULES, COMMUNES_MAYOTTE } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import '../styles/PaiementFormule.css'
 
+const { t } = useI18n()
 const route = useRoute()
 const { user, updateProfile } = useAuth()
 
@@ -36,13 +38,13 @@ const facturation = reactive({ adresse: user.value.adresse || '', ville: user.va
 
 function carteValide() {
   const numeroNettoye = carte.numero.replace(/\s+/g, '')
-  if (!carte.titulaire.trim()) return 'Merci de renseigner le nom du titulaire de la carte.'
-  if (!/^\d{16}$/.test(numeroNettoye)) return 'Le numéro de carte doit contenir 16 chiffres.'
+  if (!carte.titulaire.trim()) return t('paiement_page.erreur_titulaire')
+  if (!/^\d{16}$/.test(numeroNettoye)) return t('paiement_page.erreur_numero')
   if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(carte.expiration)) {
-    return "La date d'expiration doit être au format MM/AA."
+    return t('paiement_page.erreur_expiration')
   }
-  if (!/^\d{3,4}$/.test(carte.cvc)) return 'Le CVC doit contenir 3 ou 4 chiffres.'
-  if (!facturation.adresse.trim()) return "Merci de renseigner l'adresse de facturation."
+  if (!/^\d{3,4}$/.test(carte.cvc)) return t('paiement_page.erreur_cvc')
+  if (!facturation.adresse.trim()) return t('paiement_page.erreur_adresse')
   return ''
 }
 
@@ -80,9 +82,9 @@ async function handleConfirmer() {
         v-if="!formule"
         class="alert alert-warning"
       >
-        Cette formule n'existe pas.
+        {{ t('paiement_page.formule_inexistante') }}
         <router-link to="/">
-          Retour à l'accueil
+          {{ t('paiement_page.retour_accueil') }}
         </router-link>
       </div>
 
@@ -90,9 +92,9 @@ async function handleConfirmer() {
         v-else-if="!accesAutorise"
         class="alert alert-warning"
       >
-        Ces formules d'accompagnement sont réservées aux personnes âgées.
+        {{ t('paiement_page.reserve_seniors') }}
         <router-link to="/mon-compte">
-          Retour à mon compte
+          {{ t('paiement_page.retour_compte') }}
         </router-link>
       </div>
 
@@ -101,17 +103,16 @@ async function handleConfirmer() {
         class="card p-4 mx-auto confirmation-card text-center"
       >
         <h1 class="h5 mb-2">
-          Abonnement confirmé
+          {{ t('paiement_page.abonnement_confirme') }}
         </h1>
         <p class="text-muted mb-3">
-          Vous êtes maintenant abonné(e) à la formule {{ formule.nom }}
-          ({{ formule.prix === 0 ? 'gratuite' : `${formule.prix} €/mois` }}).
+          {{ t('paiement_page.abonne_a', { nom: formule.nom, prix: formule.prix === 0 ? t('paiement_page.gratuite') : `${formule.prix} €/mois` }) }}
         </p>
         <router-link
           to="/profil"
           class="btn btn-primary"
         >
-          Voir mon profil
+          {{ t('paiement_page.voir_profil') }}
         </router-link>
       </div>
 
@@ -120,13 +121,13 @@ async function handleConfirmer() {
         class="card p-4 mx-auto form-card"
       >
         <h1 class="h4 mb-1">
-          Formule {{ formule.nom }}
+          {{ formule.nom }}
         </h1>
         <p
           v-if="formule.prix === 0"
           class="paiement-prix"
         >
-          Gratuit
+          {{ t('paiement_page.gratuit_label') }}
         </p>
         <p
           v-else
@@ -148,9 +149,7 @@ async function handleConfirmer() {
           v-if="abonnementActuel"
           class="text-muted small mb-3"
         >
-          Vous êtes actuellement abonné(e) à la formule
-          {{ FORMULES.find((f) => f.id === abonnementActuel.formuleId)?.nom }}. Confirmer ici
-          remplacera cet abonnement par {{ formule.nom }}.
+          {{ t('paiement_page.deja_abonne', { nom: FORMULES.find((f) => f.id === abonnementActuel.formuleId)?.nom, nouvelle: formule.nom }) }}
         </p>
 
         <!-- Uniquement pour les formules payantes : la Basique gratuite n'a
@@ -161,10 +160,10 @@ async function handleConfirmer() {
           @submit.prevent="handleConfirmer"
         >
           <h2 class="h6 mb-2">
-            Moyen de paiement
+            {{ t('paiement_page.moyen_paiement') }}
           </h2>
           <div class="mb-3">
-            <label class="form-label">Nom du titulaire</label>
+            <label class="form-label">{{ t('paiement_page.titulaire_label') }}</label>
             <input
               v-model="carte.titulaire"
               type="text"
@@ -173,7 +172,7 @@ async function handleConfirmer() {
             >
           </div>
           <div class="mb-3">
-            <label class="form-label">Numéro de carte</label>
+            <label class="form-label">{{ t('paiement_page.numero_carte_label') }}</label>
             <input
               v-model="carte.numero"
               type="text"
@@ -185,7 +184,7 @@ async function handleConfirmer() {
           </div>
           <div class="row">
             <div class="col-6 mb-3">
-              <label class="form-label">Expiration (MM/AA)</label>
+              <label class="form-label">{{ t('paiement_page.expiration_label') }}</label>
               <input
                 v-model="carte.expiration"
                 type="text"
@@ -195,7 +194,7 @@ async function handleConfirmer() {
               >
             </div>
             <div class="col-6 mb-3">
-              <label class="form-label">CVC</label>
+              <label class="form-label">{{ t('paiement_page.cvc_label') }}</label>
               <input
                 v-model="carte.cvc"
                 type="text"
@@ -208,10 +207,10 @@ async function handleConfirmer() {
           </div>
 
           <h2 class="h6 mb-2">
-            Adresse de facturation
+            {{ t('paiement_page.adresse_facturation') }}
           </h2>
           <div class="mb-3">
-            <label class="form-label">Adresse</label>
+            <label class="form-label">{{ t('paiement_page.adresse_label') }}</label>
             <input
               v-model="facturation.adresse"
               type="text"
@@ -220,7 +219,7 @@ async function handleConfirmer() {
             >
           </div>
           <div class="mb-3">
-            <label class="form-label">Commune</label>
+            <label class="form-label">{{ t('paiement_page.commune_label') }}</label>
             <select
               v-model="facturation.ville"
               class="form-select"
@@ -246,7 +245,7 @@ async function handleConfirmer() {
             type="submit"
             class="btn btn-primary w-100"
           >
-            Payer et confirmer l'abonnement
+            {{ t('paiement_page.payer_confirmer') }}
           </button>
         </form>
 
@@ -263,7 +262,7 @@ async function handleConfirmer() {
             class="btn btn-primary w-100"
             @click="handleConfirmer"
           >
-            Confirmer l'abonnement
+            {{ t('paiement_page.confirmer_abonnement') }}
           </button>
         </template>
       </div>
