@@ -1,16 +1,10 @@
 <script setup>
-// Barre de navigation, en deux bandes superposées dans une même carte flottante :
-//
-//   1. la bande principale : logo, liens de navigation, réglage d'affichage et
-//      actions de compte (connexion, inscription, déconnexion) ;
-//   2. une bande basse entièrement consacrée à la langue.
-//
-// La langue a sa propre bande parce qu'elle ne se compare à rien d'autre dans la
-// barre : quelqu'un qui ne lit pas le français doit la trouver sans avoir à
-// interpréter les libellés qui l'entourent. Isolée sous une ligne de séparation
-// et précédée d'un pictogramme de globe, elle se repère à sa position et à sa
-// forme, pas à son texte. Elle reste aussi hors du menu déroulant : sur
-// téléphone, elle ne doit pas dépendre de l'ouverture d'un burger.
+// Barre de navigation, en une seule bande flottante (fond panoramique tropical,
+// voir AppNav.css) : logo à gauche, liens de navigation au centre, langue +
+// réglages + compte à droite. Auparavant la langue vivait dans une bande basse
+// séparée pour se repérer sans lire le français ; elle reste un groupe à part
+// (rôle "group" + icône globe) mais rejoint la même rangée, comme demandé pour
+// coller à la maquette de référence.
 //
 // Les liens et boutons affichés dépendent de l'état de connexion et du rôle de
 // l'utilisateur (useAuth), pas de props : le composant se branche directement
@@ -46,10 +40,9 @@ const { t } = useI18n()
 // mesurer la hauteur réelle de la barre (voir plus bas).
 const barre = ref(null)
 const menuOuvert = ref(false)
-// Vrai dès que la page a défilé de quelques pixels. La barre flotte au-dessus du
-// contenu (position: fixed) et, par-dessus la photo du hero, son fond très
-// translucide laissait passer assez d'image pour gêner la lecture des liens.
-// Une fois la page défilée, elle se densifie (voir AppNav.css).
+// Vrai dès que la page a défilé de quelques pixels : l'ombre et le fond se
+// densifient légèrement pour que la barre se détache mieux du contenu qui défile
+// dessous (voir AppNav.css).
 const estDefile = ref(false)
 
 function fermerMenu() {
@@ -62,10 +55,10 @@ function surDefilement() {
 
 // Hauteur de la barre publiée en variable CSS, et non figée en dur : la barre
 // étant en position: fixed, App.vue doit réserver l'espace correspondant en haut
-// du contenu. Cette hauteur varie maintenant avec la seconde bande, avec le mode
-// confort (tout grossit) et avec le repli du titre sur deux lignes en 320px de
-// large ; une valeur codée en dur laissait, selon les cas, un grand vide ou un
-// titre de page passant sous la barre.
+// du contenu. Cette hauteur varie avec le mode confort (tout grossit) et avec le
+// repli du titre sur deux lignes en 320px de large ; une valeur codée en dur
+// laissait, selon les cas, un grand vide ou un titre de page passant sous la
+// barre.
 let observateur = null
 
 function mesurerHauteur() {
@@ -161,8 +154,7 @@ function handleLogout() {
     class="app-nav"
     :class="{ 'app-nav-defile': estDefile, 'app-nav-ouvert': menuOuvert }"
   >
-    <!-- ================= Bande 1 : navigation et compte ================= -->
-    <div class="nav-bande nav-bande-principale navbar navbar-expand-lg">
+    <div class="nav-bande navbar navbar-expand-lg">
       <div class="container">
         <router-link
           to="/"
@@ -272,6 +264,31 @@ function handleLogout() {
             </li>
           </ul>
 
+          <!-- Groupe langue : rejoint la rangée unique (voir en-tête du script),
+               mais garde son rôle "group" et son icône globe pour rester
+               repérable sans lire le français, comme avant. -->
+          <div class="nav-langues">
+            <svg
+              class="nav-langues-globe"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+              />
+              <path d="M3 12h18" />
+              <path d="M12 3c2.5 2.7 2.5 15.3 0 18-2.5-2.7-2.5-15.3 0-18Z" />
+            </svg>
+            <SelecteurLangue />
+          </div>
+
           <div class="nav-actions">
             <!-- Mode confort : texte et boutons agrandis dans tout le site (voir
                  index.css). -->
@@ -333,38 +350,6 @@ function handleLogout() {
             </template>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ===================== Bande 2 : la langue ======================= -->
-    <!-- Volontairement en dehors de #navMain : sur téléphone, la langue doit
-         rester visible sans ouvrir le menu burger. C'est le premier réglage dont
-         a besoin quelqu'un qui ne lit pas le français, et il ne peut pas deviner
-         qu'il se cache derrière un bouton dont le libellé est en français. -->
-    <div class="nav-bande nav-bande-langues">
-      <div class="container nav-langues">
-        <!-- Globe : repère non textuel de ce à quoi sert la bande. Décoratif pour
-             les lecteurs d'écran (aria-hidden), le groupe de boutons portant déjà
-             son propre libellé (voir SelecteurLangue.vue). -->
-        <svg
-          class="nav-langues-globe"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-          />
-          <path d="M3 12h18" />
-          <path d="M12 3c2.5 2.7 2.5 15.3 0 18-2.5-2.7-2.5-15.3 0-18Z" />
-        </svg>
-        <SelecteurLangue />
       </div>
     </div>
   </header>

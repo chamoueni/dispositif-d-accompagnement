@@ -1,104 +1,168 @@
-/* Selecteur de langue (voir components/SelecteurLangue.vue). Gros boutons
-   lisibles : le public vise est age, les cibles tactiles etroites et les libelles
-   en petit corps sont les premiers obstacles rencontres. */
-/* Bande etroite que l'on fait glisser : les trois langues restent cliquables
-   d'un seul geste, sans occuper toute la largeur de la barre de navigation.
-   flex-wrap: nowrap est essentiel — avec le retour a la ligne par defaut, les
-   boutons s'empileraient au lieu de defiler. */
+/* Sélecteur de langue en menu déroulant (voir components/SelecteurLangue.vue),
+   posé dans la navbar sur fond panoramique. Couleurs pensées spécifiquement pour
+   ce fond (et non les variables globales de index.css, qui visent un fond
+   clair) : bouton quasi blanc à texte foncé pour rester net sur l'image, menu
+   déroulant en verre teal pour rester dans la même famille de couleurs que la
+   barre. */
+
 .selecteur-langue {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
+  position: relative;
+  /* Ancre le menu déroulant (position: absolute) à ce conteneur plutôt qu'à la
+     barre entière. */
+  flex-shrink: 0;
+}
+
+/* --- Bouton déclencheur ---------------------------------------------------- */
+
+.langue-declencheur {
+  display: inline-flex;
   align-items: center;
-  max-width: 215px;
-  overflow-x: auto;
-  /* Le doigt s'arrete sur un bouton entier plutot qu'a moitie dessus.
-     "proximity" et non "mandatory" : on ne force pas un recalage a chaque
-     micro-mouvement, ce qui donnerait une bande nerveuse a manipuler. */
-  scroll-snap-type: x proximity;
-  overscroll-behavior-x: contain;
-  padding-bottom: 6px;
-}
-
-/* Barre de defilement volontairement VISIBLE, et non masquee : c'est le seul
-   indice qu'il y a d'autres langues a droite. La masquer ferait plus propre et
-   laisserait croire qu'il n'y a que "Francais". */
-.selecteur-langue::-webkit-scrollbar {
-  height: 6px;
-}
-
-.selecteur-langue::-webkit-scrollbar-track {
-  background: rgba(37, 99, 235, 0.12);
-  border-radius: 3px;
-}
-
-.selecteur-langue::-webkit-scrollbar-thumb {
-  background: var(--couleur-bouton);
-  border-radius: 3px;
-}
-
-/* Firefox : meme intention, avec la seule API disponible. */
-@supports (scrollbar-width: thin) {
-  .selecteur-langue {
-    scrollbar-width: thin;
-    scrollbar-color: var(--couleur-bouton) rgba(37, 99, 235, 0.12);
-  }
-}
-
-.langue-bouton {
-  /* Ni retrecissement ni retour a la ligne : le bouton garde sa largeur et sort
-     du cadre visible, c'est la bande qui defile. */
-  flex: 0 0 auto;
-  scroll-snap-align: center;
-  white-space: nowrap;
-  /* 44px de haut minimum : meme regle que les boutons du site (voir ui.css). */
-  min-height: 44px;
-  padding: 8px 18px;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 12px 6px 14px;
   border-radius: 50rem;
-  border: 2px solid var(--couleur-bouton);
-  background: transparent;
-  color: var(--couleur-bouton-survol);
-  font-size: 16px;
-  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  /* Blanc très légèrement transparent : se détache du fond turquoise sans
+     devenir un pavé blanc opaque disproportionné dans la barre. */
+  background: rgba(255, 255, 255, 0.92);
+  color: #0a3e3a;
+  font-size: 14.5px;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: rgba(6, 30, 27, 0.18) 0 2px 6px;
   transition:
     background-color 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
+    box-shadow 0.15s ease;
 }
 
-.langue-bouton:hover {
-  background: rgba(37, 99, 235, 0.1);
+.langue-declencheur:hover {
+  background: #fff;
+  box-shadow: rgba(6, 30, 27, 0.28) 0 4px 10px;
 }
 
-/* Langue active : remplissage plein. L'etat ne repose pas que sur la couleur,
-   le bouton est aussi le seul en gras plein contraste — repere utilisable meme
-   avec une vision des couleurs alteree. */
-.langue-bouton.est-active {
-  background: var(--couleur-bouton);
-  border-color: var(--couleur-bouton);
-  color: var(--couleur-bouton-texte);
-  font-weight: 700;
-}
-
-.langue-bouton:focus-visible {
-  outline: 3px solid var(--couleur-bouton-survol);
+.langue-declencheur:focus-visible {
+  outline: 3px solid #fff;
   outline-offset: 2px;
 }
 
-/* En mode confort (voir index.css), tout grossit : le selecteur suit. */
-.mode-confort .langue-bouton {
-  font-size: 1.05em;
-  padding: 10px 22px;
+.langue-declencheur-texte {
+  white-space: nowrap;
 }
 
-@media (max-width: 991px) {
-  .selecteur-langue {
-    max-width: 175px;
+.langue-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.langue-chevron-ouvert {
+  transform: rotate(180deg);
+}
+
+/* --- Menu déroulant --------------------------------------------------------- */
+
+.langue-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1;
+  min-width: 190px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  /* Fond teal légèrement transparent + flou : garde le menu dans la même
+     famille de couleurs que la navbar tout en laissant deviner l'image derrière,
+     effet "verre" plutôt qu'un simple aplat opaque. */
+  background: rgba(9, 56, 51, 0.88);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: rgba(4, 20, 18, 0.35) 0 16px 32px -8px;
+  animation: langue-menu-ouverture 0.15s ease-out;
+}
+
+@keyframes langue-menu-ouverture {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 
-  .langue-bouton {
-    padding: 8px 14px;
-    font-size: 15px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .langue-menu {
+    animation: none;
+  }
+}
+
+.langue-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.langue-option:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.langue-option:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.langue-option.est-active {
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 700;
+}
+
+.langue-option-texte {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Coche de la langue active : petite touche de bleu (couleurs du site) au milieu
+   du teal/blanc du menu. */
+.langue-coche {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #7dd3fc;
+}
+
+/* En mode confort (voir index.css), tout grossit : le sélecteur suit. */
+.mode-confort .langue-declencheur {
+  font-size: 1.05em;
+  padding: 8px 16px 8px 18px;
+}
+
+.mode-confort .langue-option {
+  font-size: 1.05em;
+  min-height: 46px;
+}
+
+/* Petits écrans : le menu ne doit pas déborder l'écran sur un téléphone étroit,
+   le bouton reste aussi compact qu'en desktop (demande explicite : pas de gros
+   bouton). */
+@media (max-width: 420px) {
+  .langue-menu {
+    min-width: 170px;
   }
 }

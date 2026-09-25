@@ -1,6 +1,11 @@
-/* Barre de navigation en deux bandes (voir components/AppNav.vue) :
-   .nav-bande-principale (logo, liens, compte) puis .nav-bande-langues (choix de
-   la langue), empilées dans une même carte flottante .app-nav. */
+/* Barre de navigation en une seule bande flottante (voir components/AppNav.vue) :
+   fond panoramique tropical (dégradé turquoise/vert, en l'absence d'une vraie
+   photo de lagon dans les assets du projet) avec un voile bleu/vert foncé
+   semi-transparent par-dessus, pour que logo, liens et boutons blancs restent
+   lisibles quel que soit l'endroit de l'image sur lequel ils tombent. Toutes les
+   couleurs de cette barre sont redéfinies localement (sous .app-nav) plutôt que
+   dans les variables globales de index.css : le reste du site garde sa palette
+   (boutons bleus, fond crème...) intacte. */
 
 /* Lien d'évitement : hors écran tant qu'il n'a pas le focus, il se pose par
    dessus la barre dès qu'on l'atteint en tabulant. Il n'est pas caché avec
@@ -28,124 +33,114 @@
 /* Carte flottante : sortie du flux (position: fixed), donc App.vue compense avec
    un padding-top sur .app-main pour que le contenu ne passe pas dessous. Cette
    compensation lit --hauteur-nav, publiée par le composant après mesure réelle.
-   overflow: hidden pour que la bande des langues, collée en bas, soit rognée par
-   les coins arrondis de la carte au lieu de déborder de ses angles. */
+   Largeur "presque complète" et hauteur compacte, comme demandé : peu de marge
+   latérale et un padding vertical réduit (voir .nav-bande plus bas). */
 .app-nav {
   position: fixed;
-  top: 16px;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(1100px, calc(100% - 32px));
+  width: min(1400px, calc(100% - 20px));
   z-index: 1030;
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: rgba(253, 249, 242, 0.7);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
+  border-radius: 18px;
+  /* Pas d'overflow: hidden ici (utile du temps des deux bandes empilées, pour
+     rogner la bande basse aux coins arrondis) : le menu déroulant des langues
+     est positionné en absolute et déborde volontairement sous la barre. Avec
+     overflow: hidden, ce débordement était purement et simplement rogné — les
+     langues autres que celle déjà active devenaient invisibles. Le fond et la
+     bordure de la barre restent arrondis sans lui : border-radius rogne déjà le
+     fond/l'ombre de la boîte elle-même, l'overflow ne concernait que les
+     enfants. */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  /* Superposition de 3 calques : voile foncé (lisibilité du texte), deux halos
+     radiaux qui suggèrent la végétation floue en haut à gauche et le
+     scintillement du lagon en bas à droite, puis le dégradé turquoise -> vert de
+     base. Une vraie photo panoramique de Mayotte pourra remplacer ce dégradé
+     plus tard (background-image sur un fichier importé), la structure (voile +
+     dégradé) resterait la même. */
+  background:
+    linear-gradient(100deg, rgba(6, 36, 33, 0.8) 0%, rgba(8, 56, 51, 0.58) 45%, rgba(10, 70, 64, 0.42) 100%),
+    radial-gradient(120% 180% at 10% -30%, rgba(255, 255, 255, 0.16), transparent 55%),
+    radial-gradient(90% 140% at 90% 130%, rgba(255, 224, 130, 0.28), transparent 60%),
+    linear-gradient(135deg, #0a3e3a 0%, #0e6b62 30%, #159c8c 58%, #2fc2ad 80%, #bfe8c9 100%);
+  box-shadow: rgba(6, 30, 27, 0.28) 0 10px 24px -12px;
   transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
-/* Page défilée : la barre se densifie (fond quasi opaque, ombre plus marquée).
-   Tant qu'on est en haut de l'accueil, elle repose sur le dégradé clair du hero
-   et peut rester très translucide ; dès que du contenu (photos, cartes, carte de
-   Mayotte) se met à défiler dessous, ce même fond laissait passer assez de
-   matière pour que les liens deviennent pénibles à lire. */
+/* Page défilée : ombre un peu plus marquée pour que la barre se détache mieux du
+   contenu qui défile dessous. Le fond, déjà opaque (image + voile), n'a pas
+   besoin de se densifier davantage. */
 .app-nav-defile {
-  background: rgba(253, 249, 242, 0.94);
-  border-color: rgba(217, 211, 196, 0.9);
-  box-shadow: rgba(10, 40, 36, 0.14) 0 12px 24px -10px;
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: rgba(6, 30, 27, 0.4) 0 14px 28px -12px;
 }
 
 .app-nav .container {
   max-width: 100%;
 }
 
-/* --- Bande 1 : navigation et compte -------------------------------------- */
+/* --- La bande (logo, liens, langue, compte) ------------------------------- */
 
-.nav-bande-principale {
-  padding-top: 10px;
-  padding-bottom: 10px;
+.nav-bande {
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
-/* --- Bande 2 : la langue -------------------------------------------------- */
-
-/* Légèrement teintée et séparée par un filet : la bande doit se lire comme un
-   étage distinct de la barre, pas comme la suite de la rangée du dessus. */
-.nav-bande-langues {
-  border-top: 1px solid var(--border);
-  background: var(--social-bg);
-  padding: 6px 0;
-}
-
+/* Groupe langue : rejoint la rangée unique, mais garde un role="group" côté
+   SelecteurLangue.vue et cette icône globe pour rester repérable sans lire le
+   français, comme dans la précédente bande dédiée. */
 .nav-langues {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .nav-langues-globe {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  color: var(--accent);
+  color: rgba(255, 255, 255, 0.85);
 }
 
-/* La bande occupe toute la largeur de la barre : le sélecteur n'a plus besoin de
-   se comprimer dans les 215px qui lui restaient à côté des autres boutons (voir
-   SelecteurLangue.css), les trois langues tiennent côte à côte sans défilement.
-   La bande de défilement reste en place pour les écrans étroits, où elle sert
-   encore. */
-.nav-langues .selecteur-langue {
-  max-width: 100%;
-  padding-bottom: 0;
-}
-
-/* Barre de défilement du sélecteur masquée ici : sans débordement, elle
-   n'indiquait plus rien et laissait un trait bleu résiduel sous les boutons. */
-.nav-langues .selecteur-langue::-webkit-scrollbar {
-  height: 4px;
-}
+/* Les couleurs du sélecteur (bouton + menu déroulant) sont définies directement
+   dans SelecteurLangue.css : ce composant n'est utilisé que dans cette navbar,
+   pas besoin de les redéfinir ici. */
 
 /* --- Petits écrans -------------------------------------------------------- */
 
-/* Sur petit écran, la barre passe souvent au-dessus de la photo du hero (fond
-   sombre) : le fond très translucide (0.7 + flou) prend alors une teinte
-   grisâtre inégale selon ce qu'il y a dessous, et le bouton "burger" peut
-   sembler flotter séparément. Fond opaque (sans flou) tant que le menu peut être
-   en mode déroulant (jusqu'à 991px, seuil où navbar-expand-lg bascule en mode
-   "burger" : couvre donc aussi bien téléphone que tablette).
-   Le backdrop-filter est aussi désactivé ici : une fois le fond quasi opaque, le
-   flou n'apporte plus rien et certains navigateurs (Safari iOS) le repeignent mal
-   quand le menu déroulant change de hauteur à l'ouverture, laissant transparaître
-   des fragments de la page derrière le menu. */
+/* Sur téléphone/tablette, le panneau déroulant garde le même thème sombre (image
+   + voile) que la barre repliée plutôt que de revenir au fond crème du site :
+   plus besoin de gérer deux jeux de couleurs, et l'ensemble reste cohérent avec
+   la barre visible au-dessus. Pas de flou (backdrop-filter) ici : le fond est
+   déjà peint, pas translucide, donc rien à flouter — ça évite au passage le
+   mauvais repeint que Safari iOS infligeait au flou pendant l'ouverture/fermeture
+   du panneau. */
 @media (max-width: 991px) {
-  .app-nav {
-    background: var(--bg);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  /* Menu ouvert : la barre peut devenir plus haute que l'écran (4 liens + les
-     boutons de compte). On la rend défilable plutôt que de laisser les derniers
-     boutons sortir du cadre, hors d'atteinte. */
+  /* Menu ouvert : la barre peut devenir plus haute que l'écran (4 liens + langue
+     + les boutons de compte). On la rend défilable plutôt que de laisser les
+     derniers boutons sortir du cadre, hors d'atteinte. */
   .app-nav-ouvert {
-    max-height: calc(100svh - 32px);
+    max-height: calc(100svh - 28px);
     overflow-y: auto;
     overflow-x: hidden;
   }
+
+  .nav-langues {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
 }
 
-/* Filet de sécurité : le panneau déroulant lui-même garde un fond opaque
-   explicite une fois ouvert, indépendamment du fond de la barre ci-dessus, pour
-   ne jamais laisser passer le contenu de la page en dessous. */
+/* Filet de sécurité : le panneau déroulant garde un fond opaque explicite une
+   fois ouvert (même dégradé que la barre repliée), indépendamment de tout ce qui
+   pourrait apparaître dessous. */
 #navMain.show {
-  background: var(--bg);
+  background: linear-gradient(160deg, #0a3e3a 0%, #0e6b62 45%, #159c8c 100%);
+  border-radius: 12px;
+  margin-top: 6px;
   /* Léger déroulé à l'ouverture. Bootstrap animait la hauteur via son JS ; le
      menu étant désormais piloté par Vue (voir AppNav.vue), on se contente d'une
      apparition en fondu, qui ne dépend d'aucune mesure de hauteur. */
@@ -182,7 +177,6 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-h);
   /* Autorise le titre à se comprimer plutôt qu'à pousser le bouton burger sur
      une 2e ligne (la barre faisait deux étages sur téléphone). */
   min-width: 0;
@@ -191,14 +185,16 @@
   overflow: hidden;
 }
 
+/* Texte blanc plein (plus le dégradé teal/or utilisé sur fond clair) : sur cette
+   image panoramique, un texte dégradé dans des tons proches du fond aurait
+   perdu tout son contraste selon l'endroit où il tombe. L'ombre portée garde le
+   texte net même sur les zones les plus claires du dégradé. */
 .brand-text {
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.3px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(6, 30, 27, 0.45);
   /* Coupé par des points de suspension si la place manque vraiment. Le logo, lui,
      reste toujours visible : c'est lui qui identifie le site et porte le lien
      vers l'accueil. */
@@ -232,21 +228,28 @@
 }
 
 /* Logo image (src/assets/logo.png) : hauteur fixe, largeur libre pour ne pas
-   déformer le fichier fourni (pas forcément carré). */
+   déformer le fichier fourni (pas forcément carré). Léger halo blanc : sur le
+   fond photographique/dégradé, le rond teal du logo se fondait par endroits. */
 .brand-logo {
   height: 32px;
   width: auto;
   flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(6, 30, 27, 0.5));
 }
 
 /* --- Bouton burger -------------------------------------------------------- */
 
 /* Cible tactile de 44px comme le reste du site (voir ui.css), et anneau de focus
-   net plutôt que l'ombre diffuse de Bootstrap. */
+   net plutôt que l'ombre diffuse de Bootstrap. Contour blanc translucide (et non
+   var(--border), pensé pour un fond clair) pour rester visible sur l'image. */
 .app-nav .navbar-toggler {
   min-width: 48px;
   min-height: 44px;
-  border-color: var(--border);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.app-nav .navbar-toggler-icon {
+  filter: brightness(0) invert(1);
 }
 
 .app-nav .navbar-toggler:focus {
@@ -254,75 +257,62 @@
 }
 
 .app-nav .navbar-toggler:focus-visible {
-  outline: 3px solid var(--couleur-bouton-survol);
+  outline: 3px solid #fff;
   outline-offset: 2px;
 }
 
-/* Menu ouvert : le burger prend la couleur d'action, pour que l'état se lise au
-   premier coup d'œil sans dépendre du seul panneau en dessous. */
+/* Menu ouvert : le burger prend l'accent doré de la barre, pour que l'état se
+   lise au premier coup d'œil sans dépendre du seul panneau en dessous. */
 .app-nav-ouvert .navbar-toggler {
-  background: var(--couleur-bouton);
-  border-color: var(--couleur-bouton);
+  background: #e3a234;
+  border-color: #e3a234;
 }
 
 .app-nav-ouvert .navbar-toggler .navbar-toggler-icon {
-  filter: brightness(0) invert(1);
+  filter: brightness(0);
 }
 
-/* --- Liens ---------------------------------------------------------------- */
+/* --- Liens (pastilles, comme sur la maquette de référence) ---------------- */
 
 .app-nav .nav-link {
   position: relative;
   display: inline-flex;
   align-items: center;
   font-weight: 600;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.92);
   /* Un lien ne doit jamais casser au milieu ("Comment ça / marche") : il passe
      entier à la ligne suivante plutôt que de couper les mots. */
   white-space: nowrap;
-  border-radius: 10px;
+  padding: 8px 16px;
+  border-radius: 50rem;
   transition:
     color 0.15s ease,
     background-color 0.15s ease;
 }
 
-/* Survol : léger aplat coloré en plus du changement de couleur du texte. La
-   couleur seule est un repère faible quand on a une vision altérée, et la zone
-   cliquable devient visible au lieu d'être devinée. */
+/* Survol : pastille translucide blanche. Sur fond photo/dégradé, une simple
+   couleur de texte suffit rarement à signaler une zone cliquable. */
 .app-nav .nav-link:hover {
-  color: var(--accent);
-  background: var(--accent-bg);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
 }
 
+/* Page courante : pastille pleine (et non plus un simple soulignement) — se lit
+   mieux qu'un filet fin par-dessus une image de fond. */
 .app-nav .nav-link.router-link-active {
-  color: var(--accent);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 700;
 }
 
 .app-nav .nav-link:focus-visible {
-  outline: 3px solid var(--couleur-bouton-survol);
+  outline: 3px solid #fff;
   outline-offset: 2px;
-}
-
-/* Soulignement sous la page courante : la couleur seule ne suffisait pas à
-   repérer où on est, surtout en mode confort où tout est déjà plus gras. */
-@media (min-width: 992px) {
-  .app-nav .nav-link.router-link-active::after {
-    content: '';
-    position: absolute;
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 2px;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--accent-2);
-  }
 }
 
 /* Menu déroulant (téléphone / tablette) : les liens deviennent des rangées
    pleine largeur. Sur une cible tactile, viser le seul libellé d'un lien aligné
-   à gauche demande de la précision ; toute la rangée est cliquable ici, et la
-   page courante se repère à son aplat coloré (le soulignement ci-dessus n'est
-   posé qu'à partir de 992px). */
+   à gauche demande de la précision ; toute la rangée est cliquable ici. */
 @media (max-width: 991px) {
   .app-nav .navbar-nav {
     padding-top: 8px;
@@ -334,14 +324,11 @@
     min-height: 48px;
     padding-left: 12px;
     padding-right: 12px;
-  }
-
-  .app-nav .nav-link.router-link-active {
-    background: var(--accent-bg);
+    border-radius: 10px;
   }
 }
 
-/* --- Actions (mode confort, compte) --------------------------------------- */
+/* --- Actions (mode confort, langue, compte) ------------------------------- */
 
 .nav-actions {
   display: flex;
@@ -358,13 +345,53 @@
   white-space: nowrap;
 }
 
+/* Contour blanc translucide (Connexion, Déconnexion, Mon espace admin...) : les
+   couleurs par défaut de .btn-outline-secondary (pensées pour un fond clair)
+   redéfinies ici, sans toucher à la classe globale utilisée ailleurs sur le
+   site. */
+.app-nav .btn-outline-secondary {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.app-nav .btn-outline-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+  color: #fff;
+}
+
+.app-nav .btn-outline-secondary:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* "S'inscrire" : action principale de la barre, en plein vert tropical (et non
+   le bleu global de .btn-primary, réservé au reste du site) pour ressortir
+   nettement sur le dégradé turquoise environnant. */
+.app-nav .btn-primary {
+  background-color: #2fae74;
+  border-color: #2fae74;
+  color: #fff;
+}
+
+.app-nav .btn-primary:hover {
+  background-color: #23935f;
+  border-color: #23935f;
+}
+
+.app-nav .btn-primary:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
 /* Séparateur entre le réglage d'affichage (Aa) et les actions de compte : un
-   simple filet vertical sur grand écran. */
+   simple filet vertical sur grand écran, en blanc translucide. */
 .nav-separateur {
   width: 1px;
   align-self: stretch;
   min-height: 24px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /* En mode déroulant, les actions sont empilées : un filet vertical n'a plus de
@@ -372,7 +399,7 @@
 @media (max-width: 991px) {
   .nav-actions {
     justify-content: flex-start;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
   }
 
   .nav-separateur {
@@ -384,7 +411,8 @@
 }
 
 /* Badge du prénom : aligné sur la hauteur des boutons voisins, sinon il flottait
-   plus petit au milieu de la rangée. */
+   plus petit au milieu de la rangée. Reste en pastille claire (text-bg-light) :
+   un badge opaque se détache mieux du fond photo qu'une variante translucide. */
 .nav-actions .badge-role {
   display: inline-flex;
   align-items: center;
@@ -392,16 +420,15 @@
   padding: 0 14px;
   border-radius: 50rem;
   font-size: 14px;
-  color: var(--text-h);
 }
 
-/* Bouton "Aa" (mode confort) : surligné dès qu'il est actif, pour que l'état soit
-   visible sans avoir à lire le texte (utile pour un public qui active le confort
-   justement parce que lire est difficile). */
+/* Bouton "Aa" (mode confort) : surligné en doré dès qu'il est actif, pour que
+   l'état soit visible sans avoir à lire le texte (utile pour un public qui
+   active le confort justement parce que lire est difficile). */
 .confort-toggle[aria-pressed='true'] {
-  background: var(--couleur-bouton);
-  color: var(--couleur-bouton-texte);
-  border-color: var(--couleur-bouton);
+  background: #e3a234;
+  color: #122421;
+  border-color: #e3a234;
 }
 
 @media (min-width: 992px) {
