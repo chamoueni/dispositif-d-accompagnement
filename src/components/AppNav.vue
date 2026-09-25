@@ -311,20 +311,15 @@ function handleLogout() {
               aria-hidden="true"
             />
 
-            <!-- Visiteur : "S'inscrire" est l'action principale du site, donc en
-                 bouton plein, avec Connexion en second plan à côté. -->
+            <!-- Visiteur : bouton "S'inscrire" retire de la navbar (demande
+                 explicite) ; l'inscription reste accessible via les pages du
+                 site (hero, formules...), seul son raccourci ici disparait. -->
             <template v-if="!user">
               <router-link
                 to="/connexion"
                 class="btn btn-outline-secondary btn-sm"
               >
                 {{ t('nav.connexion') }}
-              </router-link>
-              <router-link
-                to="/inscription"
-                class="btn btn-primary btn-sm"
-              >
-                {{ t('nav.inscription') }}
               </router-link>
             </template>
 

@@ -366,25 +366,6 @@
   outline-offset: 2px;
 }
 
-/* "S'inscrire" : action principale de la barre, en plein vert tropical (et non
-   le bleu global de .btn-primary, réservé au reste du site) pour ressortir
-   nettement sur le dégradé turquoise environnant. */
-.app-nav .btn-primary {
-  background-color: #2fae74;
-  border-color: #2fae74;
-  color: #fff;
-}
-
-.app-nav .btn-primary:hover {
-  background-color: #23935f;
-  border-color: #23935f;
-}
-
-.app-nav .btn-primary:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 2px;
-}
-
 /* Séparateur entre le réglage d'affichage (Aa) et les actions de compte : un
    simple filet vertical sur grand écran, en blanc translucide. */
 .nav-separateur {
