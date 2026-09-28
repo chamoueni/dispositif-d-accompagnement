@@ -24,14 +24,20 @@ const media = window.matchMedia('(prefers-color-scheme: dark)')
 const state = reactive({
   // 'light' | 'dark' | 'auto'
   theme: localStorage.getItem(THEME_KEY) || 'auto',
+  // Résolution de 'theme' ('auto' -> 'light'/'dark' selon le système) : exposée
+  // à part pour le bouton principal du sélecteur (voir ThemeSwitcher.vue), qui
+  // affiche l'icône soleil/lune réellement appliquée et bascule directement
+  // entre les deux au clic, sans passer par le menu.
+  effectif: 'light',
 })
 
-function themeEffectif() {
+function calculerEffectif() {
   return state.theme === 'auto' ? (media.matches ? 'dark' : 'light') : state.theme
 }
 
 function appliquer() {
-  document.documentElement.setAttribute('data-theme', themeEffectif())
+  state.effectif = calculerEffectif()
+  document.documentElement.setAttribute('data-theme', state.effectif)
 }
 
 watchEffect(() => {

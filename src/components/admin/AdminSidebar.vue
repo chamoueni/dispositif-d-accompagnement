@@ -103,7 +103,7 @@ async function seDeconnecter() {
     <div class="admin-sidebar-spacer" />
 
     <div class="admin-sidebar-foot">
-      <ThemeSwitcher ouvre-vers-le-haut />
+      <ThemeSwitcher />
 
       <div class="admin-sidebar-compte">
         <span class="admin-sidebar-avatar">{{ initiales }}</span>
