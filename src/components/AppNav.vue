@@ -23,7 +23,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import SelecteurLangue from './SelecteurLangue.vue'
-import { useAccessibility } from '../stores/accessibility'
+import ThemeSwitcher from './ThemeSwitcher.vue'
 import IconBadge from './IconBadge.vue'
 // Logo fourni par l'utilisateur (rond teal, cœur + sourire) : remplace l'icône
 // coeur codée en SVG à la main, réutilisée aussi comme favicon (voir index.html).
@@ -31,7 +31,6 @@ import logo from '../assets/logo.png'
 import '../styles/AppNav.css'
 
 const { user, isAdmin, logout } = useAuth()
-const { state: accessibilite, toggle: toggleAccessibilite } = useAccessibility()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
@@ -290,18 +289,13 @@ function handleLogout() {
           </div>
 
           <div class="nav-actions">
-            <!-- Mode confort : texte et boutons agrandis dans tout le site (voir
-                 index.css). -->
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm confort-toggle"
-              :title="t('nav.confort_titre')"
-              :aria-pressed="accessibilite.actif"
-              @click="toggleAccessibilite"
-            >
-              <span aria-hidden="true">Aa</span>
-              <span class="visually-hidden-focusable"> {{ t('nav.confort') }}</span>
-            </button>
+            <!-- Apparence (clair/sombre/auto) + mode confort, un seul menu
+                 partagé avec l'espace admin (voir components/ThemeSwitcher.vue
+                 et composables/useTheme.js). Remplace l'ancien bouton "Aa"
+                 dédié : même bascule confort en dessous (stores/accessibility.js,
+                 inchangé), juste regroupée avec le thème au lieu d'avoir deux
+                 boutons séparés pour deux réglages d'affichage. -->
+            <ThemeSwitcher />
 
             <!-- Séparateur : marque la frontière entre le réglage d'affichage
                  ci-dessus et les actions de compte ci-dessous, qui se confondaient

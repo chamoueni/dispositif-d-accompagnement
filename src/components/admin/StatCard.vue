@@ -73,23 +73,23 @@ defineProps({
 }
 
 .admin-stat-icon-teal {
-  background: var(--admin-teal-soft);
-  color: var(--admin-teal);
+  background: var(--teal-soft);
+  color: var(--teal);
 }
 
 .admin-stat-icon-coral {
-  background: var(--admin-coral-soft);
-  color: var(--admin-coral);
+  background: var(--coral-soft);
+  color: var(--coral);
 }
 
 .admin-stat-icon-ylang {
-  background: var(--admin-ylang-soft);
-  color: var(--admin-ylang-text);
+  background: var(--ylang-soft);
+  color: var(--ylang-text);
 }
 
 .admin-stat-icon-green {
-  background: var(--admin-green-soft);
-  color: var(--admin-green);
+  background: var(--green-soft);
+  color: var(--green);
 }
 
 .admin-stat-badge {
@@ -108,7 +108,7 @@ defineProps({
 
 .admin-stat-libelle {
   font-size: 14px;
-  color: var(--admin-muted);
+  color: var(--muted);
   margin: 4px 0 0;
 }
 </style>

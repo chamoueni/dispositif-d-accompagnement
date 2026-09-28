@@ -1,0 +1,272 @@
+/* Système de thème (clair/sombre/auto) de tout le site — pages publiques ET
+   espace admin. Importé une seule fois dans main.js, AVANT index.css, pour
+   que les tokens ci-dessous existent déjà quand index.css les référence (voir
+   la section "alias" plus bas : les anciens noms de variables du site public
+   pointent maintenant vers ceux-ci, au lieu d'être redéfinis en double).
+   Piloté par data-theme="light|dark" sur <html> (voir composables/useTheme.js
+   et le petit script anti-flash dans index.html). */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --surface-2: #fbf9f4;
+  --border: #e7e1d6;
+  --ink: #1f2a2a;
+  --muted: #5b6461;
+  --teal: #0e6e6b;
+  --on-teal: #ffffff;
+  --teal-soft: #e1efee;
+  --teal-text: #0a5250;
+  --coral: #c2502f;
+  --coral-soft: #fbe4dc;
+  --coral-text: #a63a22;
+  --ylang: #e3a92b;
+  --ylang-soft: #fbefd2;
+  --ylang-text: #7a5410;
+  --green: #1e6b47;
+  --green-soft: #e1f2ea;
+  --overlay: rgba(31, 42, 42, 0.35);
+  --shadow: 0 8px 24px rgba(31, 42, 42, 0.08);
+  /* Dégradé "hero" de l'accueil (voir Accueil.css) : pas un rôle sémantique
+     couvert par les tokens ci-dessus, donc pas d'alias — juste sa propre
+     variante sombre, pour ne pas garder un rose pêche vif sur fond sombre. */
+  --couleur-fond: #fde8dc;
+  --couleur-fond-clair: #fff5ef;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #141b1b;
+  --surface: #1c2525;
+  --surface-2: #172020;
+  --border: #2c3838;
+  --ink: #ede8df;
+  --muted: #a7b0ad;
+  --teal: #3fb3ad;
+  --on-teal: #0f1a1a;
+  --teal-soft: #16403e;
+  --teal-text: #8fd8d3;
+  --coral: #f08a6b;
+  --coral-soft: #4a2a22;
+  --coral-text: #f4a48c;
+  --ylang: #f0c766;
+  --ylang-soft: #43361a;
+  --ylang-text: #f0c766;
+  --green: #6fcb9e;
+  --green-soft: #1b3a2c;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --shadow: none;
+  --couleur-fond: #2a1f1a;
+  --couleur-fond-clair: #1c1512;
+}
+
+/* --- Alias : anciens tokens du site public (voir index.css) -----------------
+   index.css définissait ces variables avec des valeurs figées ; elles
+   pointent maintenant vers les tokens ci-dessus, donc TOUT composant qui
+   utilisait déjà var(--accent), var(--text), var(--couleur-bouton)... devient
+   automatiquement sensible au thème, sans avoir à toucher ces composants un
+   par un. --bg et --border ne sont pas listés ici : le nom était déjà
+   identique des deux côtés, index.css ne les redéfinit plus du tout. */
+:root {
+  --text: var(--ink);
+  --text-h: var(--ink);
+  --bg-alt: var(--surface-2);
+  --code-bg: var(--surface-2);
+  --card-bg: var(--surface);
+  --social-bg: var(--surface-2);
+  --accent: var(--teal);
+  --accent-deep: var(--teal-text);
+  --accent-bg: var(--teal-soft);
+  --accent-border: color-mix(in srgb, var(--teal) 45%, transparent);
+  --accent-2: var(--ylang);
+  --accent-2-deep: var(--ylang-text);
+  --accent-2-bg: var(--ylang-soft);
+  --danger: var(--coral);
+  /* Boutons principaux (inscription, connexion, recherche...) : bleus fixes
+     avant cette passe, demande explicite de les faire suivre le thème. */
+  --couleur-bouton: var(--teal);
+  --couleur-bouton-survol: var(--teal-text);
+  --couleur-bouton-texte: var(--on-teal);
+}
+
+/* --- Confort ("Texte plus grand") ------------------------------------------
+   Réutilise .mode-confort, déjà posée par stores/accessibility.js (bouton
+   "Aa" existant) plutôt qu'une classe séparée : un seul mécanisme, ThemeSwitcher
+   affiche juste un second contrôle dessus (voir composant). Tailles ci-dessous
+   mises à jour pour ce nouveau design (avant : 20px/1.15em) ; ce sont des
+   valeurs de style, pas un changement de mécanisme. */
+html.mode-confort {
+  font-size: 18px;
+}
+
+html.mode-confort h1 {
+  font-size: 3.36em; /* +20% */
+}
+
+html.mode-confort h2 {
+  font-size: 1.68em; /* +20% */
+}
+
+html.mode-confort :is(p, li, label, input, select, textarea, button) {
+  line-height: 1.6;
+}
+
+html.mode-confort :is(.btn, .admin-btn, .admin-pill, .nav-link, a) {
+  min-height: 52px;
+}
+
+html.mode-confort .btn {
+  font-size: 1.15em;
+  padding: 14px 26px;
+  min-height: 52px;
+}
+
+html.mode-confort .btn-sm {
+  font-size: 1em;
+  padding: 11px 20px;
+  min-height: 52px;
+}
+
+html.mode-confort .form-control,
+html.mode-confort .form-select {
+  font-size: 1.1em;
+  padding: 14px 16px;
+  min-height: 52px;
+}
+
+html.mode-confort .nav-link {
+  font-size: 1.1em;
+}
+
+/* Plus d'espace entre les lignes des tableaux et des listes. */
+html.mode-confort :is(.admin-table, .table) td,
+html.mode-confort :is(.admin-table, .table) th {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+html.mode-confort :is(ul, ol) li + li {
+  margin-top: 6px;
+}
+
+/* Chiffres des cartes stats de l'admin (voir StatCard.vue). */
+html.mode-confort .admin-stat-valeur {
+  font-size: 44px;
+}
+
+/* Contraste renforcé du texte discret en confort (les libellés/légendes en
+   --muted sont ceux qui souffrent le plus d'un texte agrandi mais pâle). */
+html.mode-confort[data-theme='light'] {
+  --muted: #3f4846;
+}
+
+html.mode-confort[data-theme='dark'] {
+  --muted: #c9d0cd;
+}
+
+/* --- Focus visible, plus marqué en confort ---------------------------------
+   Le reste du site a déjà des anneaux de focus (voir ui.css, BackLink.css...) ;
+   celui-ci ne s'ajoute qu'en mode confort, pour ne rien changer ailleurs. */
+html.mode-confort *:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* --- Transitions douces entre thèmes ---------------------------------------
+   Ciblées (pas de sélecteur universel "*", trop coûteux sur des pages avec
+   beaucoup de nœuds) : le fond de page, les cartes/panneaux, les boutons et le
+   texte sont ce qui change réellement visuellement en changeant de thème. */
+body,
+.card,
+.admin-card,
+.admin-shell,
+.btn,
+.admin-btn,
+.form-control,
+.form-select {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .card,
+  .admin-card,
+  .admin-shell,
+  .btn,
+  .admin-btn,
+  .form-control,
+  .form-select {
+    transition: none;
+  }
+}
+
+/* --- Photos : pas d'inversion, juste un léger assombrissement en sombre --- */
+[data-theme='dark'] .photo,
+[data-theme='dark'] img:not(.mayotte-symbol):not(.brand-logo) {
+  filter: brightness(0.9);
+}
+
+/* --- Filets de sécurité sur quelques classes Bootstrap non couvertes par nos
+   propres variables (voir bootstrap-custom.scss, compilé une fois en clair) :
+   sans ça, ces éléments resteraient clairs même fond de page sombre. Liste
+   volontairement courte (les cas rencontrés dans ce projet), pas une
+   recompilation complète de Bootstrap en mode sombre. --------------------- */
+[data-theme='dark'] .text-muted {
+  color: var(--muted) !important;
+}
+
+[data-theme='dark'] .form-control,
+[data-theme='dark'] .form-select {
+  background-color: var(--surface);
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+[data-theme='dark'] .form-control::placeholder {
+  color: var(--muted);
+}
+
+[data-theme='dark'] .card {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+[data-theme='dark'] .badge.text-bg-light {
+  background-color: var(--surface-2) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme='dark'] .table {
+  --bs-table-color: var(--ink);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--border);
+}
+
+[data-theme='dark'] .alert-warning {
+  background-color: var(--ylang-soft);
+  border-color: var(--ylang-text);
+  color: var(--ylang-text);
+}
+
+[data-theme='dark'] .alert-success {
+  background-color: var(--green-soft);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+[data-theme='dark'] .alert-info {
+  background-color: var(--teal-soft);
+  border-color: var(--teal);
+  color: var(--teal-text);
+}
+
+[data-theme='dark'] .alert-danger {
+  background-color: var(--coral-soft);
+  border-color: var(--coral);
+  color: var(--coral-text);
+}

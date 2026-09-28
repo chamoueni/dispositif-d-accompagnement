@@ -11,6 +11,7 @@ import { useAuth } from '../../stores/auth'
 import { useAdminDashboard } from '../../stores/adminDashboard'
 import { useAdherentsStore } from '../../stores/adherents'
 import AdminIcon from './AdminIcon.vue'
+import ThemeSwitcher from '../ThemeSwitcher.vue'
 import logo from '../../assets/logo.png'
 
 const route = useRoute()
@@ -102,6 +103,8 @@ async function seDeconnecter() {
     <div class="admin-sidebar-spacer" />
 
     <div class="admin-sidebar-foot">
+      <ThemeSwitcher ouvre-vers-le-haut />
+
       <div class="admin-sidebar-compte">
         <span class="admin-sidebar-avatar">{{ initiales }}</span>
         <div>

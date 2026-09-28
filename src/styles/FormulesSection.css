@@ -11,7 +11,7 @@
 }
 
 .formule-card-active {
-  border-color: var(--success, #2e7d32);
+  border-color: var(--green);
   box-shadow: var(--shadow);
 }
 

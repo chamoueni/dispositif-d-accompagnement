@@ -30,7 +30,7 @@
   padding: 12px 14px;
   border: 2px solid var(--couleur-bouton);
   border-radius: 12px;
-  background: #eaf1fe;
+  background: var(--teal-soft);
 }
 
 .code-arrivee-libelle {

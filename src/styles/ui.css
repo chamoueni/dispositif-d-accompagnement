@@ -85,7 +85,7 @@
    même famille de bleu en version douce, pour rester visiblement en dessous du
    bouton principal sans introduire une troisième couleur. */
 .btn-secondary {
-  --bs-btn-bg: #eaf1fe;
+  --bs-btn-bg: var(--teal-soft);
   --bs-btn-border-color: var(--couleur-bouton);
   --bs-btn-color: var(--couleur-bouton-survol);
   --bs-btn-hover-bg: var(--couleur-bouton);
@@ -94,7 +94,7 @@
   --bs-btn-active-bg: var(--couleur-bouton-survol);
   --bs-btn-active-border-color: var(--couleur-bouton-survol);
   --bs-btn-active-color: var(--couleur-bouton-texte);
-  --bs-btn-disabled-bg: #eaf1fe;
+  --bs-btn-disabled-bg: var(--teal-soft);
   --bs-btn-disabled-border-color: var(--couleur-bouton);
   --bs-btn-disabled-color: var(--couleur-bouton-survol);
 }

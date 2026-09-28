@@ -2,10 +2,12 @@
    fond panoramique tropical (dégradé turquoise/vert, en l'absence d'une vraie
    photo de lagon dans les assets du projet) avec un voile bleu/vert foncé
    semi-transparent par-dessus, pour que logo, liens et boutons blancs restent
-   lisibles quel que soit l'endroit de l'image sur lequel ils tombent. Toutes les
-   couleurs de cette barre sont redéfinies localement (sous .app-nav) plutôt que
-   dans les variables globales de index.css : le reste du site garde sa palette
-   (boutons bleus, fond crème...) intacte. */
+   lisibles quel que soit l'endroit de l'image sur lequel ils tombent.
+   Couleurs volontairement codées en dur (pas les variables de thème,
+   assets/theme.css) : ce dégradé sert justement à garantir un texte blanc
+   lisible dessus, quel que soit le thème clair/sombre choisi pour le reste du
+   site — le rendre "sombre-sensible" cassait ce contraste plutôt que
+   l'améliorer. */
 
 /* Lien d'évitement : hors écran tant qu'il n'a pas le focus, il se pose par
    dessus la barre dès qu'on l'atteint en tabulant. Il n'est pas caché avec
@@ -366,8 +368,8 @@
   outline-offset: 2px;
 }
 
-/* Séparateur entre le réglage d'affichage (Aa) et les actions de compte : un
-   simple filet vertical sur grand écran, en blanc translucide. */
+/* Séparateur entre le réglage d'affichage (ThemeSwitcher) et les actions de
+   compte : un simple filet vertical sur grand écran, en blanc translucide. */
 .nav-separateur {
   width: 1px;
   align-self: stretch;
@@ -401,15 +403,6 @@
   padding: 0 14px;
   border-radius: 50rem;
   font-size: 14px;
-}
-
-/* Bouton "Aa" (mode confort) : surligné en doré dès qu'il est actif, pour que
-   l'état soit visible sans avoir à lire le texte (utile pour un public qui
-   active le confort justement parce que lire est difficile). */
-.confort-toggle[aria-pressed='true'] {
-  background: #e3a234;
-  color: #122421;
-  border-color: #e3a234;
 }
 
 @media (min-width: 992px) {

@@ -136,8 +136,8 @@
    garde l'alternance visuelle avec un voile blanc translucide, qui éclaircit la
    bande tout en laissant le rose pêche transparaître dessous. */
 .landing .section-alt {
-  background: rgba(255, 255, 255, 0.55);
-  border-color: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border-color: color-mix(in srgb, var(--surface) 80%, transparent);
 }
 
 .intro-text {
@@ -275,7 +275,7 @@
   margin-top: 20px;
   padding: 10px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
   border: 1px solid var(--border);
   font-size: 15px;
   color: var(--text-h);

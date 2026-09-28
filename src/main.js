@@ -4,6 +4,11 @@ import { createPinia } from 'pinia'
 import './styles/bootstrap-custom.scss'
 // JS de Bootstrap (menu mobile, etc.), nécessaire pour les data-bs-* utilisés dans Nav.vue.
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+// Thème clair/sombre/auto + mode confort (voir composables/useTheme.js et
+// components/ThemeSwitcher.vue) : importé avant index.css, qui consomme ces
+// mêmes tokens (--text, --accent, --couleur-bouton... y sont maintenant des
+// alias vers eux, voir assets/theme.css).
+import './assets/theme.css'
 // Design tokens (couleurs, styles de base) partagés par tous les composants.
 import './index.css'
 import './styles/ui.css'

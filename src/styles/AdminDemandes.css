@@ -6,8 +6,8 @@
 }
 
 .admin-kanban-colonne {
-  background: var(--admin-bg);
-  border: 1px solid var(--admin-border);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px;
   display: flex;
@@ -27,7 +27,7 @@
 .admin-kanban-compteur {
   font-size: 13px;
   font-weight: 700;
-  color: var(--admin-muted);
+  color: var(--muted);
 }
 
 .admin-kanban-carte {
@@ -45,7 +45,7 @@
 
 .admin-kanban-date {
   font-size: 13px;
-  color: var(--admin-muted);
+  color: var(--muted);
   margin: 0;
 }
 

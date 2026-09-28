@@ -20,9 +20,9 @@
   min-height: 44px;
   padding: 0 14px;
   border-radius: 10px;
-  border: 1px solid var(--admin-border);
-  background: var(--admin-surface);
-  color: var(--admin-ink);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
 }
 
 @media (max-width: 860px) {

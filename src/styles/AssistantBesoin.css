@@ -52,7 +52,7 @@
 .progress-step-active .progress-step-dot {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-teal);
 }
 
 .progress-step-done .progress-step-dot {
@@ -162,7 +162,7 @@
 .zone-tab-active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-teal);
 }
 
 /* Niveau d'urgence (étape 4) : vert/orange/rouge, cohérent avec la demande de
@@ -196,7 +196,7 @@
 
 .urgence-tile-urgent.urgence-tile-selected {
   border-color: var(--danger);
-  background: rgba(192, 91, 77, 0.12);
+  background: var(--coral-soft);
   color: var(--danger);
 }
 

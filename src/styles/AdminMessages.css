@@ -12,7 +12,7 @@
 }
 
 .admin-message-non-lu {
-  border-left-color: var(--admin-coral);
+  border-left-color: var(--coral);
 }
 
 .admin-message-entete {
@@ -31,13 +31,13 @@
 
 .admin-message-date {
   font-size: 13px;
-  color: var(--admin-muted);
+  color: var(--muted);
   flex-shrink: 0;
 }
 
 .admin-message-texte {
   margin: 0 0 12px;
-  color: var(--admin-ink);
+  color: var(--ink);
 }
 
 .admin-message-actions {
