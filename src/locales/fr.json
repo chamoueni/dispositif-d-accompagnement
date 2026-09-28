@@ -197,6 +197,7 @@
   },
   "connexion_page": {
     "titre": "Connexion",
+    "retour_formules": "Retour à nos formules",
     "sous_titre_redirect": "Connectez-vous pour continuer.",
     "sous_titre_defaut": "Accédez à votre espace.",
     "email_label": "Email",

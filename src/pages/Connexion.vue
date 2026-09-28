@@ -5,12 +5,19 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
+import '../styles/BackLink.css'
 import '../styles/Connexion.css'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const { login } = useAuth()
+
+// Arrivée ici via un clic sur une formule sans être connecté (garde requiresAuth,
+// voir router/index.js) : on propose de retourner choisir une autre formule
+// plutôt que de laisser l'utilisateur bloqué sur ce formulaire de connexion
+// sans lien avec "Nos formules".
+const vientDUneFormule = route.query.redirect?.toString().startsWith('/formule/')
 
 const form = reactive({ email: '', password: '' })
 const error = ref('')
@@ -33,6 +40,23 @@ async function handleSubmit() {
   <section class="login-page">
     <div class="container">
       <div class="login-card card mx-auto">
+        <router-link
+          v-if="vientDUneFormule"
+          to="/#nos-formules"
+          class="back-link"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 12H5M11 18l-6-6 6-6" />
+          </svg>
+          {{ t('connexion_page.retour_formules') }}
+        </router-link>
         <span class="section-label" />
         <h1 class="h3 mb-1">
           {{ t('connexion_page.titre') }}

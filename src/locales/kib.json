@@ -197,6 +197,7 @@
   },
   "connexion_page": {
     "titre": "Fidirana",
+    "retour_formules": "Miverina any amin'ny fandaharana ataonay",
     "sous_titre_redirect": "Midira mba hanohizana.",
     "sous_titre_defaut": "Idiro ny toeranao.",
     "email_label": "Mailaka",
