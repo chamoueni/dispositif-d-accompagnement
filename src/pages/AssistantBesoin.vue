@@ -12,6 +12,7 @@ import ProviderCard from '../components/ProviderCard.vue'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import SpeakButton from '../components/SpeakButton.vue'
 import BackLink from '../components/BackLink.vue'
+import IconeAction from '../components/IconeAction.vue'
 import '../styles/AssistantBesoin.css'
 
 const { t } = useI18n()
@@ -505,6 +506,7 @@ const recapTexte = computed(() => {
             @click="suivant"
           >
             {{ t('assistant_page.voir_resultats') }}
+            <IconeAction nom="recherche" />
           </button>
         </div>
       </div>
@@ -532,6 +534,7 @@ const recapTexte = computed(() => {
                 class="btn btn-outline-secondary btn-sm"
                 @click="modifierReponses"
               >
+                <IconeAction nom="crayon" />
                 {{ t('assistant_page.modifier_reponse') }}
               </button>
               <button

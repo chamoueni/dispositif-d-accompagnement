@@ -316,7 +316,7 @@
     "erreur_diff": "Les deux mots de passe ne correspondent pas."
   },
   "historique_page": {
-    "titre": "🧾 Historique de mes accompagnements",
+    "titre": "Historique de mes accompagnements",
     "periode_label": "Période",
     "j30": "30 derniers jours",
     "j90": "90 derniers jours",
@@ -325,12 +325,12 @@
     "accompagnant_placeholder": "Rechercher un nom",
     "statut_label": "Statut",
     "aucune_mission": "Aucune mission dans l'historique pour ces critères.",
-    "refaire": "🔄 Refaire cette demande",
+    "refaire": "Refaire cette demande",
     "commune_label": "Commune :",
     "message_label": "Message :"
   },
   "mes_accompagnements_page": {
-    "titre": "📅 Mes accompagnements",
+    "titre": "Mes accompagnements",
     "sous_titre": "Vos accompagnements à venir ou en cours.",
     "aucun": "Aucun accompagnement en cours pour le moment.",
     "telephone_label": "Téléphone :",
@@ -345,7 +345,7 @@
     "intervenant_defaut": "l'intervenant",
     "personne_defaut": "la personne",
     "confirm_annuler": "Annuler cette demande ?",
-    "refaire": "🔄 Refaire cette demande"
+    "refaire": "Refaire cette demande"
   },
   "recherche_page": {
     "type_service_label": "Type de service",
@@ -445,11 +445,11 @@
     "urgence_normal": "Normal",
     "urgence_important": "Important",
     "urgence_urgent": "Urgent",
-    "voir_resultats": "Voir les résultats 🔎",
+    "voir_resultats": "Voir les résultats",
     "recherche_en_cours": "Recherche en cours…",
     "trouve": "Nous avons trouvé {n} accompagnement correspondant à votre recherche à {commune}. | Nous avons trouvé {n} accompagnements correspondant à votre recherche à {commune}.",
     "aucun_reservable": "Aucun accompagnement réservable pour « {label} » pour le moment à {commune}.",
-    "modifier_reponse": "✎ Modifier ma réponse",
+    "modifier_reponse": "Modifier ma réponse",
     "modifier_reponse_simple": "Modifier ma réponse",
     "recommencer": "Recommencer",
     "connectez_vous": "Connectez-vous",

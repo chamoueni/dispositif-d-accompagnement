@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { getDemandesByDemandeur, getDemandesByAidant, getUsers } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
+import IconeAction from '../components/IconeAction.vue'
 import '../styles/Historique.css'
 
 const { t } = useI18n()
@@ -101,6 +102,7 @@ function refaire(demande) {
     <div class="container">
       <BackLink />
       <h1 class="h3 mb-4">
+        <IconeAction nom="historique" />
         {{ t('historique_page.titre') }}
       </h1>
 
@@ -219,6 +221,7 @@ function refaire(demande) {
                 class="btn btn-outline-primary btn-sm"
                 @click="refaire(demande)"
               >
+                <IconeAction nom="refaire" />
                 {{ t('historique_page.refaire') }}
               </button>
             </div>

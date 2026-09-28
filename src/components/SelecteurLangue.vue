@@ -13,12 +13,8 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { LANGUES, enregistrerLangue } from '../i18n'
+import DrapeauLangue from './DrapeauLangue.vue'
 import '../styles/SelecteurLangue.css'
-
-// Pas de vrai drapeau national pour le shimaoré/kibushi (langues locales, pas de
-// pays associé) : le drapeau de Mayotte sert de repère visuel pour les deux,
-// comme demandé.
-const DRAPEAUX = { fr: '🇫🇷', shi: '🇾🇹', kib: '🇾🇹' }
 
 const { locale, t } = useI18n()
 
@@ -98,7 +94,7 @@ onBeforeUnmount(() => document.removeEventListener('click', surClicDocument))
       @click="basculer"
       @keydown.down.prevent="ouvrir"
     >
-      <span aria-hidden="true">{{ DRAPEAUX[langueActive.code] }}</span>
+      <DrapeauLangue :code="langueActive.code" />
       <span class="langue-declencheur-texte">{{ langueActive.libelle }}</span>
       <svg
         class="langue-chevron"
@@ -136,7 +132,7 @@ onBeforeUnmount(() => document.removeEventListener('click', surClicDocument))
           @click="choisir(langue.code)"
           @keydown="surToucheOption($event, index)"
         >
-          <span aria-hidden="true">{{ DRAPEAUX[langue.code] }}</span>
+          <DrapeauLangue :code="langue.code" />
           <span class="langue-option-texte">{{ langue.libelle }}</span>
           <svg
             v-if="locale === langue.code"

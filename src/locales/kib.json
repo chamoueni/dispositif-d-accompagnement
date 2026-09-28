@@ -316,7 +316,7 @@
     "erreur_diff": "Tsy mitovy ny tenimiafina roa."
   },
   "historique_page": {
-    "titre": "🧾 Tantaran'ny fanampiako",
+    "titre": "Tantaran'ny fanampiako",
     "periode_label": "Fe-potoana",
     "j30": "30 andro farany",
     "j90": "90 andro farany",
@@ -325,12 +325,12 @@
     "accompagnant_placeholder": "Mitadiava anarana",
     "statut_label": "Sata",
     "aucune_mission": "Tsy misy asa ao amin'ny tantara mifanaraka amin'ireo sivana ireo.",
-    "refaire": "🔄 Ataovy indray ity fangatahana ity",
+    "refaire": "Ataovy indray ity fangatahana ity",
     "commune_label": "Tanàna :",
     "message_label": "Hafatra :"
   },
   "mes_accompagnements_page": {
-    "titre": "📅 Ny fanampiako",
+    "titre": "Ny fanampiako",
     "sous_titre": "Ny fanampianao ho avy na mandeha.",
     "aucun": "Tsy misy fanampiana mandeha amin'izao fotoana izao.",
     "telephone_label": "Telefaona :",
@@ -345,7 +345,7 @@
     "intervenant_defaut": "ilay mpanampy",
     "personne_defaut": "ilay olona",
     "confirm_annuler": "Foano ity fangatahana ity ?",
-    "refaire": "🔄 Ataovy indray ity fangatahana ity"
+    "refaire": "Ataovy indray ity fangatahana ity"
   },
   "recherche_page": {
     "type_service_label": "Karazana tolotra",
@@ -445,11 +445,11 @@
     "urgence_normal": "Mahazatra",
     "urgence_important": "Zava-dehibe",
     "urgence_urgent": "Maika",
-    "voir_resultats": "Jereo ny valiny 🔎",
+    "voir_resultats": "Jereo ny valiny",
     "recherche_en_cours": "Eo am-pikarohana…",
     "trouve": "Nahita fanampiana {n} mifanaraka amin'ny fikarohanao ao {commune} izahay. | Nahita fanampiana {n} mifanaraka amin'ny fikarohanao ao {commune} izahay.",
     "aucun_reservable": "Tsy misy fanampiana azo angatahina ho an'ny « {label} » amin'izao fotoana izao ao {commune}.",
-    "modifier_reponse": "✎ Ovay ny valiko",
+    "modifier_reponse": "Ovay ny valiko",
     "modifier_reponse_simple": "Ovay ny valiko",
     "recommencer": "Atombohy indray",
     "connectez_vous": "Midira",

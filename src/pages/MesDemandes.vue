@@ -17,6 +17,7 @@ import {
 } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
+import IconeAction from '../components/IconeAction.vue'
 import '../styles/MesDemandes.css'
 
 const { t } = useI18n()
@@ -262,6 +263,7 @@ function refaire(demande) {
                 class="btn btn-outline-primary btn-sm"
                 @click="refaire(demande)"
               >
+                <IconeAction nom="refaire" />
                 {{ t('mes_demandes_page.refaire') }}
               </button>
             </div>

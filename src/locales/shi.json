@@ -316,7 +316,7 @@
     "erreur_diff": "Maneno mawili ya siri hayafanani."
   },
   "historique_page": {
-    "titre": "🧾 Historia ya musaada wangu",
+    "titre": "Historia ya musaada wangu",
     "periode_label": "Muda",
     "j30": "Siku 30 zilizopita",
     "j90": "Siku 90 zilizopita",
@@ -325,12 +325,12 @@
     "accompagnant_placeholder": "Tafuta jina",
     "statut_label": "Hali",
     "aucune_mission": "Hakuna kazi katika historia kwa masharti haya.",
-    "refaire": "🔄 Fanya ombi hili tena",
+    "refaire": "Fanya ombi hili tena",
     "commune_label": "Mji :",
     "message_label": "Ujumbe :"
   },
   "mes_accompagnements_page": {
-    "titre": "📅 Musaada wangu",
+    "titre": "Musaada wangu",
     "sous_titre": "Musaada wako unaokuja au unaoendelea.",
     "aucun": "Hakuna musaada unaoendelea kwa sasa.",
     "telephone_label": "Simu :",
@@ -345,7 +345,7 @@
     "intervenant_defaut": "msaidizi",
     "personne_defaut": "mtu huyo",
     "confirm_annuler": "Ghairi ombi hili ?",
-    "refaire": "🔄 Fanya ombi hili tena"
+    "refaire": "Fanya ombi hili tena"
   },
   "recherche_page": {
     "type_service_label": "Aina ya huduma",
@@ -445,11 +445,11 @@
     "urgence_normal": "Ya kawaida",
     "urgence_important": "Muhimu",
     "urgence_urgent": "Ya haraka",
-    "voir_resultats": "Ona majibu 🔎",
+    "voir_resultats": "Ona majibu",
     "recherche_en_cours": "Utafutaji unaendelea…",
     "trouve": "Tumepata mtu {n} anayefaa utafutaji wako {commune}. | Tumepata watu {n} wanaofaa utafutaji wako {commune}.",
     "aucun_reservable": "Hakuna musaada unaoweza kuombwa kwa « {label} » kwa sasa {commune}.",
-    "modifier_reponse": "✎ Badilisha jibu langu",
+    "modifier_reponse": "Badilisha jibu langu",
     "modifier_reponse_simple": "Badilisha jibu langu",
     "recommencer": "Anza tena",
     "connectez_vous": "Ingia",

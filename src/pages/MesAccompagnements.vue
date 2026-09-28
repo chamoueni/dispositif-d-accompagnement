@@ -16,6 +16,7 @@ import {
 } from '../data/store'
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
+import IconeAction from '../components/IconeAction.vue'
 import '../styles/MesAccompagnements.css'
 
 const { t } = useI18n()
@@ -128,6 +129,7 @@ async function annulerMission(mission) {
     <div class="container">
       <BackLink />
       <h1 class="h3 mb-2">
+        <IconeAction nom="calendrier" />
         {{ t('mes_accompagnements_page.titre') }}
       </h1>
       <p class="text-muted small mb-4">
