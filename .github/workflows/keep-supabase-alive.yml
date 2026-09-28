@@ -1,0 +1,23 @@
+name: Garder le projet Supabase actif
+
+# Supabase (offre gratuite) met en pause tout projet sans activité depuis
+# plus de 7 jours. Ce workflow envoie une petite requête de lecture toutes
+# les 3 jours pour empêcher la mise en pause automatique.
+on:
+  schedule:
+    - cron: "0 6 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Requête de lecture sur la table "avis"
+        run: |
+          curl -sf "${SUPABASE_URL}/rest/v1/avis?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -o /dev/null
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
