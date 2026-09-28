@@ -159,6 +159,26 @@ export async function deleteCompteAdmin(id) {
   }
 }
 
+// Crée un compte complet (Auth + profil) depuis l'espace admin, via l'API
+// backend, seule à détenir la clé service role nécessaire pour créer un
+// utilisateur Auth sans mot de passe choisi par lui-même (voir server/index.js).
+// payload : { nom, email, telephone, ville, role, actif }.
+export async function createCompteAdmin(payload) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData.session?.access_token
+  const response = await fetch(`${API_BASE_URL}/api/admin/comptes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(body.message || 'Échec de la création du compte.')
+  return body
+}
+
 // ---------------------------------------------------------------------------
 // DEMANDE : une personne âgée sollicite un aidant (personnel de santé ou
 // particulier) pour un service donné. Suit un cycle de statuts simple :
@@ -438,6 +458,13 @@ export async function getMessagesContact() {
     return []
   }
   return data.map(mapMessageContact)
+}
+
+// Réservé à l'admin ("messages_contact_update_admin" en RLS) : bouton
+// "Marquer lu" de l'espace admin.
+export async function marquerMessageContactLu(id) {
+  const { error } = await supabase.from('messages_contact').update({ lu: true }).eq('id', id)
+  if (error) throw new Error(error.message)
 }
 
 // Réservé à l'admin (la policy RLS "messages_contact_delete_admin" refuse tout

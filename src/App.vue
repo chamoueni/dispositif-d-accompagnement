@@ -11,10 +11,13 @@ import logo from './assets/logo.png'
 const { t } = useI18n()
 const route = useRoute()
 
-// L'espace admin (tableau de bord + sa connexion dédiée) construit sa propre
-// mise en page (sidebar, voir pages/Admin.vue) : pas de navbar/footer du site
-// public autour, pour que ça se comporte comme un site à part.
-const estEspaceAdmin = computed(() => route.name === 'admin' || route.name === 'admin-connexion')
+// L'espace admin (tableau de bord + ses sous-vues, plus sa connexion dédiée)
+// construit sa propre mise en page (sidebar, voir pages/Admin.vue) : pas de
+// navbar/footer du site public autour, pour que ça se comporte comme un site
+// à part. route.meta.requiresAdmin plutôt qu'un nom de route précis : /admin
+// a maintenant des sous-routes (/admin/comptes, etc., voir router/index.js),
+// qui héritent toutes de ce meta depuis la route parente.
+const estEspaceAdmin = computed(() => route.meta.requiresAdmin === true || route.name === 'admin-connexion')
 
 const anneeCourante = new Date().getFullYear()
 </script>

@@ -32,6 +32,12 @@ create table if not exists profiles (
 -- rejouer manuellement dans le SQL Editor, comme le reste de ce fichier).
 alter table profiles add column if not exists adresse text not null default '';
 
+-- Statut "compte actif" affiché/modifiable depuis l'espace admin (voir
+-- AdminComptes.vue) : aucune règle de connexion n'en dépend pour l'instant
+-- (un compte "inactif" peut quand même se connecter), c'est une information
+-- de suivi côté admin plutôt qu'un vrai verrou d'accès.
+alter table profiles add column if not exists actif boolean not null default true;
+
 -- Un même numéro de téléphone ne doit pas pouvoir être utilisé sur deux
 -- comptes différents. Index unique PARTIEL (where telephone <> '') plutôt
 -- qu'une contrainte unique classique : la colonne a un défaut '' et plusieurs

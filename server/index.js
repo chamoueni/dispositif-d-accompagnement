@@ -1,4 +1,5 @@
 // API REST Express de gestion des adhérents + assistant IA du bouton SOS.
+import crypto from 'node:crypto'
 import express from 'express'
 import cors from 'cors'
 import Anthropic from '@anthropic-ai/sdk'
@@ -134,6 +135,73 @@ app.delete('/api/admin/comptes/:id', verifierAdmin, async (req, res, next) => {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(req.params.id)
     if (error) return res.status(400).json({ message: error.message })
     return res.status(204).end()
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Crée un compte complet (auth.users + sa ligne "profiles") depuis l'espace
+// admin, sans passer par /inscription. auth.admin.createUser() n'est
+// disponible qu'avec la clé service role, donc côté serveur uniquement (voir
+// deleteUser ci-dessus, même principe). Un email est obligatoire : Supabase
+// Auth ne peut pas créer de compte sans identifiant de connexion, même si le
+// reste du formulaire admin (téléphone, commune...) reste facultatif.
+// Comme il n'y a pas de champ mot de passe dans ce formulaire admin, un mot de
+// passe aléatoire est généré ici puis jamais communiqué : la personne définit
+// le sien via le lien "mot de passe oublié" habituel (voir
+// demanderReinitialisationMotDePasse dans stores/auth.js, appelé côté client
+// juste après la création).
+app.post('/api/admin/comptes', verifierAdmin, async (req, res, next) => {
+  try {
+    const { nom, email, telephone, ville, role, actif } = req.body
+
+    if (!nom?.trim()) return res.status(400).json({ message: 'Le nom est obligatoire.' })
+    if (!email?.trim() || !email.includes('@')) {
+      return res.status(400).json({ message: 'Un email valide est obligatoire pour créer un compte.' })
+    }
+    if (!rolesAutorises.includes(role)) return res.status(400).json({ message: 'Le rôle est invalide.' })
+
+    const motDePasseTemporaire = crypto.randomBytes(24).toString('base64url')
+
+    const { data, error: erreurCreation } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: motDePasseTemporaire,
+      email_confirm: true,
+      user_metadata: { nom, role },
+    })
+    if (erreurCreation) {
+      const message = /already.*registered|already.*exists/i.test(erreurCreation.message)
+        ? 'Un compte existe déjà avec cet email.'
+        : erreurCreation.message
+      return res.status(400).json({ message })
+    }
+
+    const { data: profil, error: erreurProfil } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        nom,
+        role,
+        telephone: telephone || '',
+        ville: ville || '',
+        actif: actif ?? true,
+      })
+      .select()
+      .single()
+
+    if (erreurProfil) {
+      // Le compte Auth a été créé mais pas son profil (ex. téléphone déjà pris,
+      // voir profiles_telephone_unique) : on annule la création plutôt que de
+      // laisser un compte Auth orphelin, sans ligne "profiles", inutilisable
+      // et impossible à recréer avec le même email/téléphone ensuite.
+      await supabaseAdmin.auth.admin.deleteUser(data.user.id)
+      const message = /profiles_telephone_unique/i.test(erreurProfil.message)
+        ? 'Ce numéro de téléphone est déjà utilisé par un autre compte.'
+        : "Impossible de créer le profil du compte, merci de réessayer."
+      return res.status(400).json({ message })
+    }
+
+    return res.status(201).json({ ...profil, email })
   } catch (error) {
     next(error)
   }

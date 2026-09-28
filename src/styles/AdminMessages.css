@@ -1,0 +1,45 @@
+.admin-messages-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-message-carte {
+  border-left: 3px solid transparent;
+}
+
+.admin-message-non-lu {
+  border-left-color: var(--admin-coral);
+}
+
+.admin-message-entete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.admin-message-nom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-message-date {
+  font-size: 13px;
+  color: var(--admin-muted);
+  flex-shrink: 0;
+}
+
+.admin-message-texte {
+  margin: 0 0 12px;
+  color: var(--admin-ink);
+}
+
+.admin-message-actions {
+  justify-content: flex-start;
+}

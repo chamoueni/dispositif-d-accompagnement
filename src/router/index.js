@@ -127,11 +127,22 @@ const routes = [
     name: 'admin-connexion',
     component: () => import('../pages/AdminLogin.vue'),
   },
+  // La coquille (sidebar + zone de contenu, voir pages/Admin.vue) porte la
+  // garde requiresAdmin ; les enfants l'héritent automatiquement (to.meta
+  // fusionne parent + enfant dans Vue Router 4), pas besoin de la répéter.
+  // Chaque entrée du menu a sa propre sous-route plutôt qu'une seule longue
+  // page qui défile (voir AdminSidebar.vue).
   {
     path: '/admin',
-    name: 'admin',
     component: () => import('../pages/Admin.vue'),
     meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      { path: '', name: 'admin', component: () => import('../pages/AdminDashboard.vue') },
+      { path: 'comptes', name: 'admin-comptes', component: () => import('../pages/AdminComptes.vue') },
+      { path: 'adherents', name: 'admin-adherents', component: () => import('../pages/AdminAdherents.vue') },
+      { path: 'demandes', name: 'admin-demandes', component: () => import('../pages/AdminDemandes.vue') },
+      { path: 'messages', name: 'admin-messages', component: () => import('../pages/AdminMessages.vue') },
+    ],
   },
 ]
 

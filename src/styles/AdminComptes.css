@@ -1,0 +1,47 @@
+.admin-comptes-filtres {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+/* table-layout: fixed (voir Admin.css) : les largeurs doivent être posées ici,
+   sinon toutes les colonnes se retrouvent à peu près égales. */
+.admin-table-comptes th:nth-child(1),
+.admin-table-comptes td:nth-child(1) {
+  width: 30%;
+}
+
+.admin-table-comptes th:nth-child(2),
+.admin-table-comptes td:nth-child(2) {
+  width: 18%;
+}
+
+.admin-table-comptes th:nth-child(3),
+.admin-table-comptes td:nth-child(3) {
+  width: 16%;
+}
+
+.admin-table-comptes th:nth-child(4),
+.admin-table-comptes td:nth-child(4) {
+  width: 12%;
+}
+
+.admin-table-comptes th:nth-child(5),
+.admin-table-comptes td:nth-child(5) {
+  width: 14%;
+}
+
+.admin-table-comptes th:nth-child(6),
+.admin-table-comptes td:nth-child(6) {
+  width: 10%;
+}
+
+@media (max-width: 640px) {
+  .admin-comptes-filtres {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

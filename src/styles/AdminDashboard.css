@@ -1,0 +1,207 @@
+.admin-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-dashboard-col-principale,
+.admin-dashboard-col-laterale {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.admin-card-head-padded {
+  padding: 20px 24px 4px;
+}
+
+.admin-dashboard-demandes .admin-table-wrap {
+  padding-bottom: 8px;
+}
+
+/* --- À traiter aujourd'hui -------------------------------------------------- */
+
+.admin-a-traiter-liste {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-a-traiter-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--admin-ylang-soft);
+  flex-wrap: wrap;
+}
+
+.admin-a-traiter-texte {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.admin-a-traiter-citation {
+  color: var(--admin-muted);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.admin-a-traiter-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* --- Activité récente -------------------------------------------------------- */
+
+.admin-activite-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-activite-liste li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.admin-activite-point {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 6px;
+}
+
+.admin-activite-point-ylang {
+  background: #d9a441;
+}
+
+.admin-activite-point-teal {
+  background: var(--admin-teal);
+}
+
+.admin-activite-point-teal-clair {
+  background: #7fb8b3;
+}
+
+.admin-activite-point-coral {
+  background: var(--admin-coral);
+}
+
+.admin-activite-date {
+  font-size: 13px;
+  color: var(--admin-muted);
+  margin-top: 2px;
+}
+
+/* --- Comptes par rôle -------------------------------------------------------- */
+
+.admin-repartition-barre {
+  display: flex;
+  height: 10px;
+  border-radius: 50rem;
+  overflow: hidden;
+  background: var(--admin-border);
+  margin-bottom: 14px;
+}
+
+.admin-repartition-segment-ylang {
+  background: #d9a441;
+}
+
+.admin-repartition-segment-teal {
+  background: var(--admin-teal);
+}
+
+.admin-repartition-segment-teal-clair {
+  background: #8fc4bf;
+}
+
+.admin-repartition-legende {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.admin-repartition-legende li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-repartition-legende strong {
+  margin-left: auto;
+}
+
+.admin-repartition-puce {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.admin-repartition-puce-ylang {
+  background: #d9a441;
+}
+
+.admin-repartition-puce-teal {
+  background: var(--admin-teal);
+}
+
+.admin-repartition-puce-teal-clair {
+  background: #8fc4bf;
+}
+
+@media (max-width: 1280px) {
+  .admin-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-a-traiter-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-a-traiter-actions {
+    width: 100%;
+  }
+
+  .admin-a-traiter-actions .admin-btn {
+    flex: 1 1 0;
+  }
+}
