@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppNav from './components/AppNav.vue'
 import SosButton from './components/SosButton.vue'
+import ConnexionBanner from './components/ConnexionBanner.vue'
 // Même logo que la navbar (voir AppNav.vue), pour une identité cohérente jusqu'en bas de page.
 import logo from './assets/logo.png'
 
@@ -23,6 +24,7 @@ const anneeCourante = new Date().getFullYear()
 </script>
 
 <template>
+  <ConnexionBanner />
   <AppNav v-if="!estEspaceAdmin" />
   <main
     id="contenu"
