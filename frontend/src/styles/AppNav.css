@@ -229,7 +229,7 @@
   }
 }
 
-/* Logo image (src/assets/logo.png) : hauteur fixe, largeur libre pour ne pas
+/* Logo image (frontend/src/assets/logo.png) : hauteur fixe, largeur libre pour ne pas
    déformer le fichier fourni (pas forcément carré). Léger halo blanc : sur le
    fond photographique/dégradé, le rond teal du logo se fondait par endroits. */
 .brand-logo {

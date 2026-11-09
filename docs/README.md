@@ -32,7 +32,7 @@ Mettre en relation des personnes âgées de Mayotte avec des intervenants capabl
 
 ### Nom
 
-Le propriétaire appelle le dispositif **« Au Fil des Âges »**. Ce nom **n'apparaît pas dans le code** : l'interface affiche « Dispositif d'accompagnement » (`src/components/AppNav.vue`, `src/App.vue`) et l'onglet du navigateur « Dispositif d'accompagnement personnalisé » (`index.html`).
+Le propriétaire appelle le dispositif **« Au Fil des Âges »**. Ce nom **n'apparaît pas dans le code** : l'interface affiche « Dispositif d'accompagnement » (`frontend/src/components/AppNav.vue`, `frontend/src/App.vue`) et l'onglet du navigateur « Dispositif d'accompagnement personnalisé » (`index.html`).
 
 ### Public cible
 
@@ -62,7 +62,7 @@ Des personnes âgées, souvent sur téléphone et avec une connexion parfois len
 | Couche | Technologie |
 |---|---|
 | Frontend | Vite 8 + Vue 3, Vue Router, Pinia, vue-i18n, Bootstrap 5 (Sass), Leaflet |
-| Backend | Node.js + Express 5, dans `server/` |
+| Backend | Node.js + Express 5, dans `backend/` |
 | Base de données et comptes | Supabase (PostgreSQL, Supabase Auth, règles RLS, une fonction Edge) |
 | Déploiement | Code sur GitHub ; hébergement Render indiqué par le propriétaire, **sans fichier de configuration dans le dépôt** |
 
@@ -88,7 +88,7 @@ Détail et variables dans [11-deploiement.md](11-deploiement.md).
 ### Structure
 
 ```
-src/            Frontend Vue
+frontend/src/            Frontend Vue
   pages/        25 vues, une par route
   components/   23 composants réutilisables (dont 3 pour l'admin)
   stores/       auth, accessibilité, admin, adhérents
@@ -97,9 +97,9 @@ src/            Frontend Vue
   router/       routes et garde de navigation
   locales/      traductions fr / shi / kib
   styles/       feuilles CSS
-server/         Backend Express (7 routes)
+backend/         Backend Express (7 routes)
 supabase/       schema.sql (tables + règles RLS) et la fonction Edge
-public/         favicon et emplacements des fichiers audio
+frontend/public/         favicon et emplacements des fichiers audio
 ```
 
 ---
@@ -170,7 +170,7 @@ Classés par importance. Chaque point renvoie au document qui le détaille.
 14. L'accueil envoie un paramètre `?ville=` que la page de recherche ne lit pas — [02](02-frontend.md) § 8.
 15. Les limites annoncées par les formules ne sont appliquées nulle part — [08](08-flux-complets.md) § 14.
 16. Le compteur et les marqueurs de l'accueil sont réservés aux connectés, que le routeur redirige hors de l'accueil — [02](02-frontend.md) § 8.
-17. `MayotteSymbol.vue` et `public/icons.svg` ne sont plus utilisés — [09](09-analyse-fichiers.md).
+17. `MayotteSymbol.vue` et `frontend/public/icons.svg` ne sont plus utilisés — [09](09-analyse-fichiers.md).
 
 ## À retenir
 

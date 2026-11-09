@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url'
 import process from 'node:process'
 import 'dotenv/config'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+// Racine du dépôt (ce script est dans frontend/scripts/) : le build y écrit
+// dist/, voir frontend/vite.config.js.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const dist = path.join(root, 'dist')
 const configuredSiteUrl = (process.env.VITE_SITE_URL || '').trim()
 let siteUrl = ''

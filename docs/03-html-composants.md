@@ -1,6 +1,6 @@
 # 03 — Composants
 
-Un composant est un morceau d'interface réutilisable. Ils sont dans `src/components/` (et `src/components/admin/` pour l'espace admin). Les pages, elles, sont dans `src/pages/` et sont décrites dans [02-frontend.md](02-frontend.md).
+Un composant est un morceau d'interface réutilisable. Ils sont dans `frontend/src/components/` (et `frontend/src/components/admin/` pour l'espace admin). Les pages, elles, sont dans `frontend/src/pages/` et sont décrites dans [02-frontend.md](02-frontend.md).
 
 ## 1. Vocabulaire rapide
 
@@ -73,7 +73,7 @@ Trois chemins existent dans le projet :
 
 ## 4. Composants généraux
 
-### AppNav — [AppNav.vue](../src/components/AppNav.vue)
+### AppNav — [AppNav.vue](../frontend/src/components/AppNav.vue)
 
 - **Rôle** : barre de navigation fixe en haut du site public.
 - **Props / événements** : aucun.
@@ -86,7 +86,7 @@ Trois chemins existent dans le projet :
   - admin → bouton vers `/admin`.
 - **Points techniques** : `mesurerHauteur` publie la hauteur réelle de la barre dans la variable CSS `--hauteur-nav`, que `App.vue` utilise pour décaler le contenu. Le menu mobile est piloté par Vue (pas par le JS de Bootstrap) et se referme au changement de page, à la touche Échap (`surTouche`) et au clic en dehors (`surClicDocument`). Le premier élément est un lien d'évitement vers `#contenu`.
 
-### SosButton — [SosButton.vue](../src/components/SosButton.vue)
+### SosButton — [SosButton.vue](../frontend/src/components/SosButton.vue)
 
 - **Rôle** : bouton flottant d'aide, présent sur tout le site public.
 - **Props / événements** : aucun.
@@ -99,11 +99,11 @@ Trois chemins existent dans le projet :
   - `envoyerMessage()` : en mode chat, interroge l'IA ; en mode formulaire, appelle `addMessageContact`.
 - **Lien d'urgence** : `href="tel:112"`.
 
-### ConnexionBanner — [ConnexionBanner.vue](../src/components/ConnexionBanner.vue)
+### ConnexionBanner — [ConnexionBanner.vue](../frontend/src/components/ConnexionBanner.vue)
 
 Bandeau affiché quand `enLigne` (de `useConnexion`) est faux. Aucune prop. Ses styles sont dans un bloc `<style scoped>` du fichier.
 
-### CarteMayotte — [CarteMayotte.vue](../src/components/CarteMayotte.vue)
+### CarteMayotte — [CarteMayotte.vue](../frontend/src/components/CarteMayotte.vue)
 
 - **Rôle** : carte « Ma position » de la page **Mon compte** (donc visible seulement une fois connecté). Centrée sur la commune du profil avec un repère « Vous êtes ici » ; bouton « Me localiser » qui affiche la position GPS (gardée dans le navigateur, jamais envoyée) ; aidants posés sur leur commune, filtrables par besoin. Avant le 9 novembre 2026, c'était une vignette sur l'accueil.
 - **Props / événements** : aucun.
@@ -112,7 +112,7 @@ Bandeau affiché quand `enLigne` (de `useConnexion`) est faux. Aucune prop. Ses 
 - **Fonctions importantes** : `placerCommune()` (repère de la commune + cadrage), `meLocaliser()` (géolocalisation du navigateur), `dessinerAidants()`, `correspondAuBesoin(aidant)`, `echapper(texte)`, `iconeVous()`, `iconeMaison()`, `iconeRegroupement()`.
 - **À savoir** : l'ordre des deux imports Leaflet ne doit pas être inversé (expliqué en commentaire dans le fichier). Les infobulles sont construites en HTML : tout texte saisi par un utilisateur passe par `echapper()` avant d’y être inséré.
 
-### ProviderCard — [ProviderCard.vue](../src/components/ProviderCard.vue)
+### ProviderCard — [ProviderCard.vue](../frontend/src/components/ProviderCard.vue)
 
 - **Rôle** : fiche d'un intervenant dans les résultats.
 - **Props** : `provider` (objet, obligatoire) — une ligne de la table `profiles`.
@@ -122,30 +122,30 @@ Bandeau affiché quand `enLigne` (de `useConnexion`) est faux. Aucune prop. Ses 
 - **Actions** : lien `tel:` vers `provider.telephone` ; lien vers `/nouvelle-demande/:id`, visible seulement si `user.role === 'senior'`.
 - **Parents** : `RecherchePersonnel`, `AssistantBesoin`.
 
-### FormulesSection — [FormulesSection.vue](../src/components/FormulesSection.vue)
+### FormulesSection — [FormulesSection.vue](../frontend/src/components/FormulesSection.vue)
 
 Affiche les cartes de `FORMULES`. Aucune prop. Fonctions : `estFormuleActive(formule)`, calculé `peutSouscrire` (visiteur ou personne âgée). Parent : `Accueil`.
 
-### PaiementBandeau — [PaiementBandeau.vue](../src/components/PaiementBandeau.vue)
+### PaiementBandeau — [PaiementBandeau.vue](../frontend/src/components/PaiementBandeau.vue)
 
 Quatre messages de réassurance (constante `GARANTIES`). Enfant : `IconBadge`. Parent : `Accueil`.
 
-### SelecteurLangue — [SelecteurLangue.vue](../src/components/SelecteurLangue.vue)
+### SelecteurLangue — [SelecteurLangue.vue](../frontend/src/components/SelecteurLangue.vue)
 
 - **Rôle** : menu déroulant pour choisir la langue.
 - **État interne** : `ouvert`, `racine`, `options`.
 - **Fonctions** : `choisir(code)` change `locale`, appelle `enregistrerLangue` et met à jour l'attribut `lang` de `<html>` ; `surToucheOption` gère les flèches haut/bas et Échap.
 - **Enfant** : `DrapeauLangue`. **Parent** : `AppNav`.
 
-### DrapeauLangue — [DrapeauLangue.vue](../src/components/DrapeauLangue.vue)
+### DrapeauLangue — [DrapeauLangue.vue](../frontend/src/components/DrapeauLangue.vue)
 
 Icône SVG d'une langue. Prop : `code` (`'fr'`, `'shi'`, `'kib'`, obligatoire).
 
-### ThemeSwitcher — [ThemeSwitcher.vue](../src/components/ThemeSwitcher.vue)
+### ThemeSwitcher — [ThemeSwitcher.vue](../frontend/src/components/ThemeSwitcher.vue)
 
 Deux boutons ronds : thème clair/sombre (`basculerThemeDirect`) et mode confort (`basculerConfort`). Aucune prop. Dépend de `useTheme` et `useAccessibility`. Parents : `AppNav`, `AdminSidebar`. Styles dans le fichier.
 
-### ChampMotDePasse — [ChampMotDePasse.vue](../src/components/ChampMotDePasse.vue)
+### ChampMotDePasse — [ChampMotDePasse.vue](../frontend/src/components/ChampMotDePasse.vue)
 
 - **Rôle** : champ mot de passe avec bouton Afficher / Masquer.
 - **Props** : `modelValue` (texte), `id` (obligatoire), `autocomplete` (défaut `current-password`), `required`.
@@ -153,15 +153,15 @@ Deux boutons ronds : thème clair/sombre (`basculerThemeDirect`) et mode confort
 - **État interne** : `visible`.
 - **Parents** : `Connexion`, `Inscription`, `Profil`, `ReinitialiserMotDePasse`.
 
-### DictateButton — [DictateButton.vue](../src/components/DictateButton.vue)
+### DictateButton — [DictateButton.vue](../frontend/src/components/DictateButton.vue)
 
 Bouton micro. **Événement** : `dictate(transcript)`. Dépend de `useVoiceInput`. Le bouton ne s'affiche pas si le navigateur ne gère pas la reconnaissance vocale (`supported`). Parents : `NouvelleDemande`, `SosButton`.
 
-### SpeakButton — [SpeakButton.vue](../src/components/SpeakButton.vue)
+### SpeakButton — [SpeakButton.vue](../frontend/src/components/SpeakButton.vue)
 
 Bouton « Écouter ». **Props** : `text` (obligatoire, texte français à lire), `cle` (clé de traduction, facultative, sert à trouver un enregistrement audio). Dépend de `useSpeech`. Parents : `ProviderCard`, `AssistantBesoin`.
 
-### BackLink — [BackLink.vue](../src/components/BackLink.vue)
+### BackLink — [BackLink.vue](../frontend/src/components/BackLink.vue)
 
 Bouton « Retour » qui appelle `router.back()`. Aucune prop.
 
@@ -169,18 +169,18 @@ Bouton « Retour » qui appelle `router.back()`. Aucune prop.
 
 | Composant | Props | Rôle |
 |---|---|---|
-| [IconBadge.vue](../src/components/IconBadge.vue) | `name` (liste fermée : `profile`, `calendar`, `search`, `map-pin`, `bolt`, `shield-check`, `connect`, `home`, `phone`), `tone` (`accent` ou `accent-2`), `compact` | Icône ronde générique |
-| [ServiceIcon.vue](../src/components/ServiceIcon.vue) | `type` (`soins`, `courses`, `menage`, `garde`, `psychologique`), `tone` (`default` ou `light`) | Icône d'un service |
-| [IconeAction.vue](../src/components/IconeAction.vue) | `nom` (`historique`, `calendrier`, `refaire`, `recherche`, `crayon`) | Petite icône devant un libellé |
-| [HighlightWord.vue](../src/components/HighlightWord.vue) | aucune ; un **slot** | Mot en dégradé animé |
-| [ReefDivider.vue](../src/components/ReefDivider.vue) | aucune | Ligne ondulée décorative |
-| [MayotteSymbol.vue](../src/components/MayotteSymbol.vue) | aucune | Silhouette de l'île — **non utilisé** |
+| [IconBadge.vue](../frontend/src/components/IconBadge.vue) | `name` (liste fermée : `profile`, `calendar`, `search`, `map-pin`, `bolt`, `shield-check`, `connect`, `home`, `phone`), `tone` (`accent` ou `accent-2`), `compact` | Icône ronde générique |
+| [ServiceIcon.vue](../frontend/src/components/ServiceIcon.vue) | `type` (`soins`, `courses`, `menage`, `garde`, `psychologique`), `tone` (`default` ou `light`) | Icône d'un service |
+| [IconeAction.vue](../frontend/src/components/IconeAction.vue) | `nom` (`historique`, `calendrier`, `refaire`, `recherche`, `crayon`) | Petite icône devant un libellé |
+| [HighlightWord.vue](../frontend/src/components/HighlightWord.vue) | aucune ; un **slot** | Mot en dégradé animé |
+| [ReefDivider.vue](../frontend/src/components/ReefDivider.vue) | aucune | Ligne ondulée décorative |
+| [MayotteSymbol.vue](../frontend/src/components/MayotteSymbol.vue) | aucune | Silhouette de l'île — **non utilisé** |
 
 Toutes ces icônes sont des SVG dessinés dans le fichier : le projet n'utilise pas de bibliothèque d'icônes.
 
 ## 5. Composants de l'espace admin
 
-### AdminSidebar — [AdminSidebar.vue](../src/components/admin/AdminSidebar.vue)
+### AdminSidebar — [AdminSidebar.vue](../frontend/src/components/admin/AdminSidebar.vue)
 
 - **Rôle** : menu latéral de l'admin.
 - **Props** : aucune. Les compteurs viennent des stores `useAdminDashboard` et `useAdherentsStore`.
@@ -189,11 +189,11 @@ Toutes ces icônes sont des SVG dessinés dans le fichier : le projet n'utilise 
 - **Action** : `seDeconnecter`.
 - **Enfants** : `AdminIcon`, `ThemeSwitcher`.
 
-### StatCard — [StatCard.vue](../src/components/admin/StatCard.vue)
+### StatCard — [StatCard.vue](../frontend/src/components/admin/StatCard.vue)
 
 Carte de chiffre clé. **Props** : `icone` (obligatoire), `tone` (défaut `teal`), `valeur` (obligatoire), `libelle` (obligatoire), `badgeTexte`, `badgeTone`, `lien`. Ne fait aucun calcul. Parent : `AdminDashboard`.
 
-### AdminIcon — [AdminIcon.vue](../src/components/admin/AdminIcon.vue)
+### AdminIcon — [AdminIcon.vue](../frontend/src/components/admin/AdminIcon.vue)
 
 Icônes en trait fin. **Prop** : `nom` (obligatoire). Noms disponibles : `arrow-left`, `check-circle`, `chevron-right`, `clock`, `edit`, `heart`, `home`, `inbox`, `log-out`, `mail`, `menu`, `message-square`, `plus`, `search`, `trash`, `user-plus`, `users`, `x`.
 

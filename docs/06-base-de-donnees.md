@@ -174,7 +174,7 @@ Toutes passent par le constructeur de requêtes de `@supabase/supabase-js` ; il 
 
 | Fonction | Fichier | Requête |
 |---|---|---|
-| `getUsers` | [store.js](../src/data/store.js) l. 115 | `from('profiles').select('*')` |
+| `getUsers` | [store.js](../frontend/src/data/store.js) l. 115 | `from('profiles').select('*')` |
 | `findById` | store.js l. 124 | `from('profiles').select('*').eq('id', id).single()` |
 | `updateCompteAdmin` | store.js l. 136 | `from('profiles').update(patch).eq('id', id).select('id')` |
 | `getDemandes` | store.js l. 209 | `from('demandes').select('*')` |
@@ -191,10 +191,10 @@ Toutes passent par le constructeur de requêtes de `@supabase/supabase-js` ; il 
 | `marquerMessageContactLu` | store.js l. 465 | `… .update({ lu: true }).eq('id', id)` |
 | `deleteMessageContact` | store.js l. 476 | `… .delete().eq('id', id).select('id')` |
 | `getAvis` / `addAvis` / `deleteAvis` | store.js l. 491, 505, 517 | lecture triée, insertion, suppression |
-| `chargerProfil` | [auth.js](../src/stores/auth.js) l. 68 | `from('profiles').select('*').eq('id', authUser.id).single()` |
+| `chargerProfil` | [auth.js](../frontend/src/stores/auth.js) l. 68 | `from('profiles').select('*').eq('id', authUser.id).single()` |
 | `signup`, `creerProfilDepuisMetadata` | auth.js | `from('profiles').insert({...})` |
 | `updateProfile` | auth.js l. 187 | `from('profiles').update(patch).eq('id', user.id)` |
-| `synchroniserAdherent` | [supabaseSync.js](../server/supabaseSync.js) | `from('adherents').upsert(...)` ou `.delete().eq('id', …)` |
+| `synchroniserAdherent` | [supabaseSync.js](../backend/supabaseSync.js) | `from('adherents').upsert(...)` ou `.delete().eq('id', …)` |
 
 Deux détails utiles :
 

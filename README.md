@@ -20,25 +20,33 @@ Le frontend est disponible sur `http://localhost:5173` et l'API sur `http://loca
 
 `SUPABASE_SERVICE_ROLE_KEY` et `AUTH_SESSION_SECRET` restent uniquement dans l'environnement Node. Ne les préfixe jamais par `VITE_`, ne les expose pas au navigateur et ne les committe pas. Supabase Auth gère les comptes et le hachage reconnu des mots de passe; Express place un identifiant de session aléatoire dans un cookie `HttpOnly`, tandis que les jetons Supabase chiffrés et révocables restent côté serveur. `AUTH_REMEMBER_DAYS` règle la durée de « Se souvenir de moi » (30 jours par défaut, plafond de 365 jours); sans cette option, le cookie est temporaire et la session serveur expire après `AUTH_SESSION_HOURS` (12 h par défaut, plafond de 24 h).
 
-## Architecture ajoutée
+## Structure du projet
 
-- `server/index.js`, `server/authRoutes.js`, `server/dataRoutes.js` et `server/sessions.js` : API Express, authentification BFF, sessions sécurisées et accès aux données sous RLS.
-- `server/adherentsStore.js` : lecture/écriture du modèle métier dans `server/data/adherents.json`.
-- `server/supabaseSync.js` : miroir facultatif des créations, modifications et suppressions dans Supabase.
-- `server/data/adherents.json` : stockage local de secours, initialisé avec un tableau vide.
-- `src/stores/adherents.js` : store Pinia et appels `fetch()` vers `/api/adherents`.
-- `src/components/AdherentsManager.vue` : composant réutilisable avec formulaire, recherche, tri, actions et toasts.
-- `src/styles/AdherentsManager.css` : styles isolés du module.
-- `supabase/schema.sql` : table `adherents` et policies RLS admin.
-- `vite.config.js` : proxy de développement `/api` vers Express.
+```
+frontend/     Le site (Vue 3 + Vite) : ce que voit le navigateur
+  src/        pages, composants, styles, traductions...
+  public/     fichiers servis tels quels (favicon, icônes, audio)
+  scripts/    génération des pages SEO après le build
+backend/      Le serveur (Node.js + Express) : l'API /api/...
+supabase/     La base de données : schéma, migrations, fonction Edge
+docs/         Documentation détaillée (commencer par docs/README.md)
+.github/      Mlezi, le robot de maintenance (GitHub Actions)
+```
 
-Les comptes utilisateurs restent gérés par Supabase Auth et les profils par `profiles`; les appels métier sont proxifiés par le serveur afin que le navigateur ne reçoive aucun jeton Supabase.
+- `backend/index.js`, `authRoutes.js`, `dataRoutes.js`, `sessions.js` : API Express, connexion par sessions sécurisées et accès aux données sous RLS.
+- `backend/adherentsStore.js` : adhérents dans MongoDB (NoSQL), ou dans `backend/data/adherents.json` si MongoDB n'est pas configuré.
+- `backend/supabaseSync.js` : copie facultative des adhérents dans la table Supabase `adherents`.
+- `frontend/src/stores/adherents.js` et `frontend/src/pages/AdminAdherents.vue` : gestion des adhérents dans l'espace admin.
+- `frontend/vite.config.js` : proxy de développement `/api` vers Express ; le build est écrit dans `dist/` à la racine.
+- `supabase/schema.sql` : tables, index et règles RLS.
+
+Les comptes utilisateurs restent gérés par Supabase Auth et les profils par `profiles` ; les appels métier passent par le serveur, afin que le navigateur ne reçoive aucun jeton Supabase.
 
 ## SEO et déploiement
 
 Définir `VITE_SITE_URL` (frontend) et `SITE_URL` (serveur) avec l’URL publique HTTPS avant le build. `npm run build` génère les pages statiques publiques avec leurs titres, descriptions, URL canoniques et Open Graph, ainsi que `dist/sitemap.xml`, `dist/robots.txt` et `dist/404.html`. Sans domaine configuré, le sitemap est valide mais vide; renseigner l’URL avant le déploiement pour y inclure les pages publiques.
 
-Configurer l’hébergement pour servir les fichiers statiques générés, préserver le statut HTTP 404 sur `404.html`, et transmettre `/api/*` à Express. Si frontend et API partagent le même site (y compris des sous-domaines), garder `COOKIE_SAME_SITE=lax`; s’ils sont sur des sites différents, `COOKIE_SAME_SITE=none` et HTTPS sont nécessaires, mais les navigateurs peuvent bloquer les cookies tiers. Un reverse proxy sous le même domaine est préférable. En production, renseigner également `VITE_API_URL`, `CORS_ORIGINS` et les secrets serveur dans la configuration de l’hébergeur.
+Configurer l’hébergement pour servir les fichiers statiques générés, préserver le statut HTTP 404 sur `404.html`, et transmettre `/api/*` à Express. Si frontend et API partagent le même site (y compris des sous-domaines), garder `COOKIE_SAME_SITE=lax`; s’ils sont sur des sites différents, `COOKIE_SAME_SITE=none` et HTTPS sont nécessaires, mais les navigateurs peuvent bloquer les cookies tiers. Un reverse proxy sous le même domaine est préférable. Sur Render, c'est le cas : le site statique transmet `/api/*` au service Express par une règle de réécriture, donc `VITE_API_URL` reste vide (voir `docs/11-deploiement.md`). Renseigner les secrets serveur dans la configuration de l’hébergeur.
 
 ## API REST
 
@@ -55,13 +63,13 @@ Un adhérent contient `id`, `nom`, `email`, `telephone`, `ville`, `role`, `statu
 
 ### Backend
 
-Dans `server/index.js`, les imports chargent Express, CORS et les fonctions de stockage. `express()` crée l'application, `cors()` autorise les appels du frontend et `express.json()` transforme le corps JSON des requêtes en objet JavaScript. `validerAdherent()` vérifie les champs obligatoires et les valeurs autorisées. Chaque route appelle le stockage JSON, puis `synchroniserAdherent()` met à jour Supabase si les variables serveur existent. Le middleware final transforme les erreurs inattendues en réponse HTTP 500.
+Dans `backend/index.js`, les imports chargent Express, CORS et les fonctions de stockage. `express()` crée l'application, `cors()` autorise les appels du frontend et `express.json()` transforme le corps JSON des requêtes en objet JavaScript. `validerAdherent()` vérifie les champs obligatoires et les valeurs autorisées. Chaque route appelle le stockage JSON, puis `synchroniserAdherent()` met à jour Supabase si les variables serveur existent. Le middleware final transforme les erreurs inattendues en réponse HTTP 500.
 
 ### Frontend
 
-Dans `src/stores/adherents.js`, `defineStore()` crée l'état Pinia. `appelerApi()` ajoute les en-têtes JSON, exécute `fetch()` et convertit les erreurs HTTP en exceptions. `chargerAdherents()`, `creerAdherent()`, `modifierAdherent()` et `supprimerAdherent()` appellent respectivement GET, POST, PUT et DELETE puis mettent à jour l'état réactif.
+Dans `frontend/src/stores/adherents.js`, `defineStore()` crée l'état Pinia. `appelerApi()` ajoute les en-têtes JSON, exécute `fetch()` et convertit les erreurs HTTP en exceptions. `chargerAdherents()`, `creerAdherent()`, `modifierAdherent()` et `supprimerAdherent()` appellent respectivement GET, POST, PUT et DELETE puis mettent à jour l'état réactif.
 
-Dans `src/components/AdherentsManager.vue`, `computed()` filtre les champs recherchables et trie la copie de la liste. `reactive()` contient les valeurs du formulaire. `enregistrer()` choisit création ou modification selon `editionId`. `supprimer()` demande une confirmation, puis appelle le store. `notifier()` affiche un toast temporaire. Le template relie ces fonctions aux inputs, boutons et lignes du tableau.
+Dans `frontend/src/components/AdherentsManager.vue`, `computed()` filtre les champs recherchables et trie la copie de la liste. `reactive()` contient les valeurs du formulaire. `enregistrer()` choisit création ou modification selon `editionId`. `supprimer()` demande une confirmation, puis appelle le store. `notifier()` affiche un toast temporaire. Le template relie ces fonctions aux inputs, boutons et lignes du tableau.
 
 ## Vérifications
 

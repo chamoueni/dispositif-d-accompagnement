@@ -1,4 +1,4 @@
-# 05 — Backend (`server/`)
+# 05 — Backend (`backend/`)
 
 Le backend est un petit serveur **Express 5** écrit en JavaScript (modules ES). Il ne remplace pas Supabase : il le complète pour trois besoins (voir [01-architecture.md](01-architecture.md)).
 
@@ -6,12 +6,12 @@ Le backend est un petit serveur **Express 5** écrit en JavaScript (modules ES).
 
 | Fichier | Rôle |
 |---|---|
-| [server/index.js](../server/index.js) | Crée le serveur, pose les middleware, déclare **toutes** les routes |
-| [server/adherentsStore.js](../server/adherentsStore.js) | Lit et écrit les adhérents dans **MongoDB** (base NoSQL) si `MONGODB_URI` est définie, sinon dans `server/data/adherents.json` |
-| [server/supabaseAdmin.js](../server/supabaseAdmin.js) | Crée le client Supabase « service role » (ou `null` si non configuré) |
-| [server/supabaseSync.js](../server/supabaseSync.js) | Recopie un adhérent dans la table Supabase `adherents` |
-| `server/data/adherents.json` | Stockage des adhérents |
-| `server/package.json` | `{"type": "module"}` uniquement |
+| [backend/index.js](../backend/index.js) | Crée le serveur, pose les middleware, déclare **toutes** les routes |
+| [backend/adherentsStore.js](../backend/adherentsStore.js) | Lit et écrit les adhérents dans **MongoDB** (base NoSQL) si `MONGODB_URI` est définie, sinon dans `backend/data/adherents.json` |
+| [backend/supabaseAdmin.js](../backend/supabaseAdmin.js) | Crée le client Supabase « service role » (ou `null` si non configuré) |
+| [backend/supabaseSync.js](../backend/supabaseSync.js) | Recopie un adhérent dans la table Supabase `adherents` |
+| `backend/data/adherents.json` | Stockage des adhérents |
+| `backend/package.json` | `{"type": "module"}` uniquement |
 
 Il n'y a **pas de dossiers `routes/`, `controllers/`, `services/`** : tout est dans `index.js`. Si on voulait rapprocher le code de ce découpage, voici la correspondance :
 
@@ -21,7 +21,7 @@ Il n'y a **pas de dossiers `routes/`, `controllers/`, `services/`** : tout est d
 
 ## 2. Démarrage du serveur
 
-Commande : `npm run server` (soit `node server/index.js`, voir [package.json](../package.json)).
+Commande : `npm run server` (soit `node backend/index.js`, voir [package.json](../package.json)).
 
 Déroulé dans `index.js` :
 
@@ -45,7 +45,7 @@ Les valeurs ne figurent pas dans le dépôt ; `.env` est ignoré par Git. Voir [
 
 ## 4. Authentification et autorisation
 
-Un seul mécanisme : le middleware **`verifierAdmin`** ([index.js](../server/index.js), ligne 31).
+Un seul mécanisme : le middleware **`verifierAdmin`** ([index.js](../backend/index.js), ligne 31).
 
 1. Si `supabaseAdmin` est `null` → `503`.
 2. Lit l'en-tête `Authorization: Bearer <jeton>`. Absent → `401`.
@@ -53,7 +53,7 @@ Un seul mécanisme : le middleware **`verifierAdmin`** ([index.js](../server/ind
 4. Si erreur, ou si l'e-mail du compte n'est pas celui de la constante `ADMIN_EMAIL` → `403`.
 5. Sinon `next()` : la route s'exécute.
 
-Le jeton est le jeton de session Supabase de l'utilisateur connecté, envoyé par le frontend (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../src/data/store.js)).
+Le jeton est le jeton de session Supabase de l'utilisateur connecté, envoyé par le frontend (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../frontend/src/data/store.js)).
 
 **Ce middleware protège les routes `/api/adherents` et `/api/admin/comptes`** (administrateur uniquement).
 
@@ -105,7 +105,7 @@ Il n'y a pas de notion de rôle côté backend : seulement « est l'administrate
   4. si l'insertion du profil échoue, **supprime le compte Auth** qui vient d'être créé, pour ne pas laisser un compte orphelin.
 - **Réponse** : `201` + le profil et l'e-mail.
 - **Erreurs** : `400` (validation, e-mail déjà utilisé, téléphone déjà utilisé), `401`, `403`, `503`, `500`.
-- **Suite côté frontend** : [AdminComptes.vue](../src/pages/AdminComptes.vue) demande aussitôt un e-mail de réinitialisation, pour que la personne choisisse son mot de passe.
+- **Suite côté frontend** : [AdminComptes.vue](../frontend/src/pages/AdminComptes.vue) demande aussitôt un e-mail de réinitialisation, pour que la personne choisisse son mot de passe.
 
 ### `DELETE /api/admin/comptes/:id`
 
@@ -116,7 +116,7 @@ Il n'y a pas de notion de rôle côté backend : seulement « est l'administrate
 
 ## 6. Gestion des erreurs
 
-Chaque route est entourée d'un `try … catch (error) { next(error) }`. Le dernier middleware ([index.js](../server/index.js), ligne 245) reçoit ces erreurs, les écrit dans la console et répond `500` avec `{ message: 'Une erreur serveur est survenue.' }`. Le détail technique n'est donc jamais envoyé au navigateur.
+Chaque route est entourée d'un `try … catch (error) { next(error) }`. Le dernier middleware ([index.js](../backend/index.js), ligne 245) reçoit ces erreurs, les écrit dans la console et répond `500` avec `{ message: 'Une erreur serveur est survenue.' }`. Le détail technique n'est donc jamais envoyé au navigateur.
 
 Format constant des erreurs : `{ "message": "..." }`.
 
@@ -128,7 +128,7 @@ Format constant des erreurs : `{ "message": "..." }`.
 | CORS ouvert | `cors()` sans option : toutes les origines sont acceptées. |
 | Pas de limite de débit, pas d'en-têtes de sécurité | Aucune bibliothèque de type limiteur ou `helmet` : **non trouvé dans le code**. |
 | Validation légère | L'e-mail est jugé valide s'il contient `@`. La taille du message envoyé à l'IA n'est pas bornée (hors limite par défaut d'`express.json()`). |
-| E-mail de l'admin en dur | La constante `ADMIN_EMAIL` est répétée dans `server/index.js`, `src/stores/auth.js`, `supabase/schema.sql` et la fonction Edge. Changer d'administrateur demande de modifier les quatre. |
+| E-mail de l'admin en dur | La constante `ADMIN_EMAIL` est répétée dans `backend/index.js`, `frontend/src/stores/auth.js`, `supabase/schema.sql` et la fonction Edge. Changer d'administrateur demande de modifier les quatre. |
 | Clé « service role » | Bien cantonnée au serveur. C'est le point fort de ce backend. |
 
 ## 8. Stockage des adhérents : base NoSQL MongoDB
@@ -136,7 +136,7 @@ Format constant des erreurs : `{ "message": "..." }`.
 Les adhérents sont la partie **NoSQL** du projet : tout le reste (profils, demandes, avis…) est en SQL dans Supabase/PostgreSQL.
 
 1. **MongoDB** (si `MONGODB_URI` est définie, par exemple une base gratuite MongoDB Atlas) : c'est la source lue par `GET /api/adherents`. Chaque adhérent est un **document** de la collection `adherents` (base `MONGODB_DB`, `dispositif` par défaut).
-2. **Fichier JSON** (`server/data/adherents.json`) : utilisé à la place de MongoDB quand `MONGODB_URI` est vide, pratique en local.
+2. **Fichier JSON** (`backend/data/adherents.json`) : utilisé à la place de MongoDB quand `MONGODB_URI` est vide, pratique en local.
 3. **Table Supabase `adherents`** : simple copie, écrite par `synchroniserAdherent` seulement si `supabaseAdmin` existe. Elle n'est jamais relue par l'application.
 
 Opérations MongoDB utilisées (pilote officiel `mongodb`) :
@@ -163,7 +163,7 @@ Conséquences à connaître :
 
 ## À retenir
 
-- Tout le backend tient dans `server/index.js` : 7 routes.
+- Tout le backend tient dans `backend/index.js` : 7 routes.
 - Seules les deux routes `/api/admin/comptes` sont protégées, par `verifierAdmin`.
 - Le backend sert à ce que le navigateur ne doit pas faire : utiliser la clé « service role » et la clé de l'API d'IA.
 - Les adhérents vivent dans un fichier JSON, copié de façon facultative vers Supabase.

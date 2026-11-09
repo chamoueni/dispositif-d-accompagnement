@@ -6,19 +6,19 @@ L'authentification est entièrement confiée à **Supabase Auth** (e-mail + mot 
 
 | Besoin | Où | Fonction |
 |---|---|---|
-| Créer un compte | [src/stores/auth.js](../src/stores/auth.js) | `signup` → `supabase.auth.signUp` |
+| Créer un compte | [frontend/src/stores/auth.js](../frontend/src/stores/auth.js) | `signup` → `supabase.auth.signUp` |
 | Se connecter | auth.js | `login` → `supabase.auth.signInWithPassword` |
 | Se déconnecter | auth.js | `logout` → `supabase.auth.signOut` |
 | Changer son mot de passe | auth.js | `changerMotDePasse` → `supabase.auth.updateUser` |
 | Mot de passe oublié | auth.js | `demanderReinitialisationMotDePasse` → `supabase.auth.resetPasswordForEmail` |
 | Restaurer la session au chargement | auth.js | `supabase.auth.getSession()` puis `onAuthStateChange` |
-| Protéger les pages | [src/router/index.js](../src/router/index.js) | `router.beforeEach` |
+| Protéger les pages | [frontend/src/router/index.js](../frontend/src/router/index.js) | `router.beforeEach` |
 | Protéger les données | [supabase/schema.sql](../supabase/schema.sql) | règles RLS |
-| Protéger les routes admin du backend | [server/index.js](../server/index.js) | `verifierAdmin` |
+| Protéger les routes admin du backend | [backend/index.js](../backend/index.js) | `verifierAdmin` |
 
 ## 2. Connexion et vérification de l'identité
 
-1. L'utilisateur saisit e-mail et mot de passe ([Connexion.vue](../src/pages/Connexion.vue)).
+1. L'utilisateur saisit e-mail et mot de passe ([Connexion.vue](../frontend/src/pages/Connexion.vue)).
 2. `login()` appelle Supabase. En cas d'échec, le message est toujours « Email ou mot de passe incorrect. », sans préciser lequel est faux.
 3. En cas de succès, Supabase renvoie une session contenant un **jeton JWT**.
 4. `chargerProfil(authUser)` lit la ligne `profiles` de l'utilisateur et la range dans `state.user`, avec l'e-mail.
@@ -30,7 +30,7 @@ L'authentification est entièrement confiée à **Supabase Auth** (e-mail + mot 
 
 ## 3. Conservation de la session
 
-- Le client Supabase est créé avec ses réglages par défaut ([supabaseClient.js](../src/lib/supabaseClient.js) : `createClient(url, cléAnon)` sans option). Avec ces réglages, la bibliothèque conserve la session dans le stockage du navigateur et la renouvelle elle-même. Le projet ne contient aucun code de gestion de jeton ou de cookie.
+- Le navigateur ne parle plus directement à Supabase : la connexion passe par le serveur ([authRoutes.js](../backend/authRoutes.js)), qui garde les jetons Supabase chiffrés côté serveur et ne donne au navigateur qu’un cookie de session `httpOnly` ([sessions.js](../backend/sessions.js)).
 - Au chargement de la page, `supabase.auth.getSession()` restaure la session puis passe `state.initialized` à `true`. Le routeur attend ce signal avant de décider d'une redirection (`attendreInitialisation`).
 - `onAuthStateChange` recharge le profil à chaque changement (connexion ou déconnexion dans un autre onglet, expiration).
 
@@ -43,7 +43,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | Personne âgée | `profiles.role = 'senior'` | choisi à l'inscription |
 | Personnel de santé | `profiles.role = 'sante'` | choisi à l'inscription |
 | Particulier | `profiles.role = 'particulier'` | choisi à l'inscription |
-| Administrateur | l'e-mail du compte est égal à la constante `ADMIN_EMAIL` | `isAdmin` dans auth.js ; `verifierAdmin` dans server/index.js ; règles RLS |
+| Administrateur | l'e-mail du compte est égal à la constante `ADMIN_EMAIL` | `isAdmin` dans auth.js ; `verifierAdmin` dans backend/index.js ; règles RLS |
 
 ### Où les permissions sont appliquées
 
@@ -62,21 +62,21 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 
 ## 5. Communication frontend ↔ backend
 
-- En développement, Vite redirige `/api` vers `http://localhost:3001` ([vite.config.js](../vite.config.js)).
+- En développement, Vite redirige `/api` vers `http://localhost:3001` ([vite.config.js](../frontend/vite.config.js)).
 - En production aussi, le site appelle `/api/...` sur sa propre adresse : une règle de réécriture Render transmet ces appels au serveur Express (voir [11-deploiement.md](11-deploiement.md)). Les cookies de session restent donc « du même site ».
-- Pour les routes admin, le frontend ajoute `Authorization: Bearer <jeton de session>` (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../src/data/store.js)).
+- Pour les routes admin, le frontend ajoute `Authorization: Bearer <jeton de session>` (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../frontend/src/data/store.js)).
 - Toutes les routes `/api/...` reçoivent le cookie de session `httpOnly` ; `/api/adherents` exige le compte administrateur.
 
 ## 6. CORS
 
-`app.use(cors())` sans option dans [server/index.js](../server/index.js) : toutes les origines sont acceptées. Aucune liste d'origines autorisées n'est définie.
+`app.use(cors())` sans option dans [backend/index.js](../backend/index.js) : toutes les origines sont acceptées. Aucune liste d'origines autorisées n'est définie.
 
 ## 7. Protections contre les failles courantes
 
 | Faille | Situation dans le projet |
 |---|---|
 | **Injection SQL** | Aucune requête SQL n'est construite par concaténation. Tout passe par le constructeur de requêtes de `supabase-js`, qui envoie les valeurs comme paramètres. |
-| **XSS** (injection de HTML/JS) | Vue échappe par défaut ce qui est affiché avec `{{ }}`. Aucun `v-html` dans le projet. Les infobulles de [CarteMayotte.vue](../src/components/CarteMayotte.vue), construites en HTML pour `bindPopup`, échappent les textes saisis par les utilisateurs (fonction `echapper`, corrigé en novembre 2026). |
+| **XSS** (injection de HTML/JS) | Vue échappe par défaut ce qui est affiché avec `{{ }}`. Aucun `v-html` dans le projet. Les infobulles de [CarteMayotte.vue](../frontend/src/components/CarteMayotte.vue), construites en HTML pour `bindPopup`, échappent les textes saisis par les utilisateurs (fonction `echapper`, corrigé en novembre 2026). |
 | **CSRF** | L'authentification repose sur un jeton envoyé dans un en-tête, pas sur un cookie de session : une requête forgée depuis un autre site ne porte pas ce jeton. En revanche, les routes non protégées (`/api/adherents`) sont appelables depuis n'importe quel site, puisqu'elles n'exigent rien. |
 | **Exposition de clés** | La clé « service role » et la clé de l'API d'IA ne sont lues que côté serveur. Le fichier `.env` est dans `.gitignore`. Seules les variables préfixées `VITE_` arrivent dans le navigateur, et la clé « anon » est conçue pour être publique. |
 | **Énumération de comptes** | Message de connexion unique ; la page « mot de passe oublié » affiche la même confirmation que l'adresse existe ou non. |
@@ -86,7 +86,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 ### Autres constats
 
 - **Routes backend** : `/api/adherents` est réservé à l’administrateur depuis novembre 2026 (elle était auparavant ouverte à tous).
-- **Code d'arrivée** : généré avec `crypto.getRandomValues` ([store.js](../src/data/store.js), `genererCodeArrivee`), donc non prévisible. Il est créé dans le navigateur de l'intervenant, pas sur un serveur.
+- **Code d'arrivée** : généré avec `crypto.getRandomValues` ([store.js](../frontend/src/data/store.js), `genererCodeArrivee`), donc non prévisible. Il est créé dans le navigateur de l'intervenant, pas sur un serveur.
 - **Fonction Edge** : [notify-contact-message](../supabase/functions/notify-contact-message/index.ts) envoie un e-mail pour tout corps contenant `record.message`. Elle ne vérifie pas elle-même l'origine de l'appel ; cela dépend des réglages de la fonction dans Supabase, **non trouvés dans le dépôt**.
 - **Copie du dépôt dans le dépôt** : le sous-dossier non suivi qui duplique le projet contient son propre fichier `.env`. Il n'est pas envoyé sur GitHub tant qu'il reste non suivi, mais il multiplie les endroits où des clés sont stockées.
 
@@ -104,7 +104,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | Type de service demandé (dont « soins »), urgence | `NouvelleDemande.vue` | `demandes` | Idem |
 | Avis | `PourQui.vue` | `avis` (avec le nom) | Tout le monde, même non connecté |
 | Message de contact | `SosButton.vue` | `messages_contact` ; recopié par e-mail à l'admin | Admin |
-| Adhérents (nom, e-mail, téléphone, commune) | `AdminAdherents.vue` | `server/data/adherents.json` + table `adherents` | Quiconque appelle `GET /api/adherents` |
+| Adhérents (nom, e-mail, téléphone, commune) | `AdminAdherents.vue` | `backend/data/adherents.json` + table `adherents` | Quiconque appelle `GET /api/adherents` |
 | Données de carte bancaire | `PaiementFormule.vue` | **Nulle part** : contrôlées dans le navigateur puis ignorées | — |
 
 ### Données de santé
@@ -119,7 +119,7 @@ Le projet n'a **pas de champ médical structuré** (pas de pathologie, de traite
 - **Information des utilisateurs** : aucune page de mentions légales, de politique de confidentialité ni de recueil de consentement — **non trouvé dans le code**.
 - **Export des données personnelles, durée de conservation** : non trouvé dans le code.
 - **Sous-traitants** : Supabase, Render (hébergement), MongoDB Atlas (si configuré), Google (polices, SMTP Gmail), IGN (cartes), Unsplash (photos). Aucun document du dépôt ne les liste pour l'utilisateur.
-- **Fichier d'adhérents dans Git** : `server/data/adherents.json` est suivi par Git et contient un enregistrement. S'il s'agit d'une personne réelle, ses données sont dans l'historique du dépôt.
+- **Fichier d'adhérents dans Git** : `backend/data/adherents.json` est suivi par Git et contient un enregistrement. S'il s'agit d'une personne réelle, ses données sont dans l'historique du dépôt.
 
 ## À retenir
 

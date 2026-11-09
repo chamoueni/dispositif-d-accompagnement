@@ -6,7 +6,7 @@
 // ces deux langues. Lui faire lire du shimaoré avec un moteur français ne donne
 // pas un accent approximatif, mais une suite de sons faux, inutilisable pour la
 // personne qui écoute. On lit donc un enregistrement humain s'il existe
-// (public/audio/{langue}/{clé}.mp3), et à défaut on repasse au texte FRANÇAIS —
+// (frontend/public/audio/{langue}/{clé}.mp3), et à défaut on repasse au texte FRANÇAIS —
 // jamais au texte traduit.
 import { useI18n } from 'vue-i18n'
 import { texteFrancais } from '../i18n'

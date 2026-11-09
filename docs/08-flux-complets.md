@@ -16,9 +16,9 @@ Inscription.vue  →  handleSubmit()  →  signup()  [stores/auth.js]
       →  router.push('/mon-compte')
 ```
 
-1. L'utilisateur choisit son rôle et remplit le formulaire ([Inscription.vue](../src/pages/Inscription.vue)).
+1. L'utilisateur choisit son rôle et remplit le formulaire ([Inscription.vue](../frontend/src/pages/Inscription.vue)).
 2. `handleSubmit` contrôle les champs obligatoires, l'e-mail, le téléphone et la longueur du mot de passe. En cas d'erreur, le message s'affiche et rien n'est envoyé.
-3. `signup(payload)` ([auth.js](../src/stores/auth.js), ligne 131) crée le compte Auth. Les informations du formulaire sont aussi rangées dans les métadonnées du compte.
+3. `signup(payload)` ([auth.js](../frontend/src/stores/auth.js), ligne 131) crée le compte Auth. Les informations du formulaire sont aussi rangées dans les métadonnées du compte.
 4. **Deux cas :**
    - *Session reçue* : la ligne `profiles` est insérée, le profil est chargé, la page redirige vers `/mon-compte`.
    - *Pas de session* (confirmation par e-mail activée) : `signup` lève une erreur dont le texte est en réalité un message de succès (« Compte créé : un email de confirmation a été envoyé… »). Il s'affiche dans la zone d'erreur du formulaire. Le profil sera créé à la première connexion par `creerProfilDepuisMetadata`.
@@ -33,7 +33,7 @@ Connexion.vue  →  handleSubmit()  →  login()  →  supabase.auth.signInWithP
 ```
 
 - Si l'utilisateur venait d'une page protégée, la garde du routeur avait mis sa destination dans `?redirect=` ; il y est renvoyé.
-- La barre de navigation ([AppNav.vue](../src/components/AppNav.vue)) change toute seule, car elle lit `user`.
+- La barre de navigation ([AppNav.vue](../frontend/src/components/AppNav.vue)) change toute seule, car elle lit `user`.
 - Toute erreur de connexion donne le même message « Email ou mot de passe incorrect. » — y compris un e-mail pas encore confirmé.
 - **Déconnexion** : `handleLogout` (navbar) ou `seDeconnecter` (Mon compte) → `logout()` → `supabase.auth.signOut()` → `state.user = null` → retour à l'accueil.
 
@@ -77,7 +77,7 @@ filtres (type, commune) → computed results → une ProviderCard par résultat
 2. Le filtrage se fait dans le navigateur : `sante` → `role === 'sante'` ; `coursier` ou `menage` → `role === 'particulier'` et service coché ; commune si choisie.
 3. Changer un filtre ne relance aucune requête.
 
-Ce que la recherche ne fait pas : elle ne tient pas compte de `actif`, n'exige pas qu'un intervenant ait un service ou une disponibilité, ne filtre pas par jour ou créneau et ne trie pas par disponibilité. Le filtre par jour existe seulement dans l'assistant (case « disponible ce jour-là » de [AssistantBesoin.vue](../src/pages/AssistantBesoin.vue)).
+Ce que la recherche ne fait pas : elle ne tient pas compte de `actif`, n'exige pas qu'un intervenant ait un service ou une disponibilité, ne filtre pas par jour ou créneau et ne trie pas par disponibilité. Le filtre par jour existe seulement dans l'assistant (case « disponible ce jour-là » de [AssistantBesoin.vue](../frontend/src/pages/AssistantBesoin.vue)).
 
 ## 6. Création d'une demande
 
@@ -144,7 +144,7 @@ AdminComptes.vue (« Nouveau compte » → formulaire) → valider()
       → dashboard.creerCompte(payload)          [stores/adminDashboard.js]
       → createCompteAdmin(payload)              [store.js, ligne 166]
             → fetch POST /api/admin/comptes  + Authorization: Bearer <jeton>
-                  → verifierAdmin               [server/index.js, ligne 31]
+                  → verifierAdmin               [backend/index.js, ligne 31]
                   → supabaseAdmin.auth.admin.createUser()   → auth.users
                   → supabaseAdmin.from('profiles').insert() → profiles
                   ← 201 + profil
@@ -162,9 +162,9 @@ AdminComptes.vue (« Nouveau compte » → formulaire) → valider()
 AdminAdherents.vue → enregistrer()
       → store.creerAdherent(formulaire)         [stores/adherents.js]
             → fetch POST /api/adherents
-                  → validerAdherent()           [server/index.js]
-                  → ajouterAdherent()           [server/adherentsStore.js] → adherents.json
-                  → synchroniserAdherent()      [server/supabaseSync.js]   → table adherents
+                  → validerAdherent()           [backend/index.js]
+                  → ajouterAdherent()           [backend/adherentsStore.js] → adherents.json
+                  → synchroniserAdherent()      [backend/supabaseSync.js]   → table adherents
                   ← 201 + adhérent
       → adherents.value.push(...) → le tableau se met à jour → notifier('Adhérent ajouté…')
 ```
@@ -208,7 +208,7 @@ Aucun prestataire de paiement n'est appelé. Les limites annoncées par les form
 
 ## 15. Notifications
 
-**Cette fonctionnalité n'existe pas dans le code.** Il n'y a ni table, ni envoi, ni affichage de notification pour les utilisateurs. Un commentaire de [MonCompte.vue](../src/pages/MonCompte.vue) le confirme. Un utilisateur découvre une nouvelle demande ou une réponse en ouvrant « Mes demandes ». Le seul envoi automatique est l'e-mail à l'administrateur du flux 12.
+**Cette fonctionnalité n'existe pas dans le code.** Il n'y a ni table, ni envoi, ni affichage de notification pour les utilisateurs. Un commentaire de [MonCompte.vue](../frontend/src/pages/MonCompte.vue) le confirme. Un utilisateur découvre une nouvelle demande ou une réponse en ouvrant « Mes demandes ». Le seul envoi automatique est l'e-mail à l'administrateur du flux 12.
 
 ## À retenir
 

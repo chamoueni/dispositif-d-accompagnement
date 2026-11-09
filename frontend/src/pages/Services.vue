@@ -3,7 +3,7 @@
 import { useI18n } from 'vue-i18n'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import BackLink from '../components/BackLink.vue'
-// Photos fournies par l'utilisateur (voir src/assets), une par service.
+// Photos fournies par l'utilisateur (voir frontend/src/assets), une par service.
 import soinsPhoto from '../assets/soins a domicile .jpg'
 import coursesPhoto from '../assets/course .jpg'
 import menagePhoto from '../assets/menage .jpg'

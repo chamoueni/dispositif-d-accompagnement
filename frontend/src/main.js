@@ -12,7 +12,7 @@ import './assets/theme.css'
 // Design tokens (couleurs, styles de base) partagés par tous les composants.
 import './index.css'
 import './styles/ui.css'
-// Multilingue (francais / shimaore / kibushi), voir src/i18n/index.js.
+// Multilingue (francais / shimaore / kibushi), voir frontend/src/i18n/index.js.
 import { i18n, langueEnregistree } from './i18n'
 import App from './App.vue'
 import router from './router'

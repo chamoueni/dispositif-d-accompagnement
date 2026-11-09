@@ -147,7 +147,7 @@ export async function updateCompteAdmin(id, patch) {
 
 // Supprime un compte entièrement (compte Supabase Auth + profil) via l'API
 // backend, seule à détenir la clé service role nécessaire pour supprimer un
-// utilisateur Auth (voir server/index.js). Une suppression RLS de la seule
+// utilisateur Auth (voir backend/index.js). Une suppression RLS de la seule
 // ligne "profiles" laisserait le compte Auth en place, bloquant toute
 // réinscription avec le même email par la suite.
 export async function deleteCompteAdmin(id) {
@@ -156,7 +156,7 @@ export async function deleteCompteAdmin(id) {
 
 // Crée un compte complet (Auth + profil) depuis l'espace admin, via l'API
 // backend, seule à détenir la clé service role nécessaire pour créer un
-// utilisateur Auth sans mot de passe choisi par lui-même (voir server/index.js).
+// utilisateur Auth sans mot de passe choisi par lui-même (voir backend/index.js).
 // payload : { nom, email, telephone, ville, role, actif }.
 export async function createCompteAdmin(payload) {
   return apiRequest('/api/admin/comptes', { method: 'POST', body: payload })

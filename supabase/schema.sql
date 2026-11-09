@@ -108,7 +108,7 @@ create policy "adherents_modify_admin" on adherents
 
 -- ---------------------------------------------------------------------------
 -- AVIS : témoignages/commentaires publics postés par les utilisateurs sur la
--- page "Pour qui" (src/pages/PourQui.vue). Remplace les témoignages statiques
+-- page "Pour qui" (frontend/src/pages/PourQui.vue). Remplace les témoignages statiques
 -- codés en dur par de vrais avis stockés en base.
 -- ---------------------------------------------------------------------------
 create table if not exists avis (
@@ -156,7 +156,7 @@ create table if not exists demandes (
 
 -- Code annonce par l'intervenant en arrivant chez la personne agee, pour qu'elle
 -- puisse verifier qu'elle ouvre bien a la bonne personne. Genere au moment ou
--- l'aidant accepte la demande (voir updateDemandeStatut dans src/data/store.js),
+-- l'aidant accepte la demande (voir updateDemandeStatut dans frontend/src/data/store.js),
 -- donc null tant que la demande est en attente.
 -- Colonne ajoutee par alter : "create table if not exists" ci-dessus ne modifie
 -- pas une table deja existante.

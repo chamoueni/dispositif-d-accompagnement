@@ -18,7 +18,7 @@ defineProps({
     required: true,
   },
   // Clé de traduction, quand la phrase vient des fichiers de langue. C'est elle
-  // qui permet de retrouver l'enregistrement public/audio/{langue}/{cle}.mp3.
+  // qui permet de retrouver l'enregistrement frontend/public/audio/{langue}/{cle}.mp3.
   cle: {
     type: String,
     default: '',

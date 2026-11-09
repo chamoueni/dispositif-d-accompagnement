@@ -16,13 +16,13 @@ npm run dev:full
 | Commande | Ce qu'elle lance | Adresse |
 |---|---|---|
 | `npm run dev` | Vite (frontend seul) | `http://localhost:5173` (port par défaut de Vite, indiqué dans le README) |
-| `npm run server` | Express (`node server/index.js`) | `http://localhost:3001` (ou `PORT`) |
+| `npm run server` | Express (`node backend/index.js`) | `http://localhost:3001` (ou `PORT`) |
 | `npm run dev:full` | Les deux, avec `concurrently` | — |
 | `npm run build` | Construit le site dans `dist/` | — |
 | `npm run preview` | Sert le contenu de `dist/` pour vérification | — |
 | `npm run lint` | ESLint sur tout le projet | — |
 
-En local, le frontend appelle `/api/...` et Vite redirige vers Express ([vite.config.js](../vite.config.js)). `VITE_API_URL` peut donc rester vide.
+En local, le frontend appelle `/api/...` et Vite redirige vers Express ([vite.config.js](../frontend/vite.config.js)). `VITE_API_URL` peut donc rester vide.
 
 Sans Express, le site ne fonctionne pas : la connexion et toutes les données passent par lui.
 
@@ -32,12 +32,12 @@ Les noms viennent de [.env.example](../.env.example). **Ne jamais écrire leurs 
 
 | Nom | Côté | Lue dans | Rôle |
 |---|---|---|---|
-| `VITE_SUPABASE_URL` | Frontend | `src/lib/supabaseClient.js` | Adresse du projet Supabase |
-| `VITE_SUPABASE_ANON_KEY` | Frontend | `src/lib/supabaseClient.js` | Clé publique « anon » |
-| `VITE_API_URL` | Frontend | `src/lib/apiBase.js` | **Vide** en local comme en production : le site appelle `/api/...` sur sa propre adresse (proxy Vite en local, règle de réécriture Render en ligne) |
-| `SUPABASE_URL` | Backend | `server/supabaseAdmin.js` | Adresse du projet Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Backend | `server/supabaseAdmin.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
-| `PORT` | Backend | `server/index.js` | Port d'écoute (fourni par l'hébergeur) |
+| `VITE_SUPABASE_URL` | Frontend | `frontend/src/lib/supabaseClient.js` | Adresse du projet Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Frontend | `frontend/src/lib/supabaseClient.js` | Clé publique « anon » |
+| `VITE_API_URL` | Frontend | `frontend/src/lib/apiBase.js` | **Vide** en local comme en production : le site appelle `/api/...` sur sa propre adresse (proxy Vite en local, règle de réécriture Render en ligne) |
+| `SUPABASE_URL` | Backend | `backend/supabaseAdmin.js` | Adresse du projet Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Backend | `backend/supabaseAdmin.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
+| `PORT` | Backend | `backend/index.js` | Port d'écoute (fourni par l'hébergeur) |
 
 Deux règles à retenir :
 
@@ -64,7 +64,7 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 | Élément | Constat dans le dépôt |
 |---|---|
 | Fichier `render.yaml` | **Non trouvé** |
-| Deux services distincts (site statique + API) | Suggéré par les commentaires de `.env.example` et de `src/lib/apiBase.js` (« service Render séparé du site statique ») |
+| Deux services distincts (site statique + API) | Suggéré par les commentaires de `.env.example` et de `frontend/src/lib/apiBase.js` (« service Render séparé du site statique ») |
 | Adresse du site déployé | **Non trouvée** |
 | Adresse de l'API déployée | **Non trouvée** (l'exemple de `.env.example` est fictif) |
 | Commandes de build et de démarrage réglées chez Render | **Non trouvées** ; elles devraient correspondre aux scripts du § 1 |
@@ -79,16 +79,16 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 - Dossier publié : `dist`.
 - Variables à définir avant la construction : `VITE_SITE_URL` et `SITE_URL` (adresse publique du site). `VITE_API_URL` reste vide.
 - **Règle de réécriture à placer en premier** (Redirects/Rewrites) : `/api/*` → `https://dispositif-d-accompagnement-ulzn.onrender.com/api/*`, action *Rewrite*. Le navigateur parle ainsi à l’API par l’adresse du site : les cookies de session restent « du même site » (deux sous-domaines `onrender.com` comptent comme deux sites différents, et les navigateurs bloquent de plus en plus les cookies tiers).
-- **Règle de réécriture indispensable** : toutes les adresses doivent renvoyer `index.html`. Le routeur utilise `createWebHistory()` ; sans cette règle, recharger `/mon-compte` donne une erreur 404. Un commentaire de `src/composables/useSpeech.js` indique que l'hébergement renvoie bien `index.html` pour un chemin inconnu.
+- **Règle de réécriture indispensable** : toutes les adresses doivent renvoyer `index.html`. Le routeur utilise `createWebHistory()` ; sans cette règle, recharger `/mon-compte` donne une erreur 404. Un commentaire de `frontend/src/composables/useSpeech.js` indique que l'hébergement renvoie bien `index.html` pour un chemin inconnu.
 
 **Backend (service web)**
 
-- Commande de démarrage : `npm run server` (ou `node server/index.js`).
+- Commande de démarrage : `npm run server` (ou `node backend/index.js`).
 - Installation : `npm install` à la racine, puisque le `package.json` est commun.
 - Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
 - Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
 
-**Point de vigilance.** Sans `MONGODB_URI`, les adhérents sont enregistrés dans le fichier `server/data/adherents.json`, effacé par Render à chaque redéploiement. En production, renseigner `MONGODB_URI` (base gratuite MongoDB Atlas : créer un cluster, un utilisateur, autoriser l'accès réseau `0.0.0.0/0`, puis copier la chaîne `mongodb+srv://…`). Voir [05-backend.md](05-backend.md), section 8.
+**Point de vigilance.** Sans `MONGODB_URI`, les adhérents sont enregistrés dans le fichier `backend/data/adherents.json`, effacé par Render à chaque redéploiement. En production, renseigner `MONGODB_URI` (base gratuite MongoDB Atlas : créer un cluster, un utilisateur, autoriser l'accès réseau `0.0.0.0/0`, puis copier la chaîne `mongodb+srv://…`). Voir [05-backend.md](05-backend.md), section 8.
 
 ## 4 bis. Maintenance automatique : Mlezi
 

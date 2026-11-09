@@ -15,7 +15,7 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **Mise en relation / mission / accompagnement** | Trois mots pour la même chose : ce qui est créé quand une demande est acceptée | table `mises_en_relation` |
 | **Code d'arrivée** | Code à 4 chiffres que l'intervenant annonce en arrivant | `demandes.code_arrivee` |
 | **Formule** | Offre d'accompagnement (Basique, Essentiel, Confort, Premium) | `FORMULES` |
-| **Adhérent** | Personne suivie par l'administrateur, gérée à part des comptes | `server/adherentsStore.js` |
+| **Adhérent** | Personne suivie par l'administrateur, gérée à part des comptes | `backend/adherentsStore.js` |
 | **Zone** | Regroupement de communes : Nord, Centre, Sud, Petite-Terre | `COMMUNES_MAYOTTE` |
 | **Mode confort** | Affichage avec texte et boutons plus grands | classe `mode-confort` |
 | **Shimaoré, kibushi** | Deux langues parlées à Mayotte | codes `shi`, `kib` |
@@ -24,8 +24,8 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 
 | Terme | Explication |
 |---|---|
-| **Frontend** | La partie qui s'exécute dans le navigateur : ce que l'utilisateur voit. Ici, `src/`. |
-| **Backend** | La partie qui s'exécute sur un serveur. Ici, `server/`, plus Supabase. |
+| **Frontend** | La partie qui s'exécute dans le navigateur : ce que l'utilisateur voit. Ici, `frontend/src/`. |
+| **Backend** | La partie qui s'exécute sur un serveur. Ici, `backend/`, plus Supabase. |
 | **API** | Ensemble d'adresses qu'un programme appelle pour demander ou envoyer des données. |
 | **API REST** | API organisée autour de ressources et de verbes HTTP : `GET` (lire), `POST` (créer), `PUT` (modifier), `DELETE` (supprimer). Exemple : `/api/adherents`. |
 | **Route** | Deux sens dans ce projet. Côté frontend : une adresse de page (`/profil`). Côté backend : une adresse d'API (`GET /api/sante`). |
@@ -54,7 +54,7 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **Composable** | Fonction `useQuelqueChose()` qui regroupe une logique réutilisable | `useSpeech`, `useTheme` |
 | **Store** | Endroit où l'on range un état partagé entre plusieurs composants | `stores/` |
 | **Pinia** | Bibliothèque officielle de stores pour Vue | `adminDashboard.js` |
-| **Routeur** | Associe une adresse à une page | `src/router/index.js` |
+| **Routeur** | Associe une adresse à une page | `frontend/src/router/index.js` |
 | **Garde de navigation** | Fonction exécutée avant chaque changement de page, qui peut rediriger | `router.beforeEach` |
 | **`meta`** | Informations libres attachées à une route | `requiresAuth`, `guestOnly`, `requiresAdmin` |
 | **Chargement à la demande (lazy loading)** | Le code d'une page n'est téléchargé que lorsqu'on la visite | `() => import('../pages/…')` |
@@ -92,8 +92,8 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 
 | Terme | Explication | Exemple |
 |---|---|---|
-| **Node.js** | Programme qui exécute du JavaScript hors du navigateur | `node server/index.js` |
-| **Express** | Bibliothèque pour créer un serveur web en Node | `server/index.js` |
+| **Node.js** | Programme qui exécute du JavaScript hors du navigateur | `node backend/index.js` |
+| **Express** | Bibliothèque pour créer un serveur web en Node | `backend/index.js` |
 | **Middleware** | Fonction qui s'exécute avant la route (contrôle, transformation) | `verifierAdmin`, `cors()` |
 | **CORS** | Règle des navigateurs qui limite les appels d'un site vers un autre ; le serveur dit qui il accepte | `app.use(cors())` |
 | **Supabase** | Service en ligne qui fournit une base PostgreSQL, l'authentification et des fonctions | |

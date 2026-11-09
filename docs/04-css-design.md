@@ -2,14 +2,14 @@
 
 ## 1. Organisation des fichiers
 
-Le style vient de quatre sources, chargées dans cet ordre par [src/main.js](../src/main.js) :
+Le style vient de quatre sources, chargées dans cet ordre par [frontend/src/main.js](../frontend/src/main.js) :
 
 | Ordre | Fichier | Rôle |
 |---|---|---|
-| 1 | [src/styles/bootstrap-custom.scss](../src/styles/bootstrap-custom.scss) | Recompile **Bootstrap 5** avec les couleurs, arrondis et polices du projet |
-| 2 | [src/assets/theme.css](../src/assets/theme.css) | Couleurs du thème clair et du thème sombre, alias, mode confort |
-| 3 | [src/index.css](../src/index.css) | Polices, taille du texte, titres `h1` / `h2`, fond de page |
-| 4 | [src/styles/ui.css](../src/styles/ui.css) | Réglages communs des boutons, classes `.section-label` et `.badge-role` |
+| 1 | [frontend/src/styles/bootstrap-custom.scss](../frontend/src/styles/bootstrap-custom.scss) | Recompile **Bootstrap 5** avec les couleurs, arrondis et polices du projet |
+| 2 | [frontend/src/assets/theme.css](../frontend/src/assets/theme.css) | Couleurs du thème clair et du thème sombre, alias, mode confort |
+| 3 | [frontend/src/index.css](../frontend/src/index.css) | Polices, taille du texte, titres `h1` / `h2`, fond de page |
+| 4 | [frontend/src/styles/ui.css](../frontend/src/styles/ui.css) | Réglages communs des boutons, classes `.section-label` et `.badge-role` |
 
 Ensuite, **chaque page ou composant importe son propre fichier CSS** depuis son `<script setup>` (exemple : `import '../styles/Profil.css'`). Ces fichiers ne sont **pas isolés** : une classe définie dans `Profil.css` s'applique à tout le site une fois la page visitée. Les noms de classes sont donc préfixés par le sujet (`.dispo-…`, `.sos-…`, `.admin-…`) pour éviter les collisions.
 
@@ -39,7 +39,7 @@ Plusieurs fichiers ne contiennent que quelques lignes (marges de page) : `Atouts
 
 ## 2. Variables (design tokens)
 
-Les couleurs sont des **variables CSS** définies dans [theme.css](../src/assets/theme.css). Changer une valeur ici change tout le site.
+Les couleurs sont des **variables CSS** définies dans [theme.css](../frontend/src/assets/theme.css). Changer une valeur ici change tout le site.
 
 ### Couleurs de base
 
@@ -64,18 +64,18 @@ Le code plus ancien utilise d'autres noms. `theme.css` les fait pointer vers les
 
 ### Variables Sass de Bootstrap
 
-[bootstrap-custom.scss](../src/styles/bootstrap-custom.scss) fixe : `$primary: #0e5c56`, `$secondary: #e3a234`, arrondi des cartes `0.9rem`, boutons et badges en pilule (`50rem`), marges intérieures de boutons agrandies.
+[bootstrap-custom.scss](../frontend/src/styles/bootstrap-custom.scss) fixe : `$primary: #0e5c56`, `$secondary: #e3a234`, arrondi des cartes `0.9rem`, boutons et badges en pilule (`50rem`), marges intérieures de boutons agrandies.
 
 **Piège à connaître** : Bootstrap est compilé une seule fois, en clair. Ses couleurs ne suivent donc pas le thème sombre automatiquement. `theme.css` contient une liste de corrections manuelles (`[data-theme='dark'] .card`, `.form-control`, `.alert-…`, `.table`, `.text-muted`). Un composant Bootstrap non listé resterait clair en mode sombre.
 
 ### Variable calculée en JavaScript
 
-`--hauteur-nav` est écrite par `mesurerHauteur()` dans [AppNav.vue](../src/components/AppNav.vue) et lue par `.app-main` dans `App.vue` : `padding-top: calc(var(--hauteur-nav, 96px) + 32px)`. C'est ce qui empêche le contenu de passer sous la barre fixe.
+`--hauteur-nav` est écrite par `mesurerHauteur()` dans [AppNav.vue](../frontend/src/components/AppNav.vue) et lue par `.app-main` dans `App.vue` : `padding-top: calc(var(--hauteur-nav, 96px) + 32px)`. C'est ce qui empêche le contenu de passer sous la barre fixe.
 
 ## 3. Thème clair / sombre
 
 - L'attribut `data-theme="light"` ou `"dark"` est posé sur `<html>`.
-- Il est écrit d'abord par le script de [index.html](../index.html) (anti-flash), puis par [useTheme.js](../src/composables/useTheme.js).
+- Il est écrit d'abord par le script de [index.html](../frontend/index.html) (anti-flash), puis par [useTheme.js](../frontend/src/composables/useTheme.js).
 - Valeur par défaut : `auto`, qui suit le réglage du système (`prefers-color-scheme`).
 - En sombre, les images sont légèrement assombries (`filter: brightness(0.9)`), sauf le logo.
 
@@ -145,7 +145,7 @@ Huit feuilles respectent `prefers-reduced-motion: reduce` et coupent leurs anima
 
 ## 8. États des boutons
 
-Définis dans [ui.css](../src/styles/ui.css) :
+Définis dans [ui.css](../frontend/src/styles/ui.css) :
 
 - **Survol** (`:hover`) : le bouton monte d'1 px et prend une ombre.
 - **Appui** (`:active`) : il revient à plat.
@@ -179,13 +179,13 @@ Les couleurs des variantes (`.btn-primary`, `.btn-outline-secondary`, `.btn-seco
 - **Le mode confort change peu la taille du texte courant sur grand écran**, car la base y est déjà à 18 px ; il agit surtout sur les titres, l'interligne et la hauteur des zones cliquables.
 - **Contrastes non vérifiés dans le dépôt** : aucun outil ni test de contraste n'est présent. Seul le cas des boutons est documenté en commentaire.
 - **Dictée et commande vocale** : la reconnaissance vocale est réglée sur `fr-FR` et n'existe pas dans tous les navigateurs (commentaire de `useVoiceInput.js` : absente sur Firefox). Le bouton est alors masqué.
-- **Lecture à voix haute en shimaoré et kibushi** : les dossiers `public/audio/shi/` et `public/audio/kib/` sont vides, donc c'est toujours le texte français qui est lu.
+- **Lecture à voix haute en shimaoré et kibushi** : les dossiers `frontend/public/audio/shi/` et `frontend/public/audio/kib/` sont vides, donc c'est toujours le texte français qui est lu.
 - **Pas de `<label for>` systématique** : dans `Profil.vue`, plusieurs `<label>` ne sont pas reliés à leur champ par `for` / `id`, contrairement à `Inscription.vue`.
 - **`Admin.css` ne tient pas compte de `prefers-reduced-motion`**.
 
 ## À retenir
 
-- Les couleurs se changent dans `src/assets/theme.css` ; les couleurs de Bootstrap dans `src/styles/bootstrap-custom.scss`.
+- Les couleurs se changent dans `frontend/src/assets/theme.css` ; les couleurs de Bootstrap dans `frontend/src/styles/bootstrap-custom.scss`.
 - Chaque page importe son CSS, mais ces fichiers ne sont pas isolés : attention aux noms de classes.
 - Bootstrap ne suit pas le thème sombre tout seul ; les corrections sont listées à la main dans `theme.css`.
 - Les points de rupture principaux sont 1024 px (texte, admin) et 991/992 px (navbar, hero).

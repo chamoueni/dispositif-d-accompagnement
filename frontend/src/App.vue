@@ -42,7 +42,7 @@ async function seDeconnecter() {
     class="app-main"
     :class="{ 'app-main-admin': estEspaceAdmin }"
   >
-    <!-- Le composant affiché ici change selon la route active (voir src/router). -->
+    <!-- Le composant affiché ici change selon la route active (voir frontend/src/router). -->
     <router-view />
   </main>
   <footer

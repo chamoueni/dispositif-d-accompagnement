@@ -14,7 +14,7 @@ import '../styles/NouvelleDemande.css'
 const route = useRoute()
 const { t } = useI18n()
 
-// Libellés traduits des services (voir src/locales/). Fonction et non constante :
+// Libellés traduits des services (voir frontend/src/locales/). Fonction et non constante :
 // elle doit être réévaluée au changement de langue.
 const libelleService = (code) => t(`demande.service_${code}`)
 const { user } = useAuth()

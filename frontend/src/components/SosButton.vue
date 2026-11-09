@@ -13,7 +13,7 @@ import { addMessageContact } from '../data/store'
 import '../styles/SosButton.css'
 
 const { user } = useAuth()
-// Textes du bouton d'urgence et du formulaire de contact : voir src/locales/.
+// Textes du bouton d'urgence et du formulaire de contact : voir frontend/src/locales/.
 const { t } = useI18n()
 
 const ouvert = ref(false)

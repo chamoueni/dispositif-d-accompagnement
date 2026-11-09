@@ -13,17 +13,17 @@ export default defineConfig([
     },
   },
   {
-    files: ['server/**/*.js'],
+    files: ['backend/**/*.js', 'frontend/scripts/**/*.js', 'frontend/vite.config.js'],
     languageOptions: {
       globals: globals.node,
     },
   },
   {
-    // Les composants de src/pages sont des vues de route (Accueil, Services...),
+    // Les composants de frontend/src/pages sont des vues de route (Accueil, Services...),
     // pas des balises réutilisables dans des templates : la règle multi-mots
     // (pensée pour éviter les collisions avec les éléments HTML natifs) ne
     // s'applique pas à ce cas d'usage, c'est une exception standard Vue Router.
-    files: ['src/pages/**/*.vue'],
+    files: ['frontend/src/pages/**/*.vue'],
     rules: {
       'vue/multi-word-component-names': 'off',
     },

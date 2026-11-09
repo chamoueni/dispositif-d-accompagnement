@@ -2,7 +2,7 @@
 // précompilé : c'est la seule façon de retenter *tous* les composants (boutons,
 // badges, formulaires...) avec notre palette, un CSS var override ne suffit pas
 // car Bootstrap fige ses couleurs en valeurs littérales à la compilation.
-// Palette + typographie reprises de la maquette "Mlezi" (voir src/index.css pour
+// Palette + typographie reprises de la maquette "Mlezi" (voir frontend/src/index.css pour
 // les mêmes valeurs en variables CSS, utilisées par notre propre code hors Bootstrap).
 $primary: #0e5c56; // teal
 $secondary: #e3a234; // or

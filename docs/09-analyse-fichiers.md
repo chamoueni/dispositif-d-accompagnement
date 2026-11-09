@@ -20,7 +20,7 @@ Ce document passe en revue les fichiers qui portent la logique du projet. Les pa
 
 ### `eslint.config.js`
 
-Règles recommandées JavaScript et Vue. Variables globales du navigateur partout, de Node pour `server/**`. La règle `vue/multi-word-component-names` est coupée pour `src/pages/`.
+Règles recommandées JavaScript et Vue. Variables globales du navigateur partout, de Node pour `backend/**`. La règle `vue/multi-word-component-names` est coupée pour `frontend/src/pages/`.
 
 ### `index.html`
 
@@ -40,19 +40,19 @@ Tâche planifiée (`cron: "0 6 */3 * *"`) qui lit une ligne de la table `avis` a
 
 ## Frontend — socle
 
-### `src/main.js`
+### `frontend/src/main.js`
 
 - **Rôle** : point d'entrée.
 - **Fait** : importe les styles dans l'ordre, pose `lang` sur `<html>`, crée l'application et branche Pinia, le routeur et i18n.
 - **Utilise** : `App.vue`, `router`, `i18n`.
 
-### `src/App.vue`
+### `frontend/src/App.vue`
 
 - **Rôle** : coquille commune.
 - **Logique** : `estEspaceAdmin` masque navbar, pied de page et SOS dans l'espace admin.
 - **Style** : réserve la place de la navbar fixe avec `--hauteur-nav`.
 
-### `src/router/index.js`
+### `frontend/src/router/index.js`
 
 - **Rôle** : table des routes et garde de navigation.
 - **Fonctions** :
@@ -61,15 +61,15 @@ Tâche planifiée (`cron: "0 6 */3 * *"`) qui lit une ligne de la table `avis` a
 - **Utilise** : `useAuth`.
 - **Utilisé par** : `main.js`.
 
-### `src/lib/supabaseClient.js`
+### `frontend/src/lib/supabaseClient.js` (supprimé en novembre 2026 : le navigateur passe désormais par l’API, voir `frontend/src/lib/api.js`)
 
 Crée et exporte `supabase`, le client unique du navigateur, à partir de `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`. Écrit une erreur explicite dans la console si elles manquent. Importé par `auth.js`, `store.js` et `ReinitialiserMotDePasse.vue`.
 
-### `src/lib/apiBase.js`
+### `frontend/src/lib/apiBase.js`
 
 Une ligne : `API_BASE_URL = import.meta.env.VITE_API_URL || ''`. Vide en local (le proxy Vite prend le relais), adresse du backend en production. Importé par `store.js`, `stores/adherents.js`, `SosButton.vue`.
 
-### `src/i18n/index.js`
+### `frontend/src/i18n/index.js`
 
 - **Rôle** : configuration de vue-i18n.
 - **Exporte** : `LANGUES`, `langueEnregistree()`, `enregistrerLangue(code)`, `i18n`, `texteFrancais(cle)`.
@@ -80,7 +80,7 @@ Une ligne : `API_BASE_URL = import.meta.env.VITE_API_URL || ''`. Vide en local (
 
 ## Frontend — état et données
 
-### `src/stores/auth.js`
+### `frontend/src/stores/auth.js`
 
 Le fichier le plus important côté compte. Malgré son dossier, ce **n'est pas un store Pinia** : c'est un état `reactive` déclaré au niveau du module.
 
@@ -102,7 +102,7 @@ Partie délicate : à l'ouverture du site, deux choses s'exécutent dès l'impor
 
 `isAdmin` est un `computed` : vrai si `state.user.email` est égal à `ADMIN_EMAIL`.
 
-### `src/data/store.js`
+### `frontend/src/data/store.js`
 
 - **Rôle** : couche d'accès aux données. Toutes les requêtes Supabase métier sont ici.
 - **Constantes exportées** :
@@ -121,15 +121,15 @@ Fonctions à comprendre en priorité :
 - **`mapDemande`, `mapMiseEnRelation`, `mapMessageContact`**. Convertissent une ligne de la base (`snake_case`) en objet de l'application (`camelCase`).
 - **`createCompteAdmin` / `deleteCompteAdmin`**. Les deux seules fonctions de ce fichier qui appellent le backend Express plutôt que Supabase, en joignant le jeton de session.
 
-### `src/stores/adminDashboard.js`
+### `frontend/src/stores/adminDashboard.js`
 
 Store Pinia `admin-dashboard`. `charger()` lance quatre lectures en parallèle (`getUsers`, `getMessagesContact`, `getDemandes`, `getMisesEnRelation`). Les autres fonctions (`modifierCompte`, `supprimerCompte`, `creerCompte`, `marquerLu`, `supprimerMessage`) écrivent en base puis corrigent l'état local, ce qui évite de tout recharger. `nomCompte(id)` renvoie « Compte supprimé » si le profil n'existe plus. Chargé une fois par `Admin.vue`.
 
-### `src/stores/adherents.js`
+### `frontend/src/stores/adherents.js`
 
 Store Pinia `adherents`. `appelerApi(url, options)` centralise les `fetch` vers Express : ajoute l'en-tête JSON, lit la réponse, lève une erreur si le statut n'est pas correct. Quatre actions : `chargerAdherents`, `creerAdherent`, `modifierAdherent`, `supprimerAdherent`.
 
-### `src/stores/accessibility.js`
+### `frontend/src/stores/accessibility.js`
 
 État du mode confort. Un `watchEffect` ajoute ou retire la classe `mode-confort` sur `<html>` et enregistre le choix dans `localStorage` (clé `dispositif.modeConfort`).
 
@@ -137,27 +137,27 @@ Store Pinia `adherents`. `appelerApi(url, options)` centralise les `fetch` vers 
 
 ## Frontend — composables
 
-### `src/composables/useAidants.js`
+### `frontend/src/composables/useAidants.js`
 
 - **Rôle** : une seule liste d'intervenants partagée entre la carte et le compteur de l'accueil, donc une seule requête.
 - **Logique** : surveille `user`. Sans compte, la liste est vide. Avec un compte, `getUsers()` est appelé une fois par session (`sessionChargee`).
 - **`pres`** : cherche les intervenants de la commune de l'utilisateur ; s'il n'y en a aucun, élargit à sa zone ; renvoie `{ liste, portee, lieu }`.
 
-### `src/composables/useSpeech.js`
+### `frontend/src/composables/useSpeech.js`
 
 - **Rôle** : lecture à voix haute.
 - **`speak(texte, cle)`** : en français, utilise la synthèse vocale du navigateur. En shimaoré ou kibushi, cherche un fichier `/audio/<langue>/<cle>.mp3` ; s'il n'existe pas, lit le texte **français** de la clé.
 - **`audioExiste(url)`** : vérifie le type de contenu renvoyé, car un hébergement statique renvoie `index.html` avec un code 200 pour un fichier absent.
 
-### `src/composables/useVoiceInput.js`
+### `frontend/src/composables/useVoiceInput.js`
 
 Reconnaissance vocale du navigateur, en `fr-FR`. `start(onResult)` écoute une phrase puis s'arrête. `supported` doit être testé avant d'afficher un bouton.
 
-### `src/composables/useTheme.js`
+### `frontend/src/composables/useTheme.js`
 
 État du thème (`light`, `dark`, `auto`). Écrit `data-theme` sur `<html>`, mémorise dans `localStorage` (clé `theme`), et écoute le changement de thème du système en mode `auto`.
 
-### `src/composables/useConnexion.js`
+### `frontend/src/composables/useConnexion.js`
 
 Un `ref` `enLigne` tenu à jour par les événements `online` et `offline` du navigateur.
 
@@ -167,22 +167,22 @@ Un `ref` `enLigne` tenu à jour par les événements `online` et `offline` du na
 
 Voir [05-backend.md](05-backend.md) pour les routes. Résumé par fichier :
 
-### `server/index.js`
+### `backend/index.js`
 
 - **Utilise** : `express`, `cors`, `cookie-parser`, `adherentsStore.js`, `supabaseSync.js`, `authRoutes.js`, `dataRoutes.js`, `sessions.js`.
 - **Fonctions** : `verifierAdmin` (middleware), `validerAdherent(body)` (renvoie un message d'erreur ou `null`), les 7 routes, le gestionnaire d'erreurs.
 - **Constantes** : `rolesAutorises`, `statutsAutorises`, `ADMIN_EMAIL`, `CONTEXTE_SITE`.
 - **Partie délicate** : dans `POST /api/admin/comptes`, si l'insertion du profil échoue après la création du compte Auth, le compte est supprimé pour éviter un compte sans profil.
 
-### `server/adherentsStore.js`
+### `backend/adherentsStore.js`
 
 `lireAdherents` / `ecrireAdherents` (privées) lisent et réécrivent **tout le fichier** à chaque opération. Exporte `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent` (renvoie `null` si introuvable), `supprimerAdherent` (renvoie `false` si introuvable). Deux requêtes simultanées peuvent s'écraser, puisqu'il n'y a pas de verrou.
 
-### `server/supabaseAdmin.js`
+### `backend/supabaseAdmin.js`
 
 Charge `.env` puis exporte `supabaseAdmin`, ou `null` si l'adresse ou la clé manque. Ce `null` permet au serveur de démarrer sans Supabase.
 
-### `server/supabaseSync.js`
+### `backend/supabaseSync.js`
 
 `synchroniserAdherent(adherent, operation)` : ne fait rien si `supabaseAdmin` est `null` ; sinon `upsert` ou `delete` dans la table `adherents`.
 
@@ -209,14 +209,14 @@ Détaillé dans [06-base-de-donnees.md](06-base-de-donnees.md).
 
 | Fichier | Constat |
 |---|---|
-| `src/components/MayotteSymbol.vue`, `src/styles/MayotteSymbol.css` | Importés par aucun fichier |
-| `public/icons.svg` | Aucune référence trouvée dans `src/` ni `index.html` |
+| `frontend/src/components/MayotteSymbol.vue`, `frontend/src/styles/MayotteSymbol.css` | Importés par aucun fichier |
+| `frontend/public/icons.svg` | Aucune référence trouvée dans `frontend/src/` ni `index.html` |
 | `README.md` | Cite deux fichiers qui n'existent pas (`AdherentsManager.vue`, `AdherentsManager.css`) |
 | `--mono`, style `code` dans `index.css` | Un commentaire d'`index.html` indique qu'aucune page n'utilise `<code>` |
 
 ## À retenir
 
-- Pour comprendre le projet, lire dans cet ordre : `router/index.js`, `stores/auth.js`, `data/store.js`, `supabase/schema.sql`, `server/index.js`.
+- Pour comprendre le projet, lire dans cet ordre : `router/index.js`, `stores/auth.js`, `data/store.js`, `supabase/schema.sql`, `backend/index.js`.
 - `stores/auth.js` n'est pas un store Pinia, contrairement à `adminDashboard.js` et `adherents.js`.
 - `store.js` est le seul endroit où modifier une requête Supabase métier.
 - `updateDemandeStatut` porte la règle métier centrale : accepter = code d'arrivée + mission.

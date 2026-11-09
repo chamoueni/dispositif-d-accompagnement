@@ -1,5 +1,5 @@
 // Stockage des adhérents : base NoSQL MongoDB (documents) si MONGODB_URI est
-// renseignée, sinon fichier JSON local (server/data/adherents.json).
+// renseignée, sinon fichier JSON local (backend/data/adherents.json).
 //
 // Pourquoi MongoDB : sur Render, le disque est effacé à chaque redéploiement,
 // donc les adhérents écrits dans le fichier JSON disparaissaient. Une base
@@ -7,7 +7,7 @@
 // un document indépendant, sans schéma imposé, dans la collection "adherents".
 //
 // Les deux modes exposent exactement les mêmes fonctions (obtenir, ajouter,
-// modifier, supprimer) : server/index.js ne sait pas lequel est utilisé.
+// modifier, supprimer) : backend/index.js ne sait pas lequel est utilisé.
 import crypto from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -53,7 +53,7 @@ const SANS_ID_MONGO = { projection: { _id: 0 } }
 
 // Promesse de connexion partagée : une seule connexion pour tout le serveur,
 // ouverte au premier appel (et non au démarrage, pour que dotenv ait déjà
-// chargé le .env, voir server/supabaseAdmin.js).
+// chargé le .env, voir backend/supabaseAdmin.js).
 let collectionPromise = null
 
 function collectionMongo() {
@@ -83,7 +83,7 @@ function collectionMongo() {
 }
 
 // ---------------------------------------------------------------------------
-// Fonctions utilisées par server/index.js
+// Fonctions utilisées par backend/index.js
 // ---------------------------------------------------------------------------
 
 export async function obtenirAdherents() {
