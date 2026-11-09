@@ -105,6 +105,8 @@ L’ancien `keep-supabase-alive.yml` (un appel tous les 3 jours) a été remplac
 
 Les horaires sont volontairement décalés sur des minutes « calmes » : GitHub retarde, voire saute, les tâches programmées aux minutes rondes (:00, :10…). L’état de Mlezi est aussi visible dans l’espace admin (carte « Santé du site »).
 
+**Réveil de secours dans Supabase.** GitHub n’ayant déclenché aucune ronde programmée de Mlezi le jour de sa mise en place, le réveil est aussi planifié dans la base elle-même : [supabase/migrations/20261109_reveil_pg_cron.sql](../supabase/migrations/20261109_reveil_pg_cron.sql) (extensions `pg_cron` et `pg_net`) appelle `GET /api/sante` toutes les 10 minutes. Comme pour les autres scripts SQL, il faut l’exécuter une fois dans l’éditeur SQL de Supabase. Vérification : `select * from cron.job;` puis, après 10 minutes, `select status_code from net._http_response order by created desc limit 5;` (codes 200 attendus).
+
 ## 5. Supabase
 
 Rien ne se déploie automatiquement depuis le dépôt.
