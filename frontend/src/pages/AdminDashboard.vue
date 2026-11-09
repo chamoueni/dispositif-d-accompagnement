@@ -10,6 +10,8 @@ import { useAuth } from '../stores/auth'
 import { useAdminDashboard } from '../stores/adminDashboard'
 import StatCard from '../components/admin/StatCard.vue'
 import AdminIcon from '../components/admin/AdminIcon.vue'
+// Carte « Santé du site » : serveur, base et robot Mlezi (lecture seule).
+import SanteSite from '../components/admin/SanteSite.vue'
 import '../styles/AdminDashboard.css'
 
 const router = useRouter()
@@ -182,6 +184,8 @@ async function marquerLu(id) {
         lien="/admin/comptes"
       />
     </div>
+
+    <SanteSite />
 
     <div class="admin-dashboard-grid">
       <div class="admin-dashboard-col-principale">
