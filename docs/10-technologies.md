@@ -30,7 +30,6 @@ Le JavaScript de Bootstrap est importé dans `main.js`, mais le menu mobile est 
 | **Express** | `^5.1.0` | 5.2.1 | Serveur HTTP et routes | `server/index.js` | le frontend |
 | **cors** | `^2.8.5` | 2.8.6 | Autorise les appels depuis une autre origine | `server/index.js` | — |
 | **dotenv** | `^17.2.2` | 17.4.2 | Charge le fichier `.env` | `server/supabaseAdmin.js` | — |
-| **@anthropic-ai/sdk** | `^0.126.0` | 0.126.0 | Appel à l'API d'IA | `server/index.js` (`/api/chat-ia`) | l'API Anthropic, modèle `claude-opus-5` |
 | **Node.js** | non déclarée | — | Exécute le serveur | — | — |
 
 La version de Node attendue n'est pas déclarée (`engines` absent). Le code utilise les modules ES (`"type": "module"`) et l'objet global `crypto`.
@@ -56,7 +55,6 @@ Aucun outil de test (Vitest, Jest, Cypress…) : **non trouvé dans le code**.
 | Service | Rôle | Où il est appelé | Configuration |
 |---|---|---|---|
 | **Supabase** | Base PostgreSQL, authentification, règles RLS, fonction Edge | `lib/supabaseClient.js`, `server/supabaseAdmin.js`, `supabase/` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
-| **API Anthropic** | Assistant du bouton SOS | `server/index.js` | `ANTHROPIC_API_KEY` |
 | **Géoplateforme IGN** | Fonds de carte « Plan » et « Satellite » | `CarteMayotte.vue` (`MODELE_IGN`) | aucune clé |
 | **Google Fonts** | Polices Fraunces, Inter, Nunito Sans | `index.html` | aucune |
 | **Unsplash** | Trois photos de la page « Pour qui » | `PourQui.vue` | aucune |
@@ -98,7 +96,7 @@ Aucun outil de test (Vitest, Jest, Cypress…) : **non trouvé dans le code**.
 ## À retenir
 
 - Côté interface : Vue 3, Vue Router, Pinia, vue-i18n, Bootstrap 5, Leaflet.
-- Côté serveur : Express 5, avec le SDK Supabase et le SDK Anthropic.
+- Côté serveur : Express 5, avec le SDK Supabase et le pilote MongoDB.
 - Supabase fournit à la fois la base, les comptes et la fonction d'envoi d'e-mail.
 - Aucun outil de test n'est installé.
 - La version de Node n'est pas fixée dans le projet.

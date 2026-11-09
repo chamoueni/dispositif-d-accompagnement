@@ -24,7 +24,7 @@ npm run dev:full
 
 En local, le frontend appelle `/api/...` et Vite redirige vers Express ([vite.config.js](../vite.config.js)). `VITE_API_URL` peut donc rester vide.
 
-Sans Express, le site fonctionne en grande partie : seuls la page Adhérents, la création/suppression de compte par l'admin et l'assistant IA (qui retombe sur des réponses automatiques) sont touchés.
+Sans Express, le site ne fonctionne pas : la connexion et toutes les données passent par lui.
 
 ## 2. Variables d'environnement
 
@@ -37,7 +37,6 @@ Les noms viennent de [.env.example](../.env.example). **Ne jamais écrire leurs 
 | `VITE_API_URL` | Frontend | `src/lib/apiBase.js` | **Vide** en local comme en production : le site appelle `/api/...` sur sa propre adresse (proxy Vite en local, règle de réécriture Render en ligne) |
 | `SUPABASE_URL` | Backend | `server/supabaseAdmin.js` | Adresse du projet Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Backend | `server/supabaseAdmin.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
-| `ANTHROPIC_API_KEY` | Backend | `server/index.js` | Clé de l'API d'IA |
 | `PORT` | Backend | `server/index.js` | Port d'écoute (fourni par l'hébergeur) |
 
 Deux règles à retenir :
@@ -86,7 +85,7 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 
 - Commande de démarrage : `npm run server` (ou `node server/index.js`).
 - Installation : `npm install` à la racine, puisque le `package.json` est commun.
-- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI`, `ANTHROPIC_API_KEY` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
+- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
 - Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
 
 **Point de vigilance.** Sans `MONGODB_URI`, les adhérents sont enregistrés dans le fichier `server/data/adherents.json`, effacé par Render à chaque redéploiement. En production, renseigner `MONGODB_URI` (base gratuite MongoDB Atlas : créer un cluster, un utilisateur, autoriser l'accès réseau `0.0.0.0/0`, puis copier la chaîne `mongodb+srv://…`). Voir [05-backend.md](05-backend.md), section 8.

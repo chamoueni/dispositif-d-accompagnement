@@ -30,7 +30,7 @@ Règles recommandées JavaScript et Vue. Variables globales du navigateur partou
 
 ### `.env.example`
 
-Modèle sans valeurs. Six variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`. Voir [11-deploiement.md](11-deploiement.md).
+Modèle sans valeurs : variables du serveur (Supabase, sessions, MongoDB) et du site (`VITE_SITE_URL`, `SITE_URL`). Voir [11-deploiement.md](11-deploiement.md).
 
 ### `.github/workflows/mlezi-gardien.yml` (remplace `keep-supabase-alive.yml`)
 
@@ -169,7 +169,7 @@ Voir [05-backend.md](05-backend.md) pour les routes. Résumé par fichier :
 
 ### `server/index.js`
 
-- **Utilise** : `express`, `cors`, `@anthropic-ai/sdk`, `adherentsStore.js`, `supabaseSync.js`, `supabaseAdmin.js`.
+- **Utilise** : `express`, `cors`, `cookie-parser`, `adherentsStore.js`, `supabaseSync.js`, `authRoutes.js`, `dataRoutes.js`, `sessions.js`.
 - **Fonctions** : `verifierAdmin` (middleware), `validerAdherent(body)` (renvoie un message d'erreur ou `null`), les 7 routes, le gestionnaire d'erreurs.
 - **Constantes** : `rolesAutorises`, `statutsAutorises`, `ADMIN_EMAIL`, `CONTEXTE_SITE`.
 - **Partie délicate** : dans `POST /api/admin/comptes`, si l'insertion du profil échoue après la création du compte Auth, le compte est supprimé pour éviter un compte sans profil.

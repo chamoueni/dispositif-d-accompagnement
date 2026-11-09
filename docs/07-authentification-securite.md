@@ -65,7 +65,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 - En développement, Vite redirige `/api` vers `http://localhost:3001` ([vite.config.js](../vite.config.js)).
 - En production aussi, le site appelle `/api/...` sur sa propre adresse : une règle de réécriture Render transmet ces appels au serveur Express (voir [11-deploiement.md](11-deploiement.md)). Les cookies de session restent donc « du même site ».
 - Pour les routes admin, le frontend ajoute `Authorization: Bearer <jeton de session>` (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../src/data/store.js)).
-- Les routes `/api/adherents` et `/api/chat-ia` sont appelées **sans jeton**.
+- Toutes les routes `/api/...` reçoivent le cookie de session `httpOnly` ; `/api/adherents` exige le compte administrateur.
 
 ## 6. CORS
 
@@ -85,7 +85,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 
 ### Autres constats
 
-- **Routes backend ouvertes** : `/api/adherents` (lecture et écriture de données personnelles) et `/api/chat-ia` (API payante) sont accessibles sans compte. Détail dans [05-backend.md](05-backend.md).
+- **Routes backend** : `/api/adherents` est réservé à l’administrateur depuis novembre 2026 (elle était auparavant ouverte à tous).
 - **Code d'arrivée** : généré avec `crypto.getRandomValues` ([store.js](../src/data/store.js), `genererCodeArrivee`), donc non prévisible. Il est créé dans le navigateur de l'intervenant, pas sur un serveur.
 - **Fonction Edge** : [notify-contact-message](../supabase/functions/notify-contact-message/index.ts) envoie un e-mail pour tout corps contenant `record.message`. Elle ne vérifie pas elle-même l'origine de l'appel ; cela dépend des réglages de la fonction dans Supabase, **non trouvés dans le dépôt**.
 - **Copie du dépôt dans le dépôt** : le sous-dossier non suivi qui duplique le projet contient son propre fichier `.env`. Il n'est pas envoyé sur GitHub tant qu'il reste non suivi, mais il multiplie les endroits où des clés sont stockées.
@@ -104,7 +104,6 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | Type de service demandé (dont « soins »), urgence | `NouvelleDemande.vue` | `demandes` | Idem |
 | Avis | `PourQui.vue` | `avis` (avec le nom) | Tout le monde, même non connecté |
 | Message de contact | `SosButton.vue` | `messages_contact` ; recopié par e-mail à l'admin | Admin |
-| Questions posées à l'assistant | `SosButton.vue` | Non stockées par le projet ; **envoyées à l'API Anthropic** | — |
 | Adhérents (nom, e-mail, téléphone, commune) | `AdminAdherents.vue` | `server/data/adherents.json` + table `adherents` | Quiconque appelle `GET /api/adherents` |
 | Données de carte bancaire | `PaiementFormule.vue` | **Nulle part** : contrôlées dans le navigateur puis ignorées | — |
 
@@ -119,7 +118,7 @@ Le projet n'a **pas de champ médical structuré** (pas de pathologie, de traite
 - **Droit à l'effacement** : il n'existe pas de bouton « supprimer mon compte » pour l'utilisateur. La suppression n'est possible que par l'administrateur (`DELETE /api/admin/comptes/:id`). Elle efface alors le compte, le profil, les demandes, les missions et les avis par cascade ; les messages de contact sont conservés avec `user_id` à `null` et le nom saisi.
 - **Information des utilisateurs** : aucune page de mentions légales, de politique de confidentialité ni de recueil de consentement — **non trouvé dans le code**.
 - **Export des données personnelles, durée de conservation** : non trouvé dans le code.
-- **Sous-traitants** : Supabase, Anthropic (assistant), Google (polices, SMTP Gmail), IGN (cartes), Unsplash (photos). Aucun document du dépôt ne les liste pour l'utilisateur.
+- **Sous-traitants** : Supabase, Render (hébergement), MongoDB Atlas (si configuré), Google (polices, SMTP Gmail), IGN (cartes), Unsplash (photos). Aucun document du dépôt ne les liste pour l'utilisateur.
 - **Fichier d'adhérents dans Git** : `server/data/adherents.json` est suivi par Git et contient un enregistrement. S'il s'agit d'une personne réelle, ses données sont dans l'historique du dépôt.
 
 ## À retenir
@@ -127,5 +126,5 @@ Le projet n'a **pas de champ médical structuré** (pas de pathologie, de traite
 - Supabase Auth gère comptes, mots de passe et sessions ; le projet ne manipule jamais un mot de passe en clair en dehors du formulaire.
 - L'administrateur est un e-mail écrit en dur à quatre endroits, pas un rôle en base.
 - Les règles « qui suis-je » sont garanties par la base ; les règles « quel est mon rôle métier » ne le sont que par l'interface.
-- Trois points de sécurité à traiter en priorité : routes `/api/adherents` ouvertes, `/api/chat-ia` sans limite, HTML non échappé dans les infobulles de la carte.
+- Point de sécurité restant à traiter : HTML non échappé dans les infobulles de la carte.
 - Côté RGPD, il manque l'information des utilisateurs, la suppression de compte par l'utilisateur, et une lecture plus restreinte des profils.

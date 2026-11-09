@@ -171,19 +171,6 @@ AdminAdherents.vue → enregistrer()
 
 Ici la correspondance avec un découpage classique est : route + controller = la fonction dans `index.js` ; service = `adherentsStore.js` et `supabaseSync.js`.
 
-## 11. Assistant IA du bouton SOS (flux avec backend)
-
-```
-SosButton.vue (entrée « assistant » du menu, vue 'chat') → envoyerMessage()
-      → demanderAssistantIA(texte)
-            → fetch POST /api/chat-ia  { message, historique (10 derniers) }
-                  → anthropic.messages.create(...)   → API Anthropic
-                  ← 200 { reponse }
-      → historique.push({ role: 'assistant', texte }) → la bulle s'affiche
-   si échec ou plus de 5 secondes :
-      → formulaireReponseAutomatique(texte) → réponse par mots-clés
-```
-
 ## 12. Message de contact
 
 ```
@@ -226,7 +213,7 @@ Aucun prestataire de paiement n'est appelé. Les limites annoncées par les form
 ## À retenir
 
 - Pour presque tout, le chemin est : page → fonction de `store.js` ou `auth.js` → Supabase → mise à jour d'un `ref`.
-- Le backend n'intervient que pour les comptes créés ou supprimés par l'admin, les adhérents et l'assistant IA.
+- Le backend Express sert d’intermédiaire pour toutes les données : connexion, profils, demandes, adhérents et comptes admin.
 - L'acceptation d'une demande déclenche trois écritures non groupées ; c'est le flux le plus fragile.
 - La recherche charge tous les profils puis filtre dans le navigateur.
 - Il n'y a pas de notifications ni de paiement réel.

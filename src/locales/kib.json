@@ -501,16 +501,10 @@
   "sos": {
     "bouton": "SOS",
     "bouton_aria": "Fanampiana sy fahamaimaizana",
-    "question_titre": "Fanontaniana haingana",
-    "question_texte": "Manontania",
     "urgence_titre": "Fahamaimaizana",
     "urgence_texte": "Antsoy ny 112",
     "probleme_titre": "Olana amin'ny tranonkala",
     "probleme_texte": "Alefaso hafatra ho anay",
-    "chat_accueil": "Salama, afaka manampy anao aho momba ny fisoratana anarana, ny tolotra, Maore ary ny fotoam-pamaliana.",
-    "chat_label": "Ny fanontanianao",
-    "chat_exemple": "Ohatra : Inona ny tolotra misy ao Maore ?",
-    "chat_en_cours": "Eo am-pamaliana…",
     "contact_label": "Hazavao ny olana",
     "contact_exemple": "Inona no tsy mandeha ?",
     "contact_envoye": "Nalefa ny hafatra, misaotra. Hovalianay haingana araka izay azo atao.",
@@ -519,8 +513,8 @@
     "fermer": "Akatona",
     "parler": "Miteny",
     "ecoute": "Mihaino anao aho…",
-    "vocal_aide": "Teneno : mpanampy, fahamaimaizana, na olana.",
-    "non_compris": "Tsy azoko. Teneno : mpanampy, fahamaimaizana, na olana. Azonao atao ihany koa ny mikasika bokotra eto ambany.",
+    "vocal_aide": "Teneno : fahamaimaizana, na olana.",
+    "non_compris": "Tsy azoko. Teneno : fahamaimaizana, na olana. Azonao atao ihany koa ny mikasika bokotra eto ambany.",
     "urgence_confirmer": "Mba hiantsoana ny 112, kasiho ny bokotra Fahamaimaizana eto ambany."
   },
   "vocal": {

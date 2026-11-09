@@ -1,9 +1,7 @@
-// API REST Express de gestion des adhérents + assistant IA du bouton SOS.
+// API REST Express : connexion (sessions), données, adhérents et bilan de santé.
 import express from 'express'
 import cors from 'cors'
-import Anthropic from '@anthropic-ai/sdk'
 import cookieParser from 'cookie-parser'
-import { rateLimit } from 'express-rate-limit'
 import {
   ajouterAdherent,
   modifierAdherent,
@@ -64,13 +62,6 @@ app.use('/api', sessionMiddleware)
 app.use('/api', authRoutes)
 app.use('/api', dataRoutes)
 
-const limiteAssistant = rateLimit({
-  windowMs: 60 * 1000,
-  limit: 20,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-})
-
 // Protège les routes /api/admin/* : le front envoie le token de session Supabase
 // de l'utilisateur connecté (Authorization: Bearer <access_token>), qu'on
 // vérifie ici avant d'autoriser une action qui utilise la clé service role
@@ -83,32 +74,6 @@ function verifierAdmin(req, res, next) {
   }
   next()
 }
-
-// Client Anthropic : lit ANTHROPIC_API_KEY dans l'environnement (jamais côté
-// client/VITE_, voir .env.example). N'est instancié que si la clé est présente,
-// pour que le reste du serveur (API adhérents) fonctionne même sans elle.
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null
-
-// Contexte injecté dans chaque appel pour que l'assistant reste factuel sur ce
-// que propose réellement le site (pas d'invention de fonctionnalités).
-const CONTEXTE_SITE = `Tu es l'assistant du site "Dispositif d'accompagnement", qui met en
-relation des personnes âgées de Mayotte avec du personnel de santé et des particuliers
-de confiance.
-
-Services proposés : soins à domicile, courses, ménage, service de garde, suivi psychologique.
-Trois profils : personnes âgées (demandeuses d'aide), personnel de santé (infirmiers, aides-
-soignants, kinés), particuliers (coursiers, ménage).
-Zones géographiques à Mayotte : Nord, Centre, Sud, Petite-Terre (regroupant les communes de
-l'île) ; la recherche se fait par commune. Délai moyen de première réponse : environ 12 minutes.
-Formules d'accompagnement : Basique (gratuite, 3 mises en relation offertes à l'essai),
-Essentiel (25€/mois), Confort (39€/mois, la plus choisie), Premium (101€/mois).
-La mise en relation de base reste gratuite ; les formules payantes ajoutent un accompagnement
-mensuel plus soutenu.
-En cas d'urgence médicale réelle, oriente toujours vers le 112.
-
-Réponds en français, en 2 à 4 phrases maximum, de façon chaleureuse et concrète. N'invente
-aucune fonctionnalité, prix ou zone qui ne figure pas ci-dessus ; si tu ne sais pas, dis-le et
-propose le bouton "Un problème avec le site" du menu SOS pour contacter un humain.`
 
 function validerAdherent(body) {
   if (!body.nom?.trim()) return 'Le nom est obligatoire.'
@@ -160,61 +125,6 @@ app.delete('/api/adherents/:id', verifierAdmin, async (req, res, next) => {
     }
     await synchroniserAdherent(adherent, 'supprimer')
     return res.status(204).end()
-  } catch (error) {
-    next(error)
-  }
-})
-
-app.post('/api/chat-ia', limiteAssistant, async (req, res, next) => {
-  try {
-    if (!anthropic) {
-      return res.status(503).json({ message: 'Assistant IA non configuré (clé API absente).' })
-    }
-
-    const { message, historique } = req.body || {}
-    if (typeof message !== 'string' || !message.trim() || message.length > 2000) {
-      return res.status(400).json({ message: 'Message vide ou trop long.' })
-    }
-
-    // Historique limité côté client (10 derniers messages) pour garder le
-    // contexte des questions de suivi sans faire grossir la requête.
-    const messages = [
-      ...(Array.isArray(historique) ? historique.slice(-10) : [])
-        .filter((m) => typeof m?.texte === 'string' && m.texte.trim() && m.texte.length <= 2000)
-        .map((m) => ({
-          role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: m.texte,
-        })),
-      { role: 'user', content: message },
-    ]
-
-    const reponse = await anthropic.beta.messages.create({
-      model: 'claude-opus-5-5',
-      // La réflexion du modèle compte dans max_tokens : 2000 laisse de la
-      // marge pour une réponse de 2 à 4 phrases.
-      max_tokens: 2000,
-      // Effort "low" : questions simples d'un chat d'aide, on privilégie la
-      // rapidité (le widget abandonne au bout de 12 s, voir SosButton.vue).
-      output_config: { effort: 'low' },
-      // Si le modèle refuse une question (filtre de sécurité trop prudent),
-      // l'API la repose automatiquement à un autre modèle adapté.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      system: CONTEXTE_SITE,
-      messages,
-    })
-
-    // Refus définitif ou réponse sans texte : 502, et le widget affiche
-    // alors la réponse de la FAQ hors-ligne (src/data/faqAssistant.js).
-    const texte = reponse.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('')
-      .trim()
-    if (reponse.stop_reason === 'refusal' || !texte) {
-      return res.status(502).json({ message: "L'assistant n'a pas pu répondre à cette question." })
-    }
-    res.json({ reponse: texte })
   } catch (error) {
     next(error)
   }

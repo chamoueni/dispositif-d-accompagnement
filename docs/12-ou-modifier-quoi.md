@@ -64,7 +64,6 @@ Table de correspondance : « je veux… » → les fichiers à ouvrir. Les chemi
 | Changer la logique d'acceptation d'une demande | `src/data/store.js` (`updateDemandeStatut`) | |
 | Ajouter un statut de demande | `supabase/schema.sql` (contrainte `check`), `src/pages/MesDemandes.vue` (`statutAffiche`), pages admin, clés `statut.*` | Rejouer le SQL |
 | Changer les filtres de la recherche | `src/pages/RecherchePersonnel.vue` (`filters`, `results`) | |
-| Modifier les réponses de l'assistant IA | `server/index.js` (`CONTEXTE_SITE`) | Réponses de secours : `SosButton.vue` (`formulaireReponseAutomatique`) |
 | Changer les mots-clés de la commande vocale | `src/components/SosButton.vue` (`MOTS_CLES`) | |
 | Changer d'administrateur | `src/stores/auth.js`, `server/index.js`, `supabase/schema.sql` (toutes les règles), `supabase/functions/notify-contact-message/index.ts` | Quatre endroits ; rejouer le SQL et redéployer la fonction |
 
@@ -79,7 +78,6 @@ Table de correspondance : « je veux… » → les fichiers à ouvrir. Les chemi
 | Ajouter une colonne | `supabase/schema.sql` avec `alter table … add column if not exists` | `create table if not exists` ne modifie pas une table existante |
 | Modifier une règle RLS | `supabase/schema.sql` | Garder le `drop policy if exists` avant le `create policy` ; rejouer le SQL |
 | Ajouter ou modifier une requête | `src/data/store.js` | Ne pas écrire de requête dans une page |
-| Changer le modèle d'IA | `server/index.js` (`model:` dans `/api/chat-ia`) | |
 | Modifier l'e-mail envoyé à l'admin | `supabase/functions/notify-contact-message/index.ts` | Redéployer la fonction |
 | Ajouter une variable d'environnement | `.env.example` + le fichier qui la lit + l'hébergeur | Préfixe `VITE_` uniquement si elle peut être publique |
 

@@ -64,7 +64,6 @@ Des personnes âgées, souvent sur téléphone et avec une connexion parfois len
 | Frontend | Vite 8 + Vue 3, Vue Router, Pinia, vue-i18n, Bootstrap 5 (Sass), Leaflet |
 | Backend | Node.js + Express 5, dans `server/` |
 | Base de données et comptes | Supabase (PostgreSQL, Supabase Auth, règles RLS, une fonction Edge) |
-| IA | API Anthropic, appelée par le backend |
 | Déploiement | Code sur GitHub ; hébergement Render indiqué par le propriétaire, **sans fichier de configuration dans le dépôt** |
 
 ### Liens
@@ -136,7 +135,7 @@ Synthèse des différences entre le code et la conception d'origine (cahier des 
 
 ### Fonctionnalités présentes et non prévues
 
-Formules d'accompagnement avec paiement simulé, assistant de besoin, carte de Mayotte, code d'arrivée, historique, bouton SOS avec assistant IA, messages de contact, trois langues, lecture et dictée vocales, mode confort, thème sombre, gestion des adhérents.
+Formules d'accompagnement avec paiement simulé, assistant de besoin, carte de Mayotte, code d'arrivée, historique, bouton SOS (urgence 112 et message à l’équipe), messages de contact, trois langues, lecture et dictée vocales, mode confort, thème sombre, gestion des adhérents.
 
 ### Technique
 
@@ -153,7 +152,6 @@ Classés par importance. Chaque point renvoie au document qui le détaille.
 **Sécurité**
 
 1. Les routes `/api/adherents` sont accessibles sans authentification, en lecture comme en écriture — [05](05-backend.md) § 7.
-2. `/api/chat-ia` est accessible sans compte et sans limite de débit — [05](05-backend.md) § 7.
 3. Les infobulles de la carte insèrent du texte saisi par les utilisateurs dans du HTML sans l'échapper — [07](07-authentification-securite.md) § 7.
 4. Tout utilisateur connecté peut lire le téléphone et l'adresse de tous les profils — [06](06-base-de-donnees.md) § 3.
 5. Les règles RLS ne contrôlent pas les changements de statut ni le rôle — [06](06-base-de-donnees.md) § 3.

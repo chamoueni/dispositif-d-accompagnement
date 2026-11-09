@@ -40,7 +40,6 @@ Déroulé dans `index.js` :
 | `PORT` | `index.js` | Port d'écoute | 3001 |
 | `SUPABASE_URL` | `supabaseAdmin.js` | Adresse du projet Supabase | `supabaseAdmin` vaut `null` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `supabaseAdmin.js` | Clé qui contourne les règles RLS | `supabaseAdmin` vaut `null` |
-| `ANTHROPIC_API_KEY` | `index.js` (ligne 48), puis lue par le SDK | Clé de l'API Anthropic | `anthropic` vaut `null`, `/api/chat-ia` répond 503 |
 
 Les valeurs ne figurent pas dans le dépôt ; `.env` est ignoré par Git. Voir [.env.example](../.env.example) pour les noms.
 
@@ -56,7 +55,7 @@ Un seul mécanisme : le middleware **`verifierAdmin`** ([index.js](../server/ind
 
 Le jeton est le jeton de session Supabase de l'utilisateur connecté, envoyé par le frontend (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../src/data/store.js)).
 
-**Ce middleware n'est posé que sur les deux routes `/api/admin/comptes`.** Les routes `/api/adherents` et `/api/chat-ia` n'ont aucun contrôle d'accès (voir § 7).
+**Ce middleware protège les routes `/api/adherents` et `/api/admin/comptes`** (administrateur uniquement).
 
 Il n'y a pas de notion de rôle côté backend : seulement « est l'administrateur » ou non.
 
@@ -115,14 +114,6 @@ Il n'y a pas de notion de rôle côté backend : seulement « est l'administrate
 - **Réponse** : `204`.
 - **Erreurs** : `400` + message Supabase, `401`, `403`, `503`, `500`.
 
-### `POST /api/chat-ia`
-
-- **Protection** : aucune.
-- **Corps** : `{ message, historique? }` où `historique` est un tableau de `{ role, texte }`.
-- **Traitement** : construit la liste des messages, puis appelle `anthropic.messages.create` avec le modèle `claude-opus-5`, `max_tokens: 400` et la consigne `CONTEXTE_SITE` (ligne 52), qui décrit les services, zones et formules du site.
-- **Réponse** : `200` + `{ reponse }`.
-- **Erreurs** : `503` si la clé API est absente ; `400` si le message est vide ; `500` sinon.
-
 ## 6. Gestion des erreurs
 
 Chaque route est entourée d'un `try … catch (error) { next(error) }`. Le dernier middleware ([index.js](../server/index.js), ligne 245) reçoit ces erreurs, les écrit dans la console et répond `500` avec `{ message: 'Une erreur serveur est survenue.' }`. Le détail technique n'est donc jamais envoyé au navigateur.
@@ -134,7 +125,6 @@ Format constant des erreurs : `{ "message": "..." }`.
 | Constat | Détail |
 |---|---|
 | Routes adhérents ouvertes | `GET/POST/PUT/DELETE /api/adherents` n'exigent aucun jeton. Toute personne connaissant l'adresse de l'API peut lire, créer, modifier ou supprimer des adhérents (nom, e-mail, téléphone, commune). |
-| Assistant IA ouvert | `POST /api/chat-ia` n'exige pas de compte et n'a **pas de limite de débit**. Chaque appel consomme l'API payante. |
 | CORS ouvert | `cors()` sans option : toutes les origines sont acceptées. |
 | Pas de limite de débit, pas d'en-têtes de sécurité | Aucune bibliothèque de type limiteur ou `helmet` : **non trouvé dans le code**. |
 | Validation légère | L'e-mail est jugé valide s'il contient `@`. La taille du message envoyé à l'IA n'est pas bornée (hors limite par défaut d'`express.json()`). |
@@ -177,4 +167,4 @@ Conséquences à connaître :
 - Seules les deux routes `/api/admin/comptes` sont protégées, par `verifierAdmin`.
 - Le backend sert à ce que le navigateur ne doit pas faire : utiliser la clé « service role » et la clé de l'API d'IA.
 - Les adhérents vivent dans un fichier JSON, copié de façon facultative vers Supabase.
-- Priorité de sécurité : protéger `/api/adherents` et limiter `/api/chat-ia`.
+- `/api/adherents` est réservé à l’administrateur (corrigé en novembre 2026 : la liste était auparavant publique).

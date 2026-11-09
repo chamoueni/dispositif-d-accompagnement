@@ -1,18 +1,15 @@
 <script setup>
-// Bouton d'urgence flottant : visible sur l'ensemble du site pour aider les
-// utilisateurs à poser des questions, obtenir une réponse rapide et signaler
-// un problème. On garde aussi l'appel d'urgence 112. Le chat pose chaque
-// question à l'assistant IA (voir server/index.js) ; si l'appel échoue (API
-// injoignable, pas de clé configurée...), on retombe sur des réponses FAQ
-// statiques pour que le widget reste utilisable hors-ligne/en démo.
-import { nextTick, ref } from 'vue'
+// Bouton d'urgence flottant, visible sur l'ensemble du site. Deux choix :
+// appeler le 112, ou écrire à l'équipe (problème avec le site, question).
+// Le message est enregistré dans la table messages_contact et l'admin le lit
+// dans son espace (Messages). Il n'y a plus de chat assistant (retiré le
+// 9 novembre 2026, à la demande du propriétaire du site).
+import { ref } from 'vue'
 import { useAuth } from '../stores/auth'
 import { useI18n } from 'vue-i18n'
 import { useVoiceInput } from '../composables/useVoiceInput'
 import DictateButton from './DictateButton.vue'
 import { addMessageContact } from '../data/store'
-import { repondreHorsLigne } from '../data/faqAssistant'
-import { API_BASE_URL } from '../lib/apiBase'
 import '../styles/SosButton.css'
 
 const { user } = useAuth()
@@ -20,11 +17,11 @@ const { user } = useAuth()
 const { t } = useI18n()
 
 const ouvert = ref(false)
-// vue : 'menu' (choix initial), 'formulaire' (message) ou 'chat'.
+// vue : 'menu' (choix initial) ou 'formulaire' (message à l'équipe).
 const vue = ref('menu')
 
 // --- Commande vocale du menu ------------------------------------------------
-// Permet d'atteindre l'assistant, l'urgence ou le signalement d'un probleme en
+// Permet d'atteindre l'urgence ou le message à l'équipe en
 // parlant, sans avoir a viser un bouton. Pensé pour le public âgé : c'est le
 // geste de pointage, pas la lecture, qui bloque le plus souvent.
 const { supported: vocalSupporte, listening: ecouteMenu, start: ecouter } = useVoiceInput()
@@ -37,8 +34,10 @@ const urgenceEnAvant = ref(false)
 // présent dans la même phrase.
 const MOTS_CLES = [
   ['urgence', ['urgence', 'urgent', 'secours', 'pompier', 'ambulance', 'malade', 'danger', '112', 'samu']],
-  ['probleme', ['probleme', 'bug', 'panne', 'erreur', 'marche pas', 'fonctionne pas', 'site', 'bloque']],
-  ['assistant', ['assistant', 'question', 'renseignement', 'information', 'demander', 'parler', 'aide', 'savoir']],
+  // Les mots d'une simple question mènent aussi au formulaire de contact :
+  // depuis le retrait du chat assistant, c'est là qu'on écrit à l'équipe.
+  ['probleme', ['probleme', 'bug', 'panne', 'erreur', 'marche pas', 'fonctionne pas', 'site', 'bloque',
+    'question', 'renseignement', 'information', 'demander', 'parler', 'aide', 'savoir', 'message']],
 ]
 
 // Accents et majuscules retirés avant comparaison : la reconnaissance vocale
@@ -57,11 +56,6 @@ function routerCommande(transcript) {
   }
 
   const [destination] = trouve
-  if (destination === 'assistant') {
-    retourVocal.value = ''
-    ouvrirChat()
-    return
-  }
   if (destination === 'probleme') {
     retourVocal.value = ''
     ouvrirFormulaire()
@@ -91,22 +85,6 @@ const envoi = ref(false)
 const envoye = ref(false)
 const erreur = ref('')
 
-// Historique de la conversation du chat IA : [{ role: 'user'|'assistant', texte }].
-const historique = ref([])
-const reponseEnCours = ref(false)
-const chatMessagesEl = ref(null)
-
-// Réponses de secours si l'assistant IA est injoignable (pas de clé API
-// configurée côté serveur, serveur endormi, hors-ligne...) : voir
-// data/faqAssistant.js, qui couvre une quinzaine de sujets fréquents.
-function formulaireReponseAutomatique(texte) {
-  return repondreHorsLigne(texte)
-}
-
-function ouvrirChat() {
-  vue.value = 'chat'
-}
-
 function ouvrirFormulaire() {
   vue.value = 'formulaire'
 }
@@ -118,76 +96,14 @@ function fermer() {
     message.value = ''
     envoye.value = false
     erreur.value = ''
-    historique.value = []
     retourVocal.value = ''
     urgenceEnAvant.value = false
   }, 200)
 }
 
-async function scrollVersLeBas() {
-  await nextTick()
-  if (chatMessagesEl.value) {
-    chatMessagesEl.value.scrollTop = chatMessagesEl.value.scrollHeight
-  }
-}
-
-// Délai max avant d'abandonner l'appel et de retomber sur la FAQ statique.
-// 12 s : une vraie réponse IA prend souvent 3 à 8 s, et l'indicateur
-// "réponse en cours" s'affiche pendant l'attente. Si la clé IA est absente,
-// le serveur répond 503 immédiatement et la FAQ prend le relais sans attendre.
-// (Le robot Mlezi garde le serveur Render éveillé en journée.)
-const DELAI_MAX_REPONSE_IA_MS = 12000
-
-// Interroge l'assistant IA côté serveur (voir server/index.js, endpoint
-// /api/chat-ia). En cas d'échec ou de dépassement du délai (réseau, clé
-// absente, serveur non déployé/endormi), on relève l'erreur pour que
-// l'appelant retombe sur la FAQ statique.
-async function demanderAssistantIA(texte) {
-  const controleur = new AbortController()
-  const delai = setTimeout(() => controleur.abort(), DELAI_MAX_REPONSE_IA_MS)
-  try {
-    const reponse = await fetch(`${API_BASE_URL}/api/chat-ia`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: texte,
-        historique: historique.value.slice(-10),
-      }),
-      signal: controleur.signal,
-    })
-    if (!reponse.ok) throw new Error('assistant IA indisponible')
-    const donnees = await reponse.json()
-    // Réponse vide = l'IA n'a rien produit : on laisse la FAQ répondre.
-    if (!donnees.reponse?.trim()) throw new Error('réponse IA vide')
-    return donnees.reponse
-  } finally {
-    clearTimeout(delai)
-  }
-}
-
 async function envoyerMessage() {
   if (!message.value.trim()) {
     erreur.value = 'Merci de décrire le problème avant d’envoyer.'
-    return
-  }
-
-  if (vue.value === 'chat') {
-    const texte = message.value.trim()
-    historique.value.push({ role: 'user', texte })
-    message.value = ''
-    erreur.value = ''
-    reponseEnCours.value = true
-    scrollVersLeBas()
-    try {
-      const texteReponse = await demanderAssistantIA(texte)
-      historique.value.push({ role: 'assistant', texte: texteReponse })
-    } catch {
-      historique.value.push({ role: 'assistant', texte: formulaireReponseAutomatique(texte) })
-    } finally {
-      reponseEnCours.value = false
-      scrollVersLeBas()
-    }
     return
   }
 
@@ -215,7 +131,7 @@ async function envoyerMessage() {
       class="sos-menu"
     >
       <template v-if="vue === 'menu'">
-        <!-- Commande vocale : atteindre l'assistant, l'urgence ou le signalement
+        <!-- Commande vocale : atteindre l'urgence ou le signalement
              d'un probleme en parlant. Masquee si le navigateur ne sait pas
              reconnaitre la parole, pour ne pas laisser un bouton sans effet. -->
         <button
@@ -251,26 +167,6 @@ async function envoyerMessage() {
           {{ retourVocal || t('sos.vocal_aide') }}
         </p>
 
-        <button
-          type="button"
-          class="sos-menu-item"
-          @click="ouvrirChat"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M7 9h10M7 13h7M5 18l-2 2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7Z" />
-          </svg>
-          <span>
-            <strong>{{ t('sos.question_titre') }}</strong>
-            <small>{{ t('sos.question_texte') }}</small>
-          </span>
-        </button>
         <a
           href="tel:112"
           class="sos-menu-item sos-menu-item-urgence"
@@ -318,60 +214,6 @@ async function envoyerMessage() {
             <small>{{ t('sos.probleme_texte') }}</small>
           </span>
         </button>
-      </template>
-
-      <template v-else-if="vue === 'chat'">
-        <div class="sos-chat">
-          <div
-            ref="chatMessagesEl"
-            class="sos-chat-messages"
-          >
-            <p class="sos-confirmation">
-              {{ t('sos.chat_accueil') }}
-            </p>
-            <p
-              v-for="(m, i) in historique"
-              :key="i"
-              class="sos-chat-bubble"
-              :class="m.role === 'user' ? 'sos-chat-bubble-user' : 'sos-chat-bubble-ia'"
-            >
-              {{ m.texte }}
-            </p>
-            <p
-              v-if="reponseEnCours"
-              class="sos-chat-bubble sos-chat-bubble-ia sos-chat-bubble-loading"
-              aria-live="polite"
-            >
-              …
-            </p>
-          </div>
-          <form
-            class="sos-form"
-            @submit.prevent="envoyerMessage"
-          >
-            <label
-              class="visually-hidden"
-              for="sos-chat-message"
-            >{{ t('sos.chat_label') }}</label>
-            <textarea
-              id="sos-chat-message"
-              v-model="message"
-              class="form-control form-control-sm"
-              rows="2"
-              :placeholder="t('sos.chat_exemple')"
-              :disabled="reponseEnCours"
-            />
-            <!-- Dicter plutot que taper : la question part au micro. -->
-            <DictateButton @dictate="ajouterDictee" />
-            <button
-              type="submit"
-              class="btn btn-primary btn-sm w-100 mt-2"
-              :disabled="reponseEnCours"
-            >
-              {{ reponseEnCours ? t('sos.chat_en_cours') : t('sos.envoyer') }}
-            </button>
-          </form>
-        </div>
       </template>
 
       <template v-else-if="envoye">

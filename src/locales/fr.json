@@ -501,16 +501,10 @@
   "sos": {
     "bouton": "SOS",
     "bouton_aria": "Aide et urgence",
-    "question_titre": "Question rapide",
-    "question_texte": "Poser une question",
     "urgence_titre": "Urgence",
     "urgence_texte": "Appeler le 112",
     "probleme_titre": "Un problème avec le site",
     "probleme_texte": "Nous envoyer un message",
-    "chat_accueil": "Bonjour, je peux vous aider sur l'inscription, les services, Mayotte et les délais de réponse.",
-    "chat_label": "Votre question",
-    "chat_exemple": "Ex. : Quels sont les services disponibles à Mayotte ?",
-    "chat_en_cours": "Réponse en cours…",
     "contact_label": "Décrivez le problème",
     "contact_exemple": "Qu'est-ce qui ne fonctionne pas ?",
     "contact_envoye": "Message envoyé, merci. On vous répondra dès que possible.",
@@ -519,8 +513,8 @@
     "fermer": "Fermer",
     "parler": "Parler",
     "ecoute": "Je vous écoute…",
-    "vocal_aide": "Dites : assistant, urgence, ou problème.",
-    "non_compris": "Je n'ai pas compris. Dites : assistant, urgence, ou problème. Vous pouvez aussi toucher un bouton ci-dessous.",
+    "vocal_aide": "Dites : urgence, ou problème.",
+    "non_compris": "Je n'ai pas compris. Dites : urgence, ou problème. Vous pouvez aussi toucher un bouton ci-dessous.",
     "urgence_confirmer": "Pour appeler le 112, touchez le bouton Urgence ci-dessous."
   },
   "vocal": {

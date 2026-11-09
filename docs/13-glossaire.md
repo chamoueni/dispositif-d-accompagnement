@@ -28,7 +28,7 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **Backend** | La partie qui s'exécute sur un serveur. Ici, `server/`, plus Supabase. |
 | **API** | Ensemble d'adresses qu'un programme appelle pour demander ou envoyer des données. |
 | **API REST** | API organisée autour de ressources et de verbes HTTP : `GET` (lire), `POST` (créer), `PUT` (modifier), `DELETE` (supprimer). Exemple : `/api/adherents`. |
-| **Route** | Deux sens dans ce projet. Côté frontend : une adresse de page (`/profil`). Côté backend : une adresse d'API (`POST /api/chat-ia`). |
+| **Route** | Deux sens dans ce projet. Côté frontend : une adresse de page (`/profil`). Côté backend : une adresse d'API (`GET /api/sante`). |
 | **JSON** | Format texte pour échanger des données, par exemple `{ "nom": "Ali" }`. |
 | **Code de statut HTTP** | Nombre renvoyé par le serveur : 200 réussi, 201 créé, 204 réussi sans contenu, 400 requête invalide, 401 non identifié, 403 interdit, 404 introuvable, 500 erreur du serveur, 503 service indisponible. |
 | **Variable d'environnement** | Réglage fourni au programme de l'extérieur (fichier `.env`, hébergeur), pour ne pas écrire de secret dans le code. |

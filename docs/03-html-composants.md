@@ -95,8 +95,7 @@ Trois chemins existent dans le projet :
 - **Enfant** : `DictateButton`.
 - **Fonctions importantes** :
   - `routerCommande(transcript)` : cherche des mots-clés (`MOTS_CLES`) dans la phrase dictée et ouvre la bonne vue. Pour « urgence », elle met le 112 en avant **sans lancer l'appel**.
-  - `demanderAssistantIA(texte)` : `POST /api/chat-ia`, abandonné après 5 secondes (`DELAI_MAX_REPONSE_IA_MS`).
-  - `formulaireReponseAutomatique(texte)` : réponses de secours par mots-clés si l'IA ne répond pas.
+  - Deux choix seulement : appeler le 112, ou écrire à l’équipe (`addMessageContact`, table `messages_contact`). Le chat assistant IA a été retiré le 9 novembre 2026.
   - `envoyerMessage()` : en mode chat, interroge l'IA ; en mode formulaire, appelle `addMessageContact`.
 - **Lien d'urgence** : `href="tel:112"`.
 
