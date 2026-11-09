@@ -1,6 +1,6 @@
 # Dispositif d'accompagnement
 
-Application Vue 3/Vite du dispositif d'accompagnement à Mayotte, avec un espace administrateur de gestion des adhérents.
+Application Vue 3/Vite du dispositif d'accompagnement à Mayotte, avec API Express et Supabase Auth/Postgres.
 
 ## Démarrage local
 
@@ -14,15 +14,15 @@ Le frontend est disponible sur `http://localhost:5173` et l'API sur `http://loca
 
 ## Configuration Supabase
 
-1. Renseigner `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans `.env` pour le site existant.
-2. Renseigner `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` pour activer le miroir serveur.
-3. Exécuter `supabase/schema.sql` dans l'éditeur SQL Supabase. La table `adherents` est créée avec des policies réservées à l'administrateur.
+1. Renseigner `SUPABASE_URL`, `SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` dans `.env`. Les accès Supabase passent maintenant par Express; aucune session Supabase n'est conservée dans le navigateur.
+2. Générer `AUTH_SESSION_SECRET` avec `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` et configurer `SITE_URL`, `VITE_SITE_URL` et `CORS_ORIGINS` selon l'origine frontend.
+3. Exécuter `supabase/schema.sql` et `supabase/migrations/20261029_secure_auth_sessions.sql` dans l'éditeur SQL Supabase. La migration crée les sessions révocables, accessibles uniquement au serveur.
 
-La clé `SUPABASE_SERVICE_ROLE_KEY` reste uniquement dans l'environnement Node. Elle ne doit jamais être préfixée par `VITE_`, exposée dans le navigateur ou commitée.
+`SUPABASE_SERVICE_ROLE_KEY` et `AUTH_SESSION_SECRET` restent uniquement dans l'environnement Node. Ne les préfixe jamais par `VITE_`, ne les expose pas au navigateur et ne les committe pas. Supabase Auth gère les comptes et le hachage reconnu des mots de passe; Express place un identifiant de session aléatoire dans un cookie `HttpOnly`, tandis que les jetons Supabase chiffrés et révocables restent côté serveur. `AUTH_REMEMBER_DAYS` règle la durée de « Se souvenir de moi » (30 jours par défaut, plafond de 365 jours); sans cette option, le cookie est temporaire et la session serveur expire après `AUTH_SESSION_HOURS` (12 h par défaut, plafond de 24 h).
 
 ## Architecture ajoutée
 
-- `server/index.js` : application Express, CORS, `express.json()` et routes REST.
+- `server/index.js`, `server/authRoutes.js`, `server/dataRoutes.js` et `server/sessions.js` : API Express, authentification BFF, sessions sécurisées et accès aux données sous RLS.
 - `server/adherentsStore.js` : lecture/écriture du modèle métier dans `server/data/adherents.json`.
 - `server/supabaseSync.js` : miroir facultatif des créations, modifications et suppressions dans Supabase.
 - `server/data/adherents.json` : stockage local de secours, initialisé avec un tableau vide.
@@ -32,7 +32,13 @@ La clé `SUPABASE_SERVICE_ROLE_KEY` reste uniquement dans l'environnement Node. 
 - `supabase/schema.sql` : table `adherents` et policies RLS admin.
 - `vite.config.js` : proxy de développement `/api` vers Express.
 
-Les comptes utilisateurs déjà gérés par `profiles` et Supabase Auth ne sont pas remplacés. Le module adhérents est ajouté dans `/admin` et dispose de son propre stockage métier.
+Les comptes utilisateurs restent gérés par Supabase Auth et les profils par `profiles`; les appels métier sont proxifiés par le serveur afin que le navigateur ne reçoive aucun jeton Supabase.
+
+## SEO et déploiement
+
+Définir `VITE_SITE_URL` (frontend) et `SITE_URL` (serveur) avec l’URL publique HTTPS avant le build. `npm run build` génère les pages statiques publiques avec leurs titres, descriptions, URL canoniques et Open Graph, ainsi que `dist/sitemap.xml`, `dist/robots.txt` et `dist/404.html`. Sans domaine configuré, le sitemap est valide mais vide; renseigner l’URL avant le déploiement pour y inclure les pages publiques.
+
+Configurer l’hébergement pour servir les fichiers statiques générés, préserver le statut HTTP 404 sur `404.html`, et transmettre `/api/*` à Express. Si frontend et API partagent le même site (y compris des sous-domaines), garder `COOKIE_SAME_SITE=lax`; s’ils sont sur des sites différents, `COOKIE_SAME_SITE=none` et HTTPS sont nécessaires, mais les navigateurs peuvent bloquer les cookies tiers. Un reverse proxy sous le même domaine est préférable. En production, renseigner également `VITE_API_URL`, `CORS_ORIGINS` et les secrets serveur dans la configuration de l’hébergeur.
 
 ## API REST
 

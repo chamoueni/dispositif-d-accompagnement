@@ -27,3 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ancienne copie du projet imbriquée par erreur : ne jamais la commiter
+/dispositif d'accompagnement/

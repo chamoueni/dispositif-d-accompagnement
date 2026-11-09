@@ -1,5 +1,5 @@
 <script setup>
-// Connexion email/mot de passe via Supabase Auth (voir stores/auth.js).
+// Connexion email/mot de passe via l’API sécurisée du serveur.
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -19,8 +19,27 @@ const { login } = useAuth()
 // sans lien avec "Nos formules".
 const vientDUneFormule = route.query.redirect?.toString().startsWith('/formule/')
 
-const form = reactive({ email: '', password: '' })
+const form = reactive({ email: '', password: '', remember: false })
 const error = ref('')
+
+// Demande au navigateur de proposer « Enregistrer le mot de passe ? ».
+// Comme la connexion passe par fetch (pas de rechargement de page), certains
+// navigateurs ne détectent pas toujours la connexion : l'API Credential
+// Management (Chrome, Edge, Opera, Android) affiche alors sa fenêtre native.
+// Firefox et Safari ne la connaissent pas, mais repèrent eux-mêmes le
+// formulaire grâce aux attributs autocomplete="username"/"current-password".
+// Le mot de passe va directement au gestionnaire du navigateur : le site ne le
+// stocke jamais.
+async function proposerEnregistrementMotDePasse(email, password) {
+  if (!window.PasswordCredential || !navigator.credentials?.store) return
+  try {
+    await navigator.credentials.store(
+      new window.PasswordCredential({ id: email, password, name: email }),
+    )
+  } catch {
+    // Refus de l'utilisateur ou navigateur incompatible : ce n'est pas bloquant.
+  }
+}
 
 // Si on arrive ici via la garde requiresAuth (ex. clic sur "Choisir Confort"
 // sans être connecté), on revient après connexion là où on voulait aller
@@ -28,7 +47,10 @@ const error = ref('')
 async function handleSubmit() {
   error.value = ''
   try {
-    await login(form.email, form.password)
+    await login(form.email, form.password, form.remember)
+    // Seulement après une connexion réussie : on ne propose jamais
+    // d'enregistrer un mot de passe erroné.
+    await proposerEnregistrementMotDePasse(form.email, form.password)
     router.push(route.query.redirect || '/mon-compte')
   } catch (err) {
     error.value = err.message
@@ -74,8 +96,10 @@ async function handleSubmit() {
             <input
               id="email"
               v-model="form.email"
+              name="email"
               type="email"
               class="form-control"
+              autocomplete="username"
               required
             >
           </div>
@@ -87,8 +111,22 @@ async function handleSubmit() {
             <ChampMotDePasse
               id="password"
               v-model="form.password"
+              name="password"
+              autocomplete="current-password"
               required
             />
+          </div>
+          <div class="form-check mb-3">
+            <input
+              id="remember"
+              v-model="form.remember"
+              class="form-check-input"
+              type="checkbox"
+            >
+            <label
+              class="form-check-label"
+              for="remember"
+            >{{ t('connexion_page.se_souvenir') }}</label>
           </div>
 
           <p

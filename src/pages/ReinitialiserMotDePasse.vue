@@ -1,37 +1,32 @@
 <script setup>
-// Page ouverte depuis le lien reçu par email (voir MotDePasseOublie.vue).
-// Supabase transforme automatiquement le jeton présent dans l'URL en une
-// session de récupération (event "PASSWORD_RECOVERY") : pas de garde de route
-// requiresAuth ici, on vérifie nous-mêmes qu'une session valide existe, car le
-// routeur global pourrait tester avant que cette session soit établie.
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+// Page ouverte depuis le lien de récupération reçu par email.
+import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../stores/auth'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
 import '../styles/Connexion.css'
 
 const { t } = useI18n()
-const { changerMotDePasse, logout } = useAuth()
+const { verifierLienReinitialisation, reinitialiserMotDePasse } = useAuth()
 
 const verification = ref(true)
 const lienValide = ref(false)
-let unsubscribe = null
+let jetonReinitialisation = ''
 
 onMounted(async () => {
-  const { data } = await supabase.auth.getSession()
-  lienValide.value = !!data.session
+  const hash = new URLSearchParams(window.location.hash.slice(1))
+  jetonReinitialisation = hash.get('type') === 'recovery' ? hash.get('access_token') || '' : ''
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+  if (jetonReinitialisation) {
+    try {
+      await verifierLienReinitialisation(jetonReinitialisation)
+      lienValide.value = true
+    } catch {
+      lienValide.value = false
+    }
+  }
   verification.value = false
-
-  // Filet de sécurité : si la session de récupération arrive juste après ce
-  // premier contrôle (traitement du lien encore en cours), on la détecte ici.
-  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY' || session) lienValide.value = true
-  })
-  unsubscribe = () => listener.subscription.unsubscribe()
 })
-
-onUnmounted(() => unsubscribe?.())
 
 const form = reactive({ nouveau: '', confirmation: '' })
 const erreur = ref('')
@@ -52,10 +47,7 @@ async function handleSubmit() {
 
   enCours.value = true
   try {
-    await changerMotDePasse(form.nouveau)
-    // On referme la session de récupération : l'utilisateur se reconnecte
-    // avec son nouveau mot de passe, comme après un changement classique.
-    await logout()
+    await reinitialiserMotDePasse(jetonReinitialisation, form.nouveau)
     reussi.value = true
   } catch (err) {
     erreur.value = err.message
@@ -117,6 +109,7 @@ async function handleSubmit() {
             <ChampMotDePasse
               id="nouveau"
               v-model="form.nouveau"
+              name="new-password"
               autocomplete="new-password"
               required
             />
@@ -129,6 +122,7 @@ async function handleSubmit() {
             <ChampMotDePasse
               id="confirmation"
               v-model="form.confirmation"
+              name="new-password-confirm"
               autocomplete="new-password"
               required
             />

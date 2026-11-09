@@ -1,8 +1,9 @@
 // API REST Express de gestion des adhérents + assistant IA du bouton SOS.
-import crypto from 'node:crypto'
 import express from 'express'
 import cors from 'cors'
 import Anthropic from '@anthropic-ai/sdk'
+import cookieParser from 'cookie-parser'
+import { rateLimit } from 'express-rate-limit'
 import {
   ajouterAdherent,
   modifierAdherent,
@@ -10,7 +11,9 @@ import {
   supprimerAdherent,
 } from './adherentsStore.js'
 import { synchroniserAdherent } from './supabaseSync.js'
-import { supabaseAdmin } from './supabaseAdmin.js'
+import authRoutes from './authRoutes.js'
+import dataRoutes from './dataRoutes.js'
+import { sessionMiddleware } from './sessions.js'
 
 const app = express()
 const port = Number(process.env.PORT) || 3001
@@ -20,23 +23,62 @@ const statutsAutorises = ['actif', 'inactif']
 // que les policies RLS Supabase : pas de rôle "admin" séparé pour ce projet.
 const ADMIN_EMAIL = 'moustakimsinina05@gmail.com'
 
-app.use(cors())
-app.use(express.json())
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1)
+
+const originsAutorises = new Set([
+  process.env.SITE_URL,
+  ...(process.env.CORS_ORIGINS || '').split(',').map((value) => value.trim()),
+  ...(process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173', 'http://127.0.0.1:5173']),
+].filter(Boolean).map((value) => {
+  try { return new URL(value).origin } catch { return '' }
+}).filter(Boolean))
+
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, !origin || originsAutorises.has(origin))
+  },
+  credentials: true,
+}))
+app.use(express.json({ limit: '1mb' }))
+app.use(cookieParser())
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(self)')
+  next()
+})
+app.use((req, res, next) => {
+  if (req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000')
+  next()
+})
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next()
+  const origin = req.get('origin')
+  if (!origin || !originsAutorises.has(origin)) {
+    return res.status(403).json({ message: 'Origine de la requête non autorisée.' })
+  }
+  next()
+})
+app.use('/api', sessionMiddleware)
+app.use('/api', authRoutes)
+app.use('/api', dataRoutes)
+
+const limiteAssistant = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+})
 
 // Protège les routes /api/admin/* : le front envoie le token de session Supabase
 // de l'utilisateur connecté (Authorization: Bearer <access_token>), qu'on
 // vérifie ici avant d'autoriser une action qui utilise la clé service role
 // (donc capable de contourner toute RLS) — sans ce contrôle, ces routes
 // seraient utilisables par n'importe qui connaissant leur URL.
-async function verifierAdmin(req, res, next) {
-  if (!supabaseAdmin) {
-    return res.status(503).json({ message: "Service d'administration non configuré côté serveur." })
-  }
-  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
-  if (!token) return res.status(401).json({ message: 'Authentification requise.' })
-
-  const { data, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || data.user?.email !== ADMIN_EMAIL) {
+function verifierAdmin(req, res, next) {
+  if (!req.authSession) return res.status(401).json({ message: 'Authentification requise.' })
+  if (req.authSession.user.email !== ADMIN_EMAIL) {
     return res.status(403).json({ message: "Accès réservé à l'administrateur." })
   }
   next()
@@ -76,7 +118,7 @@ function validerAdherent(body) {
   return null
 }
 
-app.get('/api/adherents', async (_req, res, next) => {
+app.get('/api/adherents', verifierAdmin, async (_req, res, next) => {
   try {
     res.json(await obtenirAdherents())
   } catch (error) {
@@ -84,7 +126,7 @@ app.get('/api/adherents', async (_req, res, next) => {
   }
 })
 
-app.post('/api/adherents', async (req, res, next) => {
+app.post('/api/adherents', verifierAdmin, async (req, res, next) => {
   try {
     const erreur = validerAdherent(req.body)
     if (erreur) return res.status(400).json({ message: erreur })
@@ -96,7 +138,7 @@ app.post('/api/adherents', async (req, res, next) => {
   }
 })
 
-app.put('/api/adherents/:id', async (req, res, next) => {
+app.put('/api/adherents/:id', verifierAdmin, async (req, res, next) => {
   try {
     const erreur = validerAdherent(req.body)
     if (erreur) return res.status(400).json({ message: erreur })
@@ -109,7 +151,7 @@ app.put('/api/adherents/:id', async (req, res, next) => {
   }
 })
 
-app.delete('/api/adherents/:id', async (req, res, next) => {
+app.delete('/api/adherents/:id', verifierAdmin, async (req, res, next) => {
   try {
     const adherents = await obtenirAdherents()
     const adherent = adherents.find((item) => item.id === req.params.id)
@@ -123,104 +165,22 @@ app.delete('/api/adherents/:id', async (req, res, next) => {
   }
 })
 
-// Supprime un compte entièrement (auth.users + sa ligne "profiles", qui suit
-// via "on delete cascade", voir supabase/schema.sql). Une simple suppression
-// RLS de la ligne "profiles" ne suffirait pas : le compte Supabase Auth
-// resterait, bloquant toute réinscription avec le même email ("User already
-// registered") — c'est exactement le bug rencontré avec attoufams@gmail.com.
-// auth.admin.deleteUser() n'est disponible qu'avec la clé service role, donc
-// côté serveur uniquement, jamais depuis le client.
-app.delete('/api/admin/comptes/:id', verifierAdmin, async (req, res, next) => {
-  try {
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(req.params.id)
-    if (error) return res.status(400).json({ message: error.message })
-    return res.status(204).end()
-  } catch (error) {
-    next(error)
-  }
-})
-
-// Crée un compte complet (auth.users + sa ligne "profiles") depuis l'espace
-// admin, sans passer par /inscription. auth.admin.createUser() n'est
-// disponible qu'avec la clé service role, donc côté serveur uniquement (voir
-// deleteUser ci-dessus, même principe). Un email est obligatoire : Supabase
-// Auth ne peut pas créer de compte sans identifiant de connexion, même si le
-// reste du formulaire admin (téléphone, commune...) reste facultatif.
-// Comme il n'y a pas de champ mot de passe dans ce formulaire admin, un mot de
-// passe aléatoire est généré ici puis jamais communiqué : la personne définit
-// le sien via le lien "mot de passe oublié" habituel (voir
-// demanderReinitialisationMotDePasse dans stores/auth.js, appelé côté client
-// juste après la création).
-app.post('/api/admin/comptes', verifierAdmin, async (req, res, next) => {
-  try {
-    const { nom, email, telephone, ville, role, actif } = req.body
-
-    if (!nom?.trim()) return res.status(400).json({ message: 'Le nom est obligatoire.' })
-    if (!email?.trim() || !email.includes('@')) {
-      return res.status(400).json({ message: 'Un email valide est obligatoire pour créer un compte.' })
-    }
-    if (!rolesAutorises.includes(role)) return res.status(400).json({ message: 'Le rôle est invalide.' })
-
-    const motDePasseTemporaire = crypto.randomBytes(24).toString('base64url')
-
-    const { data, error: erreurCreation } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: motDePasseTemporaire,
-      email_confirm: true,
-      user_metadata: { nom, role },
-    })
-    if (erreurCreation) {
-      const message = /already.*registered|already.*exists/i.test(erreurCreation.message)
-        ? 'Un compte existe déjà avec cet email.'
-        : erreurCreation.message
-      return res.status(400).json({ message })
-    }
-
-    const { data: profil, error: erreurProfil } = await supabaseAdmin
-      .from('profiles')
-      .insert({
-        id: data.user.id,
-        nom,
-        role,
-        telephone: telephone || '',
-        ville: ville || '',
-        actif: actif ?? true,
-      })
-      .select()
-      .single()
-
-    if (erreurProfil) {
-      // Le compte Auth a été créé mais pas son profil (ex. téléphone déjà pris,
-      // voir profiles_telephone_unique) : on annule la création plutôt que de
-      // laisser un compte Auth orphelin, sans ligne "profiles", inutilisable
-      // et impossible à recréer avec le même email/téléphone ensuite.
-      await supabaseAdmin.auth.admin.deleteUser(data.user.id)
-      const message = /profiles_telephone_unique/i.test(erreurProfil.message)
-        ? 'Ce numéro de téléphone est déjà utilisé par un autre compte.'
-        : "Impossible de créer le profil du compte, merci de réessayer."
-      return res.status(400).json({ message })
-    }
-
-    return res.status(201).json({ ...profil, email })
-  } catch (error) {
-    next(error)
-  }
-})
-
-app.post('/api/chat-ia', async (req, res, next) => {
+app.post('/api/chat-ia', limiteAssistant, async (req, res, next) => {
   try {
     if (!anthropic) {
       return res.status(503).json({ message: 'Assistant IA non configuré (clé API absente).' })
     }
 
-    const { message, historique } = req.body
-    if (!message?.trim()) return res.status(400).json({ message: 'Message vide.' })
+    const { message, historique } = req.body || {}
+    if (typeof message !== 'string' || !message.trim() || message.length > 2000) {
+      return res.status(400).json({ message: 'Message vide ou trop long.' })
+    }
 
     // Historique limité côté client (10 derniers messages) pour garder le
     // contexte des questions de suivi sans faire grossir la requête.
     const messages = [
-      ...(Array.isArray(historique) ? historique : [])
-        .filter((m) => m?.texte?.trim())
+      ...(Array.isArray(historique) ? historique.slice(-10) : [])
+        .filter((m) => typeof m?.texte === 'string' && m.texte.trim() && m.texte.length <= 2000)
         .map((m) => ({
           role: m.role === 'assistant' ? 'assistant' : 'user',
           content: m.texte,
@@ -242,9 +202,11 @@ app.post('/api/chat-ia', async (req, res, next) => {
   }
 })
 
+app.use('/api', (_req, res) => res.status(404).json({ message: 'Route API introuvable.' }))
+
 app.use((error, _req, res, _next) => {
   void _next
-  console.error('API adhérents :', error)
+  console.error('Erreur API :', error?.name || 'Erreur')
   res.status(500).json({ message: 'Une erreur serveur est survenue.' })
 })
 

@@ -166,6 +166,7 @@ async function demanderAssistantIA(texte) {
   try {
     const reponse = await fetch(`${API_BASE_URL}/api/chat-ia`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: texte,

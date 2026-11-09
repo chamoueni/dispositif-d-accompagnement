@@ -9,22 +9,46 @@ const routes = [
     path: '/',
     name: 'accueil',
     component: () => import('../pages/Accueil.vue'),
+    meta: {
+      seo: {
+        title: 'Aide à domicile à Mayotte | Dispositif d’accompagnement',
+        description: 'Trouvez à Mayotte un accompagnement de confiance pour les personnes âgées : soins à domicile, courses, ménage et aide du quotidien.',
+      },
+    },
   },
   // Pages de présentation publiques (accessibles sans être connecté).
   {
     path: '/pourquoi',
     name: 'pourquoi',
     component: () => import('../pages/Pourquoi.vue'),
+    meta: {
+      seo: {
+        title: 'Pourquoi ce dispositif d’accompagnement à Mayotte',
+        description: 'Découvrez comment le dispositif facilite l’accès des personnes âgées de Mayotte à une aide de proximité et à un accompagnement adapté.',
+      },
+    },
   },
   {
     path: '/services',
     name: 'services',
     component: () => import('../pages/Services.vue'),
+    meta: {
+      seo: {
+        title: 'Services d’aide à domicile à Mayotte',
+        description: 'Soins à domicile, courses, ménage, garde et soutien psychologique : découvrez les services d’accompagnement proposés à Mayotte.',
+      },
+    },
   },
   {
     path: '/pour-qui',
     name: 'pour-qui',
     component: () => import('../pages/PourQui.vue'),
+    meta: {
+      seo: {
+        title: 'À qui s’adresse le dispositif d’accompagnement',
+        description: 'Personnes âgées, personnel de santé et particuliers : découvrez les profils concernés par le dispositif d’accompagnement à Mayotte.',
+      },
+    },
   },
   // Questionnaire "Je cherche de l'aide" en 4 étapes, public (pas de connexion
   // requise pour explorer les résultats ; envoyer une demande nécessite un
@@ -33,11 +57,23 @@ const routes = [
     path: '/assistant',
     name: 'assistant',
     component: () => import('../pages/AssistantBesoin.vue'),
+    meta: {
+      seo: {
+        title: 'Trouver une aide adaptée à Mayotte',
+        description: 'Précisez votre besoin pour découvrir les solutions d’accompagnement disponibles pour les personnes âgées à Mayotte.',
+      },
+    },
   },
   {
     path: '/atouts',
     name: 'atouts',
     component: () => import('../pages/Atouts.vue'),
+    meta: {
+      seo: {
+        title: 'Nos engagements pour un accompagnement de confiance',
+        description: 'Sécurité, fiabilité et disponibilité : découvrez les engagements du dispositif d’accompagnement personnalisé à Mayotte.',
+      },
+    },
   },
   // guestOnly : réservé aux visiteurs non connectés (redirige vers /profil sinon).
   {
@@ -65,6 +101,7 @@ const routes = [
     path: '/reinitialiser-mot-de-passe',
     name: 'reinitialiser-mot-de-passe',
     component: () => import('../pages/ReinitialiserMotDePasse.vue'),
+    meta: { noindex: true },
   },
   // requiresAuth : redirige vers /connexion si personne n'est connecté.
   {
@@ -144,6 +181,12 @@ const routes = [
       { path: 'messages', name: 'admin-messages', component: () => import('../pages/AdminMessages.vue') },
     ],
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../pages/NotFound.vue'),
+    meta: { noindex: true },
+  },
 ]
 
 const router = createRouter({
@@ -173,6 +216,12 @@ function attendreInitialisation(initialized) {
 // Garde de navigation globale : applique les règles requiresAuth / guestOnly
 // définies sur chaque route avant de laisser passer.
 router.beforeEach(async (to) => {
+  if (to.path === '/index.html') return { path: '/', query: to.query, hash: to.hash, replace: true }
+  const normalizedPath = to.path.replace(/\/+$/, '') || '/'
+  if (normalizedPath !== to.path) {
+    return { path: normalizedPath, query: to.query, hash: to.hash, replace: true }
+  }
+
   const { user, isAdmin, initialized } = useAuth()
   await attendreInitialisation(initialized)
 
@@ -199,6 +248,61 @@ router.beforeEach(async (to) => {
     return { name: isAdmin.value ? 'admin' : 'mon-compte' }
   }
   return true
+})
+
+function mettreMeta(name, content, attribute = 'name') {
+  let element = document.head.querySelector(`meta[${attribute}="${name}"]`)
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute(attribute, name)
+    document.head.append(element)
+  }
+  element.setAttribute('content', content)
+}
+
+router.afterEach((to) => {
+  if (typeof document === 'undefined') return
+  const seo = to.meta.seo
+  const privateRoute = to.meta.noindex || to.meta.requiresAuth || to.meta.guestOnly ||
+    to.path.startsWith('/admin') || to.name === 'not-found'
+  const title = seo?.title || (to.name === 'not-found' ? 'Page introuvable' : 'Espace privé')
+  const description = seo?.description || ''
+  const baseUrl = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/+$/, '')
+  const canonical = `${baseUrl}${to.path === '/' ? '/' : to.path}`
+
+  document.title = title
+  mettreMeta('description', description)
+  mettreMeta('robots', privateRoute ? 'noindex, nofollow' : 'index, follow')
+  mettreMeta('og:title', title, 'property')
+  mettreMeta('og:description', description, 'property')
+  mettreMeta('og:type', 'website', 'property')
+  mettreMeta('og:url', canonical, 'property')
+  mettreMeta('og:locale', 'fr_FR', 'property')
+  mettreMeta('twitter:card', 'summary')
+
+  let canonicalLink = document.head.querySelector('link[rel="canonical"]')
+  if (!canonicalLink) {
+    canonicalLink = document.createElement('link')
+    canonicalLink.rel = 'canonical'
+    document.head.append(canonicalLink)
+  }
+  canonicalLink.href = canonical
+
+  document.head.querySelector('script[data-seo-schema]')?.remove()
+  if (!privateRoute) {
+    const schema = document.createElement('script')
+    schema.type = 'application/ld+json'
+    schema.dataset.seoSchema = 'true'
+    schema.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': to.name === 'accueil' ? 'Organization' : 'WebPage',
+      name: title,
+      description,
+      url: canonical,
+      ...(to.name === 'accueil' ? { areaServed: 'Mayotte' } : {}),
+    })
+    document.head.append(schema)
+  }
 })
 
 export default router

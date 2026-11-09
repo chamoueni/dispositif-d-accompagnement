@@ -68,8 +68,10 @@ async function seConnecter() {
           <input
             id="admin-email"
             v-model="email"
+            name="email"
             type="email"
             class="form-control"
+            autocomplete="username"
             required
           >
         </div>
@@ -82,8 +84,10 @@ async function seConnecter() {
             <input
               id="admin-password"
               v-model="password"
+              name="password"
               :type="afficherMotDePasse ? 'text' : 'password'"
               class="form-control"
+              autocomplete="current-password"
               required
             >
             <button

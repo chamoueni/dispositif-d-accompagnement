@@ -66,8 +66,10 @@ async function handleSubmit() {
             <input
               id="email"
               v-model="email"
+              name="email"
               type="email"
               class="form-control"
+              autocomplete="username"
               required
             >
           </div>

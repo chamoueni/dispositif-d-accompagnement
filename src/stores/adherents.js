@@ -11,6 +11,7 @@ export const useAdherentsStore = defineStore('adherents', () => {
   // Centralise les appels fetch vers le backend Express.
   async function appelerApi(url, options = {}) {
     const reponse = await fetch(`${API_BASE_URL}${url}`, {
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       ...options,
     })

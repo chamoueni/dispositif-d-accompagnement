@@ -203,6 +203,7 @@
     "email_label": "Email",
     "password_label": "Mot de passe",
     "cta": "Se connecter",
+    "se_souvenir": "Se souvenir de moi",
     "mdp_oublie": "Mot de passe oublié ?",
     "pas_de_compte": "Pas encore de compte ?"
   },

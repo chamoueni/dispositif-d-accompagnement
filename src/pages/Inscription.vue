@@ -169,8 +169,10 @@ async function handleSubmit() {
               <input
                 id="email"
                 v-model="form.email"
+                name="email"
                 type="email"
                 class="form-control"
+                autocomplete="username"
                 required
               >
             </div>
@@ -185,6 +187,7 @@ async function handleSubmit() {
               <ChampMotDePasse
                 id="password"
                 v-model="form.password"
+                name="new-password"
                 autocomplete="new-password"
                 required
               />

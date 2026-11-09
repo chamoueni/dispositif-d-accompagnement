@@ -10,6 +10,7 @@ const { t } = useI18n()
 defineProps({
   modelValue: { type: String, default: '' },
   id: { type: String, required: true },
+  name: { type: String, default: undefined },
   autocomplete: { type: String, default: 'current-password' },
   required: { type: Boolean, default: false },
 })
@@ -22,6 +23,7 @@ const visible = ref(false)
   <div class="input-group">
     <input
       :id="id"
+      :name="name"
       :type="visible ? 'text' : 'password'"
       class="form-control"
       :autocomplete="autocomplete"

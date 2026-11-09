@@ -1,10 +1,14 @@
-// Couche données Supabase (tables "profiles", "demandes", "mises_en_relation" —
-// voir supabase/schema.sql). Remplace l'ancien mock localStorage : toutes ces
-// fonctions sont maintenant asynchrones (elles renvoient des Promises), donc
-// chaque appelant doit utiliser await/.then() plutôt qu'un accès synchrone.
-import { supabase } from '../lib/supabaseClient'
-import { API_BASE_URL } from '../lib/apiBase'
+// Couche de données via l’API Express, qui applique l’authentification BFF et
+// conserve les règles RLS Supabase. Toutes ces fonctions sont asynchrones.
+import { apiRequest } from '../lib/api'
 import { messageErreurProfil } from '../stores/auth'
+
+async function appelerDonnees(action, payload = {}) {
+  return apiRequest('/api/data', {
+    method: 'POST',
+    body: { action, payload },
+  })
+}
 
 // Les 17 communes de Mayotte, regroupées par zone géographique approximative.
 // Sert à trier par "proximité" sans vraie géolocalisation (cf. spécificité Mayotte :
@@ -113,31 +117,31 @@ export const FORMULES = [
 // Renvoie tous les profils (utilisé par la page Recherche pour filtrer les
 // prestataires). La RLS limite déjà ça aux utilisateurs connectés.
 export async function getUsers() {
-  const { data, error } = await supabase.from('profiles').select('*')
-  if (error) {
+  try {
+    return await appelerDonnees('profiles.list')
+  } catch (error) {
     console.error('getUsers:', error.message)
     return []
   }
-  return data
 }
 
 export async function findById(id) {
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single()
-  if (error) {
+  try {
+    return await appelerDonnees('profiles.find', { id })
+  } catch (error) {
     console.error('findById:', error.message)
     return null
   }
-  return data
 }
 
 // Réservé à l'admin (policy RLS "profiles_update_admin") : modifie n'importe
 // quel profil depuis l'espace admin, contrairement à updateProfile() dans
 // stores/auth.js qui ne touche qu'au profil de l'utilisateur connecté.
 export async function updateCompteAdmin(id, patch) {
-  const { data, error } = await supabase.from('profiles').update(patch).eq('id', id).select('id')
-  if (error) throw new Error(messageErreurProfil(error))
-  if (!data || data.length === 0) {
-    throw new Error('Modification refusée par la base (droits insuffisants).')
+  try {
+    await appelerDonnees('profiles.updateAdmin', { id, patch })
+  } catch (error) {
+    throw new Error(messageErreurProfil(error), { cause: error })
   }
 }
 
@@ -147,16 +151,7 @@ export async function updateCompteAdmin(id, patch) {
 // ligne "profiles" laisserait le compte Auth en place, bloquant toute
 // réinscription avec le même email par la suite.
 export async function deleteCompteAdmin(id) {
-  const { data: sessionData } = await supabase.auth.getSession()
-  const token = sessionData.session?.access_token
-  const response = await fetch(`${API_BASE_URL}/api/admin/comptes/${id}`, {
-    method: 'DELETE',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(body.message || 'Échec de la suppression du compte.')
-  }
+  await apiRequest(`/api/admin/comptes/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 // Crée un compte complet (Auth + profil) depuis l'espace admin, via l'API
@@ -164,19 +159,7 @@ export async function deleteCompteAdmin(id) {
 // utilisateur Auth sans mot de passe choisi par lui-même (voir server/index.js).
 // payload : { nom, email, telephone, ville, role, actif }.
 export async function createCompteAdmin(payload) {
-  const { data: sessionData } = await supabase.auth.getSession()
-  const token = sessionData.session?.access_token
-  const response = await fetch(`${API_BASE_URL}/api/admin/comptes`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  })
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(body.message || 'Échec de la création du compte.')
-  return body
+  return apiRequest('/api/admin/comptes', { method: 'POST', body: payload })
 }
 
 // ---------------------------------------------------------------------------
@@ -207,128 +190,43 @@ function mapDemande(row) {
 }
 
 export async function getDemandes() {
-  const { data, error } = await supabase.from('demandes').select('*')
-  if (error) {
+  try {
+    return (await appelerDonnees('demandes.list')).map(mapDemande)
+  } catch (error) {
     console.error('getDemandes:', error.message)
     return []
   }
-  return data.map(mapDemande)
 }
 
 export async function getDemandesByDemandeur(demandeurId) {
-  const { data, error } = await supabase
-    .from('demandes')
-    .select('*')
-    .eq('demandeur_id', demandeurId)
-  if (error) {
+  try {
+    return (await appelerDonnees('demandes.byDemandeur', { id: demandeurId })).map(mapDemande)
+  } catch (error) {
     console.error('getDemandesByDemandeur:', error.message)
     return []
   }
-  return data.map(mapDemande)
 }
 
 export async function getDemandesByAidant(aidantId) {
-  const { data, error } = await supabase.from('demandes').select('*').eq('aidant_id', aidantId)
-  if (error) {
+  try {
+    return (await appelerDonnees('demandes.byAidant', { id: aidantId })).map(mapDemande)
+  } catch (error) {
     console.error('getDemandesByAidant:', error.message)
     return []
   }
-  return data.map(mapDemande)
 }
 
 // Crée une nouvelle demande au statut "en_attente".
 // payload attendu : { demandeurId, aidantId, typeService, urgence, message, creneauSouhaite }
 export async function addDemande(payload) {
-  const { data, error } = await supabase
-    .from('demandes')
-    .insert({
-      demandeur_id: payload.demandeurId,
-      aidant_id: payload.aidantId,
-      type_service: payload.typeService,
-      urgence: payload.urgence,
-      message: payload.message,
-      creneau_souhaite: payload.creneauSouhaite,
-    })
-    .select()
-    .single()
-  if (error) throw new Error(error.message)
-  return mapDemande(data)
-}
-
-// Code à 4 chiffres que l'intervenant annonce en arrivant, pour que la personne
-// âgée vérifie qu'elle ouvre bien à la bonne personne.
-//
-// crypto.getRandomValues et non Math.random : c'est un code de vérification, sa
-// valeur ne doit pas être devinable. Math.random n'offre aucune garantie
-// d'imprévisibilité et ses suites sont reconstituables.
-//
-// Le modulo 10000 introduit un biais théorique sur la plage 0-65535 d'un
-// Uint16 ; il est ici négligeable et sans portée pratique pour un code lu à voix
-// haute. Formaté sur 4 chiffres, zéros de tête compris ("0472" reste un code
-// valide et se dicte aussi bien).
-function genererCodeArrivee() {
-  const tirage = new Uint16Array(1)
-  crypto.getRandomValues(tirage)
-  return String(tirage[0] % 10000).padStart(4, '0')
-}
-
-// Renvoie le code à écrire, ou null s'il ne faut rien écrire.
-//
-// Tolère l'absence de la colonne "code_arrivee". supabase/schema.sql ne
-// s'applique pas tout seul : entre le déploiement de ce code et l'exécution du
-// SQL dans le tableau de bord, la colonne n'existe pas encore. Sans ce garde-fou,
-// la requête échouerait et ACCEPTER UNE DEMANDE deviendrait impossible — on
-// casserait une fonction qui marche pour en ajouter une nouvelle. Dans ce cas on
-// renonce simplement au code, le reste de l'acceptation se déroule normalement.
-async function codeArriveeAAttribuer(id) {
-  try {
-    const { data, error } = await supabase
-      .from('demandes')
-      .select('code_arrivee')
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    // Un code déjà attribué n'est jamais régénéré : la personne âgée a pu le
-    // noter, il doit rester le même jusqu'à la visite.
-    return data?.code_arrivee ? null : genererCodeArrivee()
-  } catch (err) {
-    console.warn(
-      "Code d'arrivée ignoré : la colonne demandes.code_arrivee n'existe pas encore. " +
-        'Rejouer le alter table de supabase/schema.sql dans le SQL Editor.',
-      err.message,
-    )
-    return null
-  }
+  return mapDemande(await appelerDonnees('demandes.create', { demande: payload }))
 }
 
 // Change le statut d'une demande. Si le nouveau statut est "acceptee", une
 // MISE_EN_RELATION est créée dans la foulée pour représenter la mission qui démarre,
 // et un code d'arrivée est attribué.
 export async function updateDemandeStatut(id, statut) {
-  const patch = { statut, date_mise_a_jour: new Date().toISOString() }
-
-  if (statut === 'acceptee') {
-    const code = await codeArriveeAAttribuer(id)
-    if (code) patch.code_arrivee = code
-  }
-
-  const { data, error } = await supabase
-    .from('demandes')
-    .update(patch)
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw new Error(error.message)
-
-  const demande = mapDemande(data)
-  if (statut === 'acceptee') {
-    await addMiseEnRelation({
-      demandeId: demande.id,
-      demandeurId: demande.demandeurId,
-      aidantId: demande.aidantId,
-    })
-  }
-  return demande
+  return mapDemande(await appelerDonnees('demandes.updateStatut', { id, statut }))
 }
 
 // ---------------------------------------------------------------------------
@@ -351,40 +249,27 @@ function mapMiseEnRelation(row) {
 }
 
 export async function getMisesEnRelation() {
-  const { data, error } = await supabase.from('mises_en_relation').select('*')
-  if (error) {
+  try {
+    return (await appelerDonnees('missions.list')).map(mapMiseEnRelation)
+  } catch (error) {
     console.error('getMisesEnRelation:', error.message)
     return []
   }
-  return data.map(mapMiseEnRelation)
 }
 
 export async function getMiseEnRelationByDemande(demandeId) {
-  const { data, error } = await supabase
-    .from('mises_en_relation')
-    .select('*')
-    .eq('demande_id', demandeId)
-    .maybeSingle()
-  if (error) {
+  try {
+    const data = await appelerDonnees('missions.byDemande', { demandeId })
+    return data ? mapMiseEnRelation(data) : null
+  } catch (error) {
     console.error('getMiseEnRelationByDemande:', error.message)
     return null
   }
-  return data ? mapMiseEnRelation(data) : null
 }
 
 // payload attendu : { demandeId, demandeurId, aidantId }
 export async function addMiseEnRelation(payload) {
-  const { data, error } = await supabase
-    .from('mises_en_relation')
-    .insert({
-      demande_id: payload.demandeId,
-      demandeur_id: payload.demandeurId,
-      aidant_id: payload.aidantId,
-    })
-    .select()
-    .single()
-  if (error) throw new Error(error.message)
-  return mapMiseEnRelation(data)
+  return mapMiseEnRelation(await appelerDonnees('missions.create', { mission: payload }))
 }
 
 // Délai entre l'acceptation d'une demande (création de la mise en relation)
@@ -405,17 +290,7 @@ export function missionDemarree(mission, maintenant = Date.now()) {
 
 // Termine ou annule une mission ; renseigne date_fin dans les deux cas.
 export async function updateMiseEnRelationStatut(id, statutMission) {
-  const { data, error } = await supabase
-    .from('mises_en_relation')
-    .update({
-      statut_mission: statutMission,
-      date_fin: statutMission === 'en_cours' ? null : new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw new Error(error.message)
-  return mapMiseEnRelation(data)
+  return mapMiseEnRelation(await appelerDonnees('missions.updateStatut', { id, statutMission }))
 }
 
 // ---------------------------------------------------------------------------
@@ -438,33 +313,24 @@ function mapMessageContact(row) {
 // payload attendu : { userId, nom, message }. userId est optionnel (visiteur
 // non connecté).
 export async function addMessageContact(payload) {
-  const { error } = await supabase.from('messages_contact').insert({
-    user_id: payload.userId ?? null,
-    nom: payload.nom,
-    message: payload.message,
-  })
-  if (error) throw new Error(error.message)
+  await appelerDonnees('contact.create', payload)
 }
 
 // Réservé à l'admin : la RLS renverrait de toute façon une liste vide pour
 // n'importe qui d'autre, mais autant ne l'appeler que depuis la page Admin.
 export async function getMessagesContact() {
-  const { data, error } = await supabase
-    .from('messages_contact')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) {
+  try {
+    return (await appelerDonnees('messages.list')).map(mapMessageContact)
+  } catch (error) {
     console.error('getMessagesContact:', error.message)
     return []
   }
-  return data.map(mapMessageContact)
 }
 
 // Réservé à l'admin ("messages_contact_update_admin" en RLS) : bouton
 // "Marquer lu" de l'espace admin.
 export async function marquerMessageContactLu(id) {
-  const { error } = await supabase.from('messages_contact').update({ lu: true }).eq('id', id)
-  if (error) throw new Error(error.message)
+  await appelerDonnees('messages.markRead', { id })
 }
 
 // Réservé à l'admin (la policy RLS "messages_contact_delete_admin" refuse tout
@@ -474,13 +340,7 @@ export async function marquerMessageContactLu(id) {
 // (0 ligne affectée, mais pas d'erreur) et le message semblait supprimé
 // jusqu'au prochain rechargement.
 export async function deleteMessageContact(id) {
-  const { data, error } = await supabase.from('messages_contact').delete().eq('id', id).select('id')
-  if (error) throw new Error(error.message)
-  if (!data || data.length === 0) {
-    throw new Error(
-      "Suppression refusée par la base (droits insuffisants) : le message n'a pas été supprimé.",
-    )
-  }
+  await appelerDonnees('messages.delete', { id })
 }
 
 // ---------------------------------------------------------------------------
@@ -489,35 +349,23 @@ export async function deleteMessageContact(id) {
 
 // Page publique : accessible même sans connexion (RLS "avis_select_anyone").
 export async function getAvis() {
-  const { data, error } = await supabase
-    .from('avis')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) {
+  try {
+    return await appelerDonnees('avis.list')
+  } catch (error) {
     console.error('getAvis:', error.message)
     return []
   }
-  return data
 }
 
 // payload attendu : { userId, nom, texte }. Réservé aux utilisateurs connectés
 // (RLS "avis_insert_own" vérifie que userId correspond bien à l'appelant).
 export async function addAvis(payload) {
-  const { error } = await supabase.from('avis').insert({
-    user_id: payload.userId,
-    nom: payload.nom,
-    texte: payload.texte,
-  })
-  if (error) throw new Error(error.message)
+  await appelerDonnees('avis.create', payload)
 }
 
 // L'auteur (ou l'admin) peut retirer son propre avis. Même garde-fou que
 // deleteMessageContact() : un delete() bloqué par la RLS ne renvoie pas
 // d'erreur, juste 0 ligne affectée, donc on le détecte nous-mêmes.
 export async function deleteAvis(id) {
-  const { data, error } = await supabase.from('avis').delete().eq('id', id).select('id')
-  if (error) throw new Error(error.message)
-  if (!data || data.length === 0) {
-    throw new Error("Suppression refusée par la base (droits insuffisants) : l'avis n'a pas été supprimé.")
-  }
+  await appelerDonnees('avis.delete', { id })
 }
