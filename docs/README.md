@@ -151,10 +151,8 @@ Classés par importance. Chaque point renvoie au document qui le détaille.
 
 **Sécurité**
 
-1. Les routes `/api/adherents` sont accessibles sans authentification, en lecture comme en écriture — [05](05-backend.md) § 7.
-3. Les infobulles de la carte insèrent du texte saisi par les utilisateurs dans du HTML sans l'échapper — [07](07-authentification-securite.md) § 7.
-4. Tout utilisateur connecté peut lire le téléphone et l'adresse de tous les profils — [06](06-base-de-donnees.md) § 3.
-5. Les règles RLS ne contrôlent pas les changements de statut ni le rôle — [06](06-base-de-donnees.md) § 3.
+1. Tout utilisateur connecté peut lire le téléphone et l'adresse de tous les profils — [06](06-base-de-donnees.md) § 3.
+2. Les règles RLS ne contrôlent pas les changements de statut ni le rôle — [06](06-base-de-donnees.md) § 3.
 
 **Fiabilité**
 

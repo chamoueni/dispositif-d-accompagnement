@@ -89,16 +89,11 @@
       "cta_aider": "Te hanampy aho"
     },
     "carte": {
-      "label": "Maore",
-      "aidants": "Mpanampy {n}",
-      "invite_connexion": "Midira mba hahita ny mpanampy akaikin'ny anao.",
-      "se_connecter": "Midira",
       "filtre_titre": "Safidio ny mpanampy araka ny ilaina",
       "filtre_tous": "Rehetra",
       "filtre_sante": "Fahasalamana",
       "filtre_coursier": "Mpitondra entana",
-      "filtre_menage": "Fanadiovana",
-      "agrandir": "Sarintany ny mpanampy ao Maore : halehibiazo mba hijerena"
+      "filtre_menage": "Fanadiovana"
     },
     "pourquoi": {
       "titre": "Nahoana io fandaharana io",
@@ -280,6 +275,22 @@
     "historique_titre": "Tantara",
     "historique_texte": "Asa vita na nofoanana.",
     "profil_titre": "Ny mombamomba ahy"
+  },
+  "carte_position": {
+    "titre": "Ny toerako",
+    "votre_commune": "Ny tanànanao : {commune}",
+    "sans_commune": "Tsy voasoratra ny tanànanao.",
+    "completer_profil": "Fenoy ny momba ahy",
+    "aidants": "Mpanampy {n} manodidina anao",
+    "me_localiser": "📍 Tadiavo ny toerako",
+    "recherche": "Eo am-pitadiavana…",
+    "recentrer": "Miverina amin'ny tanànako",
+    "vous_etes_ici": "Eto ianao",
+    "ma_position": "Ny toerako ankehitriny",
+    "precision": "Fahamarinana : eo amin'ny {metres} m eo ho eo",
+    "erreur_refus": "Nolavinao ny fidirana amin'ny toeranao. Tsindrio ny hidy eo akaikin'ny adiresin'ny tranonkala raha hanome alalana.",
+    "erreur_indisponible": "Tsy hita ny toerana amin'izao. Jereo raha mandeha ny fitadiavana toerana amin'ny fitaovanao.",
+    "confidentialite": "Mijanona ao amin'ny fitaovanao ny toerana GPS-nao : tsy alefa na voatahiry. Apetraka eo amin'ny tanànany ny mpanampy, fa tsy amin'ny adiresiny mihitsy."
   },
   "profil_page": {
     "titre": "Ny mombamomba ahy",

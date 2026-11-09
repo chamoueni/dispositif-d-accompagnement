@@ -76,7 +76,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | Faille | Situation dans le projet |
 |---|---|
 | **Injection SQL** | Aucune requête SQL n'est construite par concaténation. Tout passe par le constructeur de requêtes de `supabase-js`, qui envoie les valeurs comme paramètres. |
-| **XSS** (injection de HTML/JS) | Vue échappe par défaut ce qui est affiché avec `{{ }}`. Aucun `v-html` dans le projet. **Exception à corriger** : [CarteMayotte.vue](../src/components/CarteMayotte.vue) construit les infobulles de la carte en concaténant `aidant.nom`, `aidant.ville` et la spécialité dans une chaîne HTML passée à `bindPopup`. Ces valeurs sont saisies par les utilisateurs et ne sont pas échappées. |
+| **XSS** (injection de HTML/JS) | Vue échappe par défaut ce qui est affiché avec `{{ }}`. Aucun `v-html` dans le projet. Les infobulles de [CarteMayotte.vue](../src/components/CarteMayotte.vue), construites en HTML pour `bindPopup`, échappent les textes saisis par les utilisateurs (fonction `echapper`, corrigé en novembre 2026). |
 | **CSRF** | L'authentification repose sur un jeton envoyé dans un en-tête, pas sur un cookie de session : une requête forgée depuis un autre site ne porte pas ce jeton. En revanche, les routes non protégées (`/api/adherents`) sont appelables depuis n'importe quel site, puisqu'elles n'exigent rien. |
 | **Exposition de clés** | La clé « service role » et la clé de l'API d'IA ne sont lues que côté serveur. Le fichier `.env` est dans `.gitignore`. Seules les variables préfixées `VITE_` arrivent dans le navigateur, et la clé « anon » est conçue pour être publique. |
 | **Énumération de comptes** | Message de connexion unique ; la page « mot de passe oublié » affiche la même confirmation que l'adresse existe ou non. |
@@ -126,5 +126,5 @@ Le projet n'a **pas de champ médical structuré** (pas de pathologie, de traite
 - Supabase Auth gère comptes, mots de passe et sessions ; le projet ne manipule jamais un mot de passe en clair en dehors du formulaire.
 - L'administrateur est un e-mail écrit en dur à quatre endroits, pas un rôle en base.
 - Les règles « qui suis-je » sont garanties par la base ; les règles « quel est mon rôle métier » ne le sont que par l'interface.
-- Point de sécurité restant à traiter : HTML non échappé dans les infobulles de la carte.
+- La position GPS affichée sur la carte « Ma position » reste dans le navigateur : elle n’est ni envoyée au serveur ni enregistrée.
 - Côté RGPD, il manque l'information des utilisateurs, la suppression de compte par l'utilisateur, et une lecture plus restreinte des profils.

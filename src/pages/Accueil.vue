@@ -12,7 +12,6 @@ import FormulesSection from '../components/FormulesSection.vue'
 import PaiementBandeau from '../components/PaiementBandeau.vue'
 // Vignette carte des aidants inscrits, posée sur la photo du hero. Remplace
 // l'ancien emblème décoratif (components/MayotteSymbol.vue, désormais inutilisé).
-import CarteMayotte from '../components/CarteMayotte.vue'
 // Effet "dégradé animé" sur les mots-clés du titre (voir components/HighlightWord.vue) :
 // réutilisable sur n'importe quel titre, pas seulement celui-ci.
 import HighlightWord from '../components/HighlightWord.vue'
@@ -185,14 +184,9 @@ onUnmounted(() => observateurServices?.disconnect())
             alt="Coucher de soleil sur le lagon de Mayotte"
             class="hero-photo"
           >
-          <!-- Emplacement réservé à la vignette carte, sous la photo et aligné à
-               droite. Ce conteneur occupe la place dans le flux (la vignette,
-               elle, est en absolu dedans) : la photo et la carte ne peuvent donc
-               jamais se toucher, et l'agrandissement au survol ne décale rien.
-               Voir components/CarteMayotte.vue. -->
-          <div class="carte-emplacement">
-            <CarteMayotte />
-          </div>
+          <!-- La vignette carte qui était ici a été déplacée sur la page Mon
+               compte (réservée aux utilisateurs connectés) : voir
+               components/CarteMayotte.vue. -->
         </div>
       </div>
     </section>

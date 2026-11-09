@@ -89,16 +89,11 @@
       "cta_aider": "Nataka kusaidia"
     },
     "carte": {
-      "label": "Maore",
-      "aidants": "Wasaidizi {n}",
-      "invite_connexion": "Ingia ili uone wasaidizi karibu na wewe.",
-      "se_connecter": "Ingia",
       "filtre_titre": "Chagua wasaidizi kulingana na haja",
       "filtre_tous": "Wote",
       "filtre_sante": "Afya",
       "filtre_coursier": "Mpeleza",
-      "filtre_menage": "Usafi",
-      "agrandir": "Ramani ya wasaidizi Maore : kuza ili uangalie"
+      "filtre_menage": "Usafi"
     },
     "pourquoi": {
       "titre": "Ku nini mradi uno",
@@ -279,6 +274,22 @@
     "historique_titre": "Historia",
     "historique_texte": "Kazi zilizomalizika au kughairiwa.",
     "profil_titre": "Wasifu wangu"
+  },
+  "carte_position": {
+    "titre": "Mahali pangu",
+    "votre_commune": "Mji wako : {commune}",
+    "sans_commune": "Mji wako haujaandikwa.",
+    "completer_profil": "Kamilisha wasifu wangu",
+    "aidants": "Wasaidizi {n} karibu na wewe",
+    "me_localiser": "📍 Nitafute mahali nilipo",
+    "recherche": "Inatafuta…",
+    "recentrer": "Rudi kwa mji wangu",
+    "vous_etes_ici": "Uko hapa",
+    "ma_position": "Mahali nilipo sasa",
+    "precision": "Usahihi : karibu mita {metres}",
+    "erreur_refus": "Umekataa ruhusa ya mahali ulipo. Bonyeza kufuli karibu na anwani ya tovuti ili kuruhusu.",
+    "erreur_indisponible": "Mahali hapajapatikana. Hakikisha huduma ya mahali imewashwa kwenye kifaa chako.",
+    "confidentialite": "Mahali pako pa GPS pabaki kwenye kifaa chako : hapatumwi wala hapahifadhiwi. Wasaidizi wanaonyeshwa kwenye mji wao, kamwe si anwani yao."
   },
   "profil_page": {
     "titre": "Wasifu wangu",

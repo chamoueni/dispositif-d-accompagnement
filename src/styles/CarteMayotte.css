@@ -1,129 +1,68 @@
-/* Vignette cartographique du hero (voir components/CarteMayotte.vue). Absolue
-   dans .carte-emplacement, qui lui reserve sa place sous la photo : son
-   agrandissement ne pousse donc aucun autre element de la page.
-
-   Ancrage sur le coin HAUT-droit (top + right, jamais bottom) : c'est ce qui
-   impose le sens de l'agrandissement. La vignette s'etend vers le BAS et vers
-   la GAUCHE, donc elle ne remonte jamais sur la photo placee au-dessus, et elle
-   ne sort pas de l'ecran par la droite. */
-.carte-mayotte {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 18px;
-  border: 3px solid #fff;
-  box-shadow: 0 10px 24px -10px rgba(90, 45, 20, 0.5);
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.4s ease;
-  z-index: 3;
-}
-
-.carte-mayotte.est-ouverte {
-  width: 520px;
-  height: 520px;
-  border-radius: 22px;
-  box-shadow: 0 28px 60px -20px rgba(90, 45, 20, 0.55);
-  cursor: default;
-  /* Au-dessus du contenu, mais sous la navbar (1030) et le bouton SOS (1040) :
-     agrandie, la carte ne doit pas masquer la navigation. */
-  z-index: 1020;
-}
-
-.carte-mayotte:focus-visible {
-  outline: 3px solid var(--couleur-bouton-survol);
-  outline-offset: 3px;
-}
+/* Carte "Ma position" de la page Mon compte (voir components/CarteMayotte.vue).
+   Auparavant vignette du hero de l'accueil ; c'est maintenant une carte fixe
+   dans une carte Bootstrap, toujours manipulable. */
 
 .carte-mayotte-zone {
   width: 100%;
-  height: 100%;
+  height: 420px;
+  border-radius: 14px;
+  overflow: hidden;
   background: var(--bg-alt);
+  /* Sous la navbar (1030) et le bouton SOS (1040) : les calques de Leaflet
+     montent jusqu'à z-index 1000, on les enferme dans ce contexte. */
+  position: relative;
+  z-index: 0;
 }
 
-/* Repliee, la carte est decorative : on neutralise les evenements pointeur de
-   la zone Leaflet pour que le defilement de la page ne soit jamais capture.
-   Le conteneur, lui, reste sensible au survol et au clic : c'est lui qui ouvre. */
-.carte-mayotte:not(.est-ouverte) .carte-mayotte-zone {
-  pointer-events: none;
+@media (max-width: 575px) {
+  .carte-mayotte-zone {
+    height: 320px;
+  }
 }
 
-/* Zoom, selecteur de fond et legende : illisibles a la taille de la vignette,
-   ils apparaissent avec l'agrandissement. */
-.carte-mayotte:not(.est-ouverte) .leaflet-control-container {
-  opacity: 0;
+/* --- Repère "Vous êtes ici" ------------------------------------------------ */
+
+/* Point turquoise cerclé de blanc, avec un halo : bien distinct des maisons
+   roses des aidants. Le fond du divIcon est transparent (sinon carré blanc). */
+.marqueur-vous {
+  background: none;
+  border: none;
 }
 
-.carte-mayotte .leaflet-control-container {
-  transition: opacity 0.3s ease;
+.marqueur-vous span {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: var(--accent, #2a9d8f);
+  box-shadow: 0 0 0 6px rgba(42, 157, 143, 0.3), 0 4px 10px -2px rgba(18, 36, 33, 0.45);
 }
 
-.carte-mayotte-label {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 5px 8px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fff;
-  background: rgba(18, 36, 33, 0.72);
-  pointer-events: none;
+/* Position GPS : même repère, avec une pulsation pour la distinguer du
+   repère de la commune (position approximative). */
+.marqueur-vous-gps span {
+  background: #1d6fd6;
+  box-shadow: 0 0 0 6px rgba(29, 111, 214, 0.3), 0 4px 10px -2px rgba(18, 36, 33, 0.45);
+  animation: pulsation-position 2s ease-out infinite;
 }
 
-/* --- Filtre par besoin ----------------------------------------------------- */
-
-/* Barre posee en haut de la carte agrandie. Fond opaque : les libelles doivent
-   rester lisibles quel que soit le fond de carte, plan clair ou satellite. */
-.carte-filtres {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 500;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 4px 12px -4px rgba(18, 36, 33, 0.35);
+@keyframes pulsation-position {
+  0% { box-shadow: 0 0 0 0 rgba(29, 111, 214, 0.45), 0 4px 10px -2px rgba(18, 36, 33, 0.45); }
+  100% { box-shadow: 0 0 0 16px rgba(29, 111, 214, 0), 0 4px 10px -2px rgba(18, 36, 33, 0.45); }
 }
 
-/* --- Invitation a se connecter --------------------------------------------- */
-
-/* Sans session, la RLS ne renvoie aucun profil : ce voile explique la carte vide
-   au lieu de laisser croire qu'aucun aidant n'est inscrit. */
-.carte-voile-connexion {
-  position: absolute;
-  inset: 0;
-  z-index: 600;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px;
-  text-align: center;
-  background: rgba(253, 232, 220, 0.92);
-  color: var(--text-h);
+.cercle-precision {
+  fill: #1d6fd6;
+  fill-opacity: 0.12;
+  stroke: #1d6fd6;
+  stroke-opacity: 0.5;
+  stroke-width: 1.5;
 }
 
-.carte-voile-connexion p {
-  margin: 0;
-  max-width: 260px;
-  font-size: 16px;
-  font-weight: 600;
-}
+/* --- Marqueurs des aidants -------------------------------------------------- */
 
-/* --- Marqueurs ------------------------------------------------------------- */
-
-/* Goutte rose fonce avec une maison blanche a l'interieur. Le fond du divIcon
-   est transparent : sans ca Leaflet pose un carre blanc derriere le dessin. */
+/* Goutte rose foncé avec une maison blanche à l'intérieur. */
 .marqueur-aidant {
   background: none;
   border: none;
@@ -141,9 +80,9 @@
   fill: #b5305f;
 }
 
-/* Regroupement : pastille verte numerotee, avec un anneau plus clair pour la
-   detacher du fond de carte. Tous les aidants d'une commune partageant le point
-   du chef-lieu, ce chiffre se lit comme "nombre d'aidants dans la commune". */
+/* Regroupement : pastille verte numérotée. Tous les aidants d'une commune
+   partageant le point du chef-lieu, ce chiffre se lit comme "nombre d'aidants
+   dans la commune". */
 .cluster-aidants {
   display: flex;
   align-items: center;
@@ -159,59 +98,53 @@
 
 /* --- Infobulle ------------------------------------------------------------- */
 
-/* Texte plus grand que le defaut Leaflet (11px) : le public vise est age, une
-   infobulle illisible ne sert a rien. */
+/* Texte plus grand que le défaut Leaflet (11px) : le public visé est âgé.
+   Couleurs FIXES, et non les variables du thème : la bulle Leaflet a toujours
+   un fond blanc, alors qu'en mode sombre --text et --text-h deviennent clairs
+   (texte blanc sur blanc, illisible). */
 .carte-mayotte .leaflet-popup-content {
   margin: 12px 16px;
   font-size: 15px;
   line-height: 1.35;
-  color: var(--text);
+  color: #2b3a37;
 }
 
 .carte-mayotte .popup-nom {
   margin: 0 0 2px;
   font-weight: 700;
-  color: var(--text-h);
+  color: #12201d;
 }
 
 .carte-mayotte .popup-service {
   margin: 0;
   font-weight: 600;
-  color: var(--couleur-bouton-survol);
+  color: #1f7a6f;
+}
+
+/* Titre de la carte : couleur des titres du thème, lisible en clair comme en
+   sombre (le style par défaut des titres dans une .card était trop pâle). */
+.carte-position-titre {
+  color: var(--text-h);
 }
 
 .carte-mayotte .popup-commune {
   margin: 0;
 }
 
-/* Boutons de zoom plus grands que le defaut Leaflet (26px), coherents avec les
-   cibles tactiles confortables du reste du site. */
+/* Boutons de zoom plus grands que le défaut Leaflet (26px), cohérents avec
+   les cibles tactiles confortables du reste du site. */
 .carte-mayotte .leaflet-bar a {
   width: 34px;
   height: 34px;
   line-height: 34px;
   font-size: 20px;
-  color: var(--text-h);
+  /* Fond blanc fixe (Leaflet) : couleur fixe aussi, comme pour les bulles. */
+  color: #12201d;
 }
 
-/* --- Petits ecrans --------------------------------------------------------- */
-
-/* Pas de survol au doigt : l'ouverture se fait au toucher (voir le composant).
-   La taille agrandie est bornee a la largeur de l'ecran. */
-@media (max-width: 991px) {
-  .carte-mayotte.est-ouverte {
-    width: min(88vw, 460px);
-    height: min(88vw, 460px);
-  }
-}
-
-/* Mouvement desactive cote systeme : la carte change de taille quasi d'un coup.
-   On garde une transition tres courte au lieu de "none" a dessein : sans
-   transition sur "width", aucun transitionend n'est emis, donc invalidateSize()
-   ne serait jamais appele et la carte s'afficherait tronquee. Le ResizeObserver
-   du composant couvre de toute facon ce cas. */
+/* Mouvement désactivé côté système : pas de pulsation. */
 @media (prefers-reduced-motion: reduce) {
-  .carte-mayotte {
-    transition: width 0.01s linear, height 0.01s linear;
+  .marqueur-vous-gps span {
+    animation: none;
   }
 }

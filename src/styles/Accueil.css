@@ -104,24 +104,6 @@
   box-shadow: 0 24px 48px -24px rgba(90, 45, 20, 0.45);
 }
 
-/* Réserve la place de la vignette dans le flux. La vignette est en position
-   absolue à l'intérieur, calée sur le coin HAUT-droit : en grandissant elle
-   s'étend donc vers le bas et vers la gauche, jamais vers le haut — la photo,
-   qui est au-dessus, reste entièrement visible. */
-.carte-emplacement {
-  position: relative;
-  align-self: flex-end;
-  width: 210px;
-  height: 210px;
-}
-
-@media (max-width: 991px) {
-  .carte-emplacement {
-    width: 150px;
-    height: 150px;
-  }
-}
-
 .section {
   padding: 56px 0;
 }

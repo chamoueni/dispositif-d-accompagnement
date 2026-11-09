@@ -1,24 +1,25 @@
 <script setup>
-// Vignette cartographique posée sur la photo du hero. Repliée elle est
-// décorative ; au survol (ou au toucher sur mobile) elle s'agrandit et devient
-// une vraie carte manipulable : déplacement, zoom, fond Plan ou Satellite, et
-// surtout les aidants inscrits posés sur leur commune.
+// Carte "Ma position" de la page Mon compte (/mon-compte), donc réservée aux
+// utilisateurs connectés (la route exige une session, voir router/index.js).
+// Elle était auparavant une vignette sur la page d'accueil, ouverte à tous ;
+// déplacée ici le 9 novembre 2026 à la demande du propriétaire du site.
 //
-// Les marqueurs ne s'affichent QU'AUX UTILISATEURS CONNECTÉS. Ce n'est pas un
-// choix esthétique : la policy RLS "profiles_select_authenticated" réserve la
-// lecture des profils aux comptes identifiés — un visiteur anonyme reçoit une
-// liste vide, sans erreur. Cela évite au passage d'exposer la localisation des
-// inscrits sur une page ouverte à tous.
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+// Ce qu'elle montre :
+// - la commune de l'utilisateur (champ "ville" de son profil), avec un repère
+//   "Vous êtes ici" et un cadrage centré dessus ;
+// - sur demande (bouton "Me localiser"), sa position précise via le GPS du
+//   navigateur. Cette position reste dans le navigateur : elle n'est ni envoyée
+//   au serveur ni enregistrée ;
+// - les aidants inscrits, posés sur leur commune (jamais leur adresse exacte),
+//   filtrables par besoin.
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 // ATTENTION À L'ORDRE DES DEUX IMPORTS CI-DESSOUS. leaflet.markercluster est un
 // script UMD dont le corps référence un `L` global (L.FeatureGroup.extend...) et
 // qui n'exporte rien. Il ne fonctionne que parce que Leaflet, juste au-dessus,
-// se publie lui-même sur window.L en fin de module. Les modules ES étant évalués
-// dans l'ordre de leurs imports, inverser ces deux lignes (ou les laisser trier
-// par un outil de formatage) ferait planter toute la page d'accueil sur un
-// "L is not defined".
+// se publie lui-même sur window.L en fin de module. Inverser ces deux lignes
+// ferait planter la page sur un "L is not defined".
 import 'leaflet.markercluster'
 // Uniquement la feuille de positionnement/animation du plugin : sa feuille
 // "Default" impose des pastilles bleues, or les regroupements doivent être
@@ -30,108 +31,52 @@ import { useAidants } from '../composables/useAidants'
 import { useAuth } from '../stores/auth'
 import '../styles/CarteMayotte.css'
 
-// Mayotte entière tient dans ce cadrage.
-const CENTRE = [-12.8275, 45.1662]
-const ZOOM = 10
+// Mayotte entière tient dans ce cadrage (utilisé si la commune est inconnue).
+const CENTRE_MAYOTTE = [-12.8275, 45.1662]
+const ZOOM_ILE = 10
+// Cadrage sur une commune : assez près pour voir les villages voisins.
+const ZOOM_COMMUNE = 13
+// Cadrage sur la position GPS : niveau rue.
+const ZOOM_POSITION = 16
 
-// Mêmes besoins que la page Recherche (voir pages/RecherchePersonnel.vue) : un
-// visiteur qui filtre ici et poursuit sur /recherche retrouve les mêmes
-// catégories, sans avoir à retraduire ce qu'il cherche.
-// Seulement des identifiants : le libellé est résolu dans le template avec t(),
-// sinon il resterait figé dans la langue active au chargement du module.
+// Mêmes besoins que la page Recherche (voir pages/RecherchePersonnel.vue).
+// Seulement des identifiants : le libellé est résolu dans le template avec t().
 const BESOINS = ['tous', 'sante', 'coursier', 'menage']
 
-// Fonds de carte IGN (Géoplateforme, accès libre sans clé). Le satellite tient
-// lieu de "vue Google Maps" : les tuiles Google ne peuvent pas être utilisées
-// ici, elles exigent une clé facturée et leurs conditions interdisent de les
-// servir en dehors du SDK Google.
+// Fonds de carte IGN (Géoplateforme, accès libre sans clé).
 const MODELE_IGN =
   'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
   '&LAYER={couche}&STYLE=normal&TILEMATRIXSET=PM' +
   '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT={format}'
-
 const ATTRIBUTION = '© <a href="https://www.ign.fr/">IGN</a> — Géoplateforme'
 
 const { t } = useI18n()
-const { user, initialized } = useAuth()
+const { user } = useAuth()
 
-const conteneur = ref(null)
 const zoneCarte = ref(null)
-const estOuverte = ref(false)
 const besoin = ref('tous')
 const nombreAffiche = ref(0)
+// État du bouton "Me localiser" : '' | 'recherche' | 'trouvee' | 'refus' | 'indisponible'
+const etatLocalisation = ref('')
 
-// Liste partagee avec le compteur du hero : une seule requete pour les deux
-// (voir composables/useAidants.js).
+// Liste partagée avec le compteur de l'accueil (voir composables/useAidants.js).
 const { aidants } = useAidants()
+
+// Point de la commune du profil, ou null si la commune n'est pas renseignée.
+const pointCommune = computed(() => getCoordonneesCommune(user.value?.ville))
+
+// Le navigateur ne propose la géolocalisation que sur une page sécurisée (HTTPS
+// ou localhost) : sans elle, on n'affiche même pas le bouton.
+const geolocalisationDisponible = typeof navigator !== 'undefined' && 'geolocation' in navigator
 
 let carte = null
 let regroupements = null
+let repereCommune = null
+let reperePosition = null
+let cerclePrecision = null
 let observateurTaille = null
 
-// Commandes coupées tant que la vignette est repliée : sans ça, un clic-glissé
-// sur une carte de 210px gênerait plus qu'il n'aiderait.
-const COMMANDES = ['dragging', 'doubleClickZoom', 'touchZoom', 'boxZoom', 'keyboard']
-
-// Un écran tactile n'a pas de survol : matchMedia répond pour le pointeur
-// principal de l'appareil, et décide donc quel geste ouvre la carte.
-const peutSurvoler = () => window.matchMedia('(hover: hover)').matches
-
-function definirCommandes(actives) {
-  if (!carte) return
-  COMMANDES.forEach((nom) => carte[nom] && carte[nom][actives ? 'enable' : 'disable']())
-}
-
-function ouvrir() {
-  if (estOuverte.value) return
-  estOuverte.value = true
-  definirCommandes(true)
-}
-
-function fermer() {
-  if (!estOuverte.value) return
-  estOuverte.value = false
-  definirCommandes(false)
-  // Retour au cadrage d'origine : après un zoom, la vignette repartirait sinon
-  // sur un coin d'île sans repère.
-  carte?.setView(CENTRE, ZOOM)
-}
-
-function surEntreeSouris() {
-  if (peutSurvoler()) ouvrir()
-}
-
-function surSortieSouris() {
-  if (peutSurvoler()) fermer()
-}
-
-// Tactile : le toucher ouvre. La fermeture passe par le toucher à l'extérieur
-// (voir surPointeurDocument), sinon manipuler la carte la refermerait aussitôt.
-function surClic() {
-  if (!peutSurvoler()) ouvrir()
-}
-
-function surPointeurDocument(evenement) {
-  if (!estOuverte.value || peutSurvoler()) return
-  if (conteneur.value?.contains(evenement.target)) return
-  fermer()
-}
-
-function surSortieFocus(evenement) {
-  if (!conteneur.value?.contains(evenement.relatedTarget)) fermer()
-}
-
-// invalidateSize() à la fin de l'agrandissement : Leaflet a mémorisé la taille
-// de la vignette et ne dessine de tuiles que sur cette surface tant qu'on ne
-// lui signale pas le changement. On filtre sur "width" car `transition: all`
-// déclenche l'évènement une fois par propriété animée.
-function surFinTransition(evenement) {
-  if (evenement.propertyName !== 'width') return
-  carte?.invalidateSize()
-}
-
-// Marqueur maison rose foncé : un divIcon (HTML) plutôt qu'une image, pour que
-// la couleur reste pilotable en CSS et que le dessin reste net en haute densité.
+// Marqueur des aidants : goutte rose foncé avec une maison blanche.
 function iconeMaison() {
   return L.divIcon({
     className: 'marqueur-aidant',
@@ -148,9 +93,19 @@ function iconeMaison() {
   })
 }
 
-// Pastille verte numérotée quand plusieurs aidants se touchent. Comme tous les
-// aidants d'une même commune partagent le point du chef-lieu, ce chiffre se lit
-// naturellement comme "nombre d'aidants dans cette commune".
+// Repère "Vous êtes ici" : point turquoise cerclé, bien distinct des maisons
+// roses des aidants. `classe` permet de varier le style (commune ou GPS).
+function iconeVous(classe) {
+  return L.divIcon({
+    className: 'marqueur-vous ' + classe,
+    html: '<span></span>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -14],
+  })
+}
+
+// Pastille verte numérotée quand plusieurs aidants se touchent.
 function iconeRegroupement(groupe) {
   return L.divIcon({
     className: 'cluster-aidants',
@@ -159,8 +114,7 @@ function iconeRegroupement(groupe) {
   })
 }
 
-// Même logique de filtrage que la page Recherche : "sante" porte sur le rôle,
-// "coursier"/"menage" sur le service coché par un particulier dans son profil.
+// Même logique de filtrage que la page Recherche.
 function correspondAuBesoin(aidant) {
   if (besoin.value === 'sante') return aidant.role === 'sante'
   if (besoin.value === 'tous') return true
@@ -175,54 +129,126 @@ function libelleAidant(aidant) {
   return services || 'Particulier'
 }
 
-function dessinerMarqueurs() {
+// Les textes des profils sont saisis par les utilisateurs : on les échappe
+// avant de les mettre dans le HTML des infobulles.
+function echapper(texte) {
+  return String(texte ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c])
+}
+
+function dessinerAidants() {
   if (!regroupements) return
   regroupements.clearLayers()
 
   let poses = 0
-  aidants.value.filter(correspondAuBesoin).forEach((aidant) => {
-    const point = getCoordonneesCommune(aidant.ville)
-    // Un profil sans commune connue n'est pas plaçable : on le laisse de côté
-    // plutôt que de l'inventer au centre de l'île.
-    if (!point) return
+  aidants.value
+    // L'utilisateur lui-même est déjà représenté par le repère "Vous êtes ici".
+    .filter((aidant) => aidant.id !== user.value?.id)
+    .filter(correspondAuBesoin)
+    .forEach((aidant) => {
+      const point = getCoordonneesCommune(aidant.ville)
+      // Un profil sans commune connue n'est pas plaçable : on le laisse de côté.
+      if (!point) return
 
-    L.marker([point.lat, point.lng], {
-      icon: iconeMaison(),
-      alt: libelleAidant(aidant) + ' — ' + aidant.ville,
+      L.marker([point.lat, point.lng], {
+        icon: iconeMaison(),
+        alt: libelleAidant(aidant) + ' — ' + aidant.ville,
+      })
+        .bindPopup(
+          [
+            '<p class="popup-nom">' + echapper(aidant.nom || 'Aidant inscrit') + '</p>',
+            '<p class="popup-service">' + echapper(libelleAidant(aidant)) + '</p>',
+            '<p class="popup-commune">' + echapper(aidant.ville) + '</p>',
+          ].join(''),
+        )
+        .addTo(regroupements)
+      poses += 1
     })
-      .bindPopup(
-        [
-          '<p class="popup-nom">' + (aidant.nom || 'Aidant inscrit') + '</p>',
-          '<p class="popup-service">' + libelleAidant(aidant) + '</p>',
-          '<p class="popup-commune">' + aidant.ville + '</p>',
-        ].join(''),
-      )
-      .addTo(regroupements)
-    poses += 1
-  })
 
   nombreAffiche.value = poses
 }
 
-// Le composable recharge la liste au gre de la session : on se contente de
-// redessiner quand elle change.
-watch(aidants, dessinerMarqueurs)
+// Place (ou déplace) le repère de la commune du profil et centre la carte dessus.
+function placerCommune() {
+  if (!carte) return
+  repereCommune?.remove()
+  repereCommune = null
 
-watch(besoin, dessinerMarqueurs)
+  const point = pointCommune.value
+  if (!point) {
+    carte.setView(CENTRE_MAYOTTE, ZOOM_ILE)
+    return
+  }
+  repereCommune = L.marker([point.lat, point.lng], {
+    icon: iconeVous('marqueur-vous-commune'),
+    alt: t('carte_position.vous_etes_ici'),
+    zIndexOffset: 1000,
+  })
+    .bindPopup('<p class="popup-nom">' + echapper(t('carte_position.vous_etes_ici')) + '</p>'
+      + '<p class="popup-commune">' + echapper(t('carte_position.votre_commune', { commune: user.value.ville })) + '</p>')
+    .addTo(carte)
+  carte.setView([point.lat, point.lng], ZOOM_COMMUNE)
+}
+
+// Bouton "Me localiser" : demande la position au navigateur (qui affiche sa
+// propre autorisation). Rien n'est envoyé au serveur.
+function meLocaliser() {
+  if (!geolocalisationDisponible || !carte) return
+  etatLocalisation.value = 'recherche'
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      if (!carte) return
+      const point = [coords.latitude, coords.longitude]
+      reperePosition?.remove()
+      cerclePrecision?.remove()
+      // Cercle de précision : le GPS d'un ordinateur peut se tromper de
+      // plusieurs centaines de mètres, autant le montrer honnêtement.
+      cerclePrecision = L.circle(point, {
+        radius: coords.accuracy,
+        className: 'cercle-precision',
+        interactive: false,
+      }).addTo(carte)
+      reperePosition = L.marker(point, {
+        icon: iconeVous('marqueur-vous-gps'),
+        alt: t('carte_position.ma_position'),
+        zIndexOffset: 1100,
+      })
+        .bindPopup('<p class="popup-nom">' + echapper(t('carte_position.ma_position')) + '</p>'
+          + '<p class="popup-commune">' + echapper(t('carte_position.precision', { metres: Math.round(coords.accuracy) })) + '</p>')
+        .addTo(carte)
+      carte.setView(point, ZOOM_POSITION)
+      reperePosition.openPopup()
+      etatLocalisation.value = 'trouvee'
+    },
+    (erreur) => {
+      // Code 1 = l'utilisateur a refusé ; les autres = position introuvable.
+      etatLocalisation.value = erreur.code === 1 ? 'refus' : 'indisponible'
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+  )
+}
+
+// Revenir sur la commune du profil après une localisation GPS.
+function recentrer() {
+  if (pointCommune.value) carte?.setView([pointCommune.value.lat, pointCommune.value.lng], ZOOM_COMMUNE)
+  else carte?.setView(CENTRE_MAYOTTE, ZOOM_ILE)
+}
+
+// La liste des aidants arrive après le montage (requête) : on redessine.
+watch(aidants, dessinerAidants)
+watch(besoin, dessinerAidants)
+// Changement de commune dans le profil, ou session chargée après coup.
+watch(() => user.value?.ville, placerCommune)
 
 onMounted(() => {
   carte = L.map(zoneCarte.value, {
-    center: CENTRE,
-    zoom: ZOOM,
+    center: CENTRE_MAYOTTE,
+    zoom: ZOOM_ILE,
     minZoom: 9,
     maxZoom: 18,
-    dragging: false,
-    doubleClickZoom: false,
-    touchZoom: false,
-    boxZoom: false,
-    keyboard: false,
-    // Jamais réactivé, même carte ouverte : sur une carte posée au milieu d'une
-    // page, le zoom molette détourne le défilement. Les boutons +/- suffisent.
+    // Pas de zoom à la molette : sur une carte au milieu d'une page, il
+    // détourne le défilement. Les boutons +/- et le pincement suffisent.
     scrollWheelZoom: false,
   })
 
@@ -230,12 +256,10 @@ onMounted(() => {
     MODELE_IGN.replace('{couche}', 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2').replace('{format}', 'image/png'),
     { attribution: ATTRIBUTION, minZoom: 9, maxZoom: 18 },
   ).addTo(carte)
-
   const satellite = L.tileLayer(
     MODELE_IGN.replace('{couche}', 'ORTHOIMAGERY.ORTHOPHOTOS').replace('{format}', 'image/jpeg'),
     { attribution: ATTRIBUTION, minZoom: 9, maxZoom: 18 },
   )
-
   L.control.layers({ Plan: plan, Satellite: satellite }, null, { position: 'topright' }).addTo(carte)
 
   regroupements = L.markerClusterGroup({
@@ -245,58 +269,76 @@ onMounted(() => {
   })
   regroupements.addTo(carte)
 
-  // Leaflet ne mesure son conteneur qu'à la création et ne dessine de tuiles que
-  // sur la surface mesurée. Toute variation ultérieure — agrandissement au
-  // survol, chargement différé de la feuille de styles, redimensionnement de la
-  // fenêtre, mode confort — laisse sinon une bande vide à côté de la carte.
-  // Le rAF évite l'avertissement "ResizeObserver loop" que provoque une
-  // modification synchrone du layout depuis le callback.
+  // Leaflet ne mesure son conteneur qu'à la création : on lui signale tout
+  // changement de taille (fenêtre, mode confort...) pour éviter une bande vide.
   observateurTaille = new ResizeObserver(() => {
     requestAnimationFrame(() => carte?.invalidateSize())
   })
   observateurTaille.observe(zoneCarte.value)
 
-  dessinerMarqueurs()
-  document.addEventListener('pointerdown', surPointeurDocument)
+  placerCommune()
+  dessinerAidants()
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', surPointeurDocument)
   observateurTaille?.disconnect()
   observateurTaille = null
   carte?.remove()
   carte = null
   regroupements = null
+  repereCommune = null
+  reperePosition = null
+  cerclePrecision = null
 })
 </script>
 
 <template>
-  <div
-    ref="conteneur"
-    class="carte-mayotte"
-    :class="{ 'est-ouverte': estOuverte }"
-    role="button"
-    tabindex="0"
-    :aria-expanded="estOuverte"
-    :aria-label="t('accueil.carte.agrandir')"
-    @mouseenter="surEntreeSouris"
-    @mouseleave="surSortieSouris"
-    @click="surClic"
-    @focusin="ouvrir"
-    @focusout="surSortieFocus"
-    @keydown.esc="fermer"
-    @transitionend="surFinTransition"
+  <section
+    class="card p-3 p-md-4 carte-position"
+    :aria-label="t('carte_position.titre')"
   >
-    <div
-      ref="zoneCarte"
-      class="carte-mayotte-zone"
-    />
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+      <div>
+        <h2 class="h5 mb-1 carte-position-titre">
+          {{ t('carte_position.titre') }}
+        </h2>
+        <p class="text-muted small mb-0">
+          <template v-if="pointCommune">
+            {{ t('carte_position.votre_commune', { commune: user.ville }) }} ·
+          </template>
+          <template v-else>
+            {{ t('carte_position.sans_commune') }}
+            <router-link to="/profil">
+              {{ t('carte_position.completer_profil') }}
+            </router-link> ·
+          </template>
+          {{ t('carte_position.aidants', { n: nombreAffiche }) }}
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button
+          v-if="geolocalisationDisponible"
+          type="button"
+          class="btn btn-primary btn-sm"
+          :disabled="etatLocalisation === 'recherche'"
+          @click="meLocaliser"
+        >
+          {{ etatLocalisation === 'recherche' ? t('carte_position.recherche') : t('carte_position.me_localiser') }}
+        </button>
+        <button
+          v-if="etatLocalisation === 'trouvee'"
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          @click="recentrer"
+        >
+          {{ t('carte_position.recentrer') }}
+        </button>
+      </div>
+    </div>
 
-    <!-- Filtre par besoin : n'apparaît qu'une fois la carte agrandie, il serait
-         illisible et intouchable à la taille de la vignette. -->
+    <!-- Filtre par besoin : mêmes catégories que la page Recherche. -->
     <div
-      v-show="estOuverte && user"
-      class="carte-filtres"
+      class="d-flex flex-wrap gap-2 mb-3"
       role="group"
       :aria-label="t('accueil.carte.filtre_titre')"
     >
@@ -307,32 +349,31 @@ onBeforeUnmount(() => {
         class="btn btn-sm"
         :class="besoin === b ? 'btn-primary' : 'btn-outline-secondary'"
         :aria-pressed="besoin === b"
-        @click.stop="besoin = b"
+        @click="besoin = b"
       >
         {{ t('accueil.carte.filtre_' + b) }}
       </button>
     </div>
 
-    <!-- Sans session, la base ne renvoie aucun profil (RLS) : mieux vaut le dire
-         que laisser croire qu'aucun aidant n'est inscrit. -->
     <div
-      v-if="initialized && !user"
-      v-show="estOuverte"
-      class="carte-voile-connexion"
-    >
-      <p>{{ t('accueil.carte.invite_connexion') }}</p>
-      <router-link
-        to="/connexion"
-        class="btn btn-primary btn-sm"
-        @click.stop
-      >
-        {{ t('accueil.carte.se_connecter') }}
-      </router-link>
-    </div>
+      ref="zoneCarte"
+      class="carte-mayotte carte-mayotte-zone"
+    />
 
-    <span
-      v-show="!estOuverte"
-      class="carte-mayotte-label"
-    >{{ user && nombreAffiche ? t('accueil.carte.aidants', { n: nombreAffiche }) : t('accueil.carte.label') }}</span>
-  </div>
+    <p
+      class="small mt-2 mb-0"
+      :class="etatLocalisation === 'refus' || etatLocalisation === 'indisponible' ? 'text-danger' : 'text-muted'"
+      aria-live="polite"
+    >
+      <template v-if="etatLocalisation === 'refus'">
+        {{ t('carte_position.erreur_refus') }}
+      </template>
+      <template v-else-if="etatLocalisation === 'indisponible'">
+        {{ t('carte_position.erreur_indisponible') }}
+      </template>
+      <template v-else>
+        {{ t('carte_position.confidentialite') }}
+      </template>
+    </p>
+  </section>
 </template>

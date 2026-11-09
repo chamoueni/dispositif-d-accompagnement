@@ -89,16 +89,11 @@
       "cta_aider": "Je souhaite aider"
     },
     "carte": {
-      "label": "Mayotte",
-      "aidants": "{n} aidants",
-      "invite_connexion": "Connectez-vous pour voir les aidants près de chez vous.",
-      "se_connecter": "Se connecter",
       "filtre_titre": "Filtrer les aidants par besoin",
       "filtre_tous": "Tous",
       "filtre_sante": "Santé",
       "filtre_coursier": "Coursier",
-      "filtre_menage": "Ménage",
-      "agrandir": "Carte des aidants à Mayotte : agrandir pour l'explorer"
+      "filtre_menage": "Ménage"
     },
     "pourquoi": {
       "titre": "Pourquoi ce dispositif",
@@ -280,6 +275,22 @@
     "historique_titre": "Historique",
     "historique_texte": "Missions terminées ou annulées.",
     "profil_titre": "Mon profil"
+  },
+  "carte_position": {
+    "titre": "Ma position",
+    "votre_commune": "Votre commune : {commune}",
+    "sans_commune": "Votre commune n'est pas renseignée.",
+    "completer_profil": "Compléter mon profil",
+    "aidants": "{n} aidants autour de vous",
+    "me_localiser": "📍 Me localiser",
+    "recherche": "Localisation en cours…",
+    "recentrer": "Revenir à ma commune",
+    "vous_etes_ici": "Vous êtes ici",
+    "ma_position": "Ma position actuelle",
+    "precision": "Précision : environ {metres} m",
+    "erreur_refus": "Vous avez refusé l'accès à votre position. Pour l'autoriser, cliquez sur le cadenas à côté de l'adresse du site.",
+    "erreur_indisponible": "Position introuvable pour le moment. Vérifiez que la localisation de votre appareil est activée.",
+    "confidentialite": "Votre position GPS reste sur votre appareil : elle n'est ni envoyée ni enregistrée. Les aidants sont placés sur leur commune, jamais à leur adresse."
   },
   "profil_page": {
     "titre": "Mon profil",

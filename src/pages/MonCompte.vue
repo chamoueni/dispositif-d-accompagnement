@@ -10,6 +10,9 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { FORMULES } from '../data/store'
 import IconBadge from '../components/IconBadge.vue'
+// Carte "Ma position" : sa commune, sa position GPS sur demande et les
+// aidants autour. Réservée à cette page, donc aux utilisateurs connectés.
+import CarteMayotte from '../components/CarteMayotte.vue'
 import '../styles/MonCompte.css'
 
 const { t } = useI18n()
@@ -104,6 +107,10 @@ async function seDeconnecter() {
             </p>
           </router-link>
         </div>
+      </div>
+
+      <div class="mt-4">
+        <CarteMayotte />
       </div>
 
       <button

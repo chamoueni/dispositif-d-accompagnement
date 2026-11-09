@@ -26,7 +26,7 @@ App.vue
     └── DictateButton
 
 Pages publiques
-├── Accueil          → CarteMayotte, FormulesSection, PaiementBandeau → IconBadge,
+├── Accueil          → FormulesSection, PaiementBandeau → IconBadge,
 │                      HighlightWord, IconBadge, ServiceIcon, ReefDivider
 ├── Pourquoi         → BackLink, IconBadge
 ├── Services         → BackLink, ServiceIcon
@@ -105,12 +105,12 @@ Bandeau affiché quand `enLigne` (de `useConnexion`) est faux. Aucune prop. Ses 
 
 ### CarteMayotte — [CarteMayotte.vue](../src/components/CarteMayotte.vue)
 
-- **Rôle** : vignette de carte sur l'accueil, qui s'agrandit au survol (ou au toucher) et montre les intervenants par commune.
+- **Rôle** : carte « Ma position » de la page **Mon compte** (donc visible seulement une fois connecté). Centrée sur la commune du profil avec un repère « Vous êtes ici » ; bouton « Me localiser » qui affiche la position GPS (gardée dans le navigateur, jamais envoyée) ; aidants posés sur leur commune, filtrables par besoin. Avant le 9 novembre 2026, c'était une vignette sur l'accueil.
 - **Props / événements** : aucun.
-- **État interne** : `estOuverte`, `besoin` (`'tous'`, `'sante'`, `'coursier'`, `'menage'`), `nombreAffiche`.
+- **État interne** : `besoin` (`'tous'`, `'sante'`, `'coursier'`, `'menage'`), `nombreAffiche`, `etatLocalisation` (`''`, `'recherche'`, `'trouvee'`, `'refus'`, `'indisponible'`).
 - **Dépendances** : `leaflet`, `leaflet.markercluster`, `useAidants`, `getCoordonneesCommune` (store.js), `useAuth`.
-- **Fonctions importantes** : `dessinerMarqueurs()` (replace les marqueurs à chaque changement de liste ou de filtre), `correspondAuBesoin(aidant)`, `ouvrir()` / `fermer()`, `iconeMaison()`, `iconeRegroupement()`.
-- **À savoir** : l'ordre des deux imports Leaflet ne doit pas être inversé (expliqué en commentaire dans le fichier). Les infobulles sont construites en HTML par concaténation de chaînes avec `aidant.nom` (voir la remarque de sécurité dans [07-authentification-securite.md](07-authentification-securite.md)).
+- **Fonctions importantes** : `placerCommune()` (repère de la commune + cadrage), `meLocaliser()` (géolocalisation du navigateur), `dessinerAidants()`, `correspondAuBesoin(aidant)`, `echapper(texte)`, `iconeVous()`, `iconeMaison()`, `iconeRegroupement()`.
+- **À savoir** : l'ordre des deux imports Leaflet ne doit pas être inversé (expliqué en commentaire dans le fichier). Les infobulles sont construites en HTML : tout texte saisi par un utilisateur passe par `echapper()` avant d’y être inséré.
 
 ### ProviderCard — [ProviderCard.vue](../src/components/ProviderCard.vue)
 

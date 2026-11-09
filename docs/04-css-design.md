@@ -22,7 +22,7 @@ Sept fichiers gardent leurs styles dans un bloc `<style scoped>` (isolé) : `App
 | Barre de navigation, lien d'évitement | `styles/AppNav.css` |
 | Pied de page, espace réservé sous la navbar | bloc `<style scoped>` de `App.vue` |
 | Page d'accueil (hero, sections, cartes) | `styles/Accueil.css` |
-| Vignette carte de Mayotte | `styles/CarteMayotte.css` |
+| Carte « Ma position » (Mon compte) | `styles/CarteMayotte.css` |
 | Cartes de formules | `styles/FormulesSection.css`, `styles/PaiementBandeau.css` |
 | Bouton SOS, menu, chat | `styles/SosButton.css` |
 | Sélecteur de langue | `styles/SelecteurLangue.css` |
@@ -105,7 +105,7 @@ Les polices viennent de Google Fonts, avec `display=swap` : le texte s'affiche t
 | Lien d'évitement | `fixed` | 1040 | `AppNav.css` |
 | Bouton SOS | `fixed`, en bas à droite (20 px) | 1040 | `SosButton.css` |
 | Barre de navigation | `fixed`, à 14 px du haut | 1030 | `AppNav.css` |
-| Vignette carte de Mayotte | — | 1020 | `CarteMayotte.css` |
+| Carte « Ma position » (calques Leaflet enfermés) | — | 0 | `CarteMayotte.css` |
 
 La barre de navigation est une « carte flottante » : largeur `min(1400px, 100% - 20px)`, coins arrondis de 18 px, fond en dégradés superposés turquoise → vert.
 
