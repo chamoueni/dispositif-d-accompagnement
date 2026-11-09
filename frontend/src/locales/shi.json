@@ -20,7 +20,8 @@
     "connexion": "Ingia",
     "inscription": "Jiandikishe",
     "admin": "Msimamizi",
-    "deconnexion": "Toka"
+    "deconnexion": "Toka",
+    "nouveautes_aria": "Mambo mapya {n} kwenye maombi yako"
   },
   "footer": {
     "description": "Musaada kwa wazehe Maore : utunzaji, manunuzi, usafi na huduma ya ulinzi, na wafanyakazi wa afya na watu binafsi wa imani.",
@@ -275,7 +276,9 @@
     "historique_texte": "Kazi zilizomalizika au kughairiwa.",
     "profil_titre": "Wasifu wangu",
     "bonjour": "Jeje {prenom}",
-    "sous_titre": "Unataka kufanya nini leo ?"
+    "sous_titre": "Unataka kufanya nini leo ?",
+    "nouvelles_reponses": "Majibu mapya {n}",
+    "nouvelles_demandes": "Maombi mapya {n}"
   },
   "carte_position": {
     "titre": "Mahali pangu",

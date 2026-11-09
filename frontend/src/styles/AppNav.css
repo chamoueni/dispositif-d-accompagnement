@@ -406,6 +406,24 @@
   text-decoration: none;
 }
 
+/* Pastille rouge du nombre de nouveautés sur « Mon compte » (voir
+   composables/useNouveautesDemandes.js). */
+.pastille-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #e2553a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 /* La pastille est un lien vers Mon compte : on le signale au survol/focus. */
 .nav-actions .badge-role:hover,
 .nav-actions .badge-role:focus-visible {

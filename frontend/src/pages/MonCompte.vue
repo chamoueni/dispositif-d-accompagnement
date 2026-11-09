@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { FORMULES } from '../data/store'
 import { prenomDe } from '../lib/nom'
+import { useNouveautesDemandes } from '../composables/useNouveautesDemandes'
 import IconBadge from '../components/IconBadge.vue'
 // Carte "Ma position" : sa commune, sa position GPS sur demande et les
 // aidants autour. Réservée à cette page, donc aux utilisateurs connectés.
@@ -18,6 +19,12 @@ import '../styles/MonCompte.css'
 
 const { t } = useI18n()
 const { user, logout } = useAuth()
+// Nouveautés sur Mes demandes : pastille sur la tuile correspondante.
+const { nombre: nouveautesDemandes } = useNouveautesDemandes()
+const texteNouveautes = computed(() => t(
+  user.value?.role === 'senior' ? 'mon_compte_page.nouvelles_reponses' : 'mon_compte_page.nouvelles_demandes',
+  nouveautesDemandes.value,
+))
 const router = useRouter()
 
 // Formule active de l'utilisateur (choisie sur /formule/:id, voir PaiementFormule.vue),
@@ -113,7 +120,12 @@ async function seDeconnecter() {
           <router-link
             :to="lien.to"
             class="card h-100 compte-tile"
+            :class="{ 'compte-tile-nouveau': lien.to === '/mes-demandes' && nouveautesDemandes }"
           >
+            <span
+              v-if="lien.to === '/mes-demandes' && nouveautesDemandes"
+              class="pastille-tuile"
+            >{{ texteNouveautes }}</span>
             <IconBadge :name="lien.icon" />
             <!-- Titre + texte groupés : sur téléphone, la tuile passe en
                  ligne (icône à gauche, textes à droite), voir MonCompte.css. -->

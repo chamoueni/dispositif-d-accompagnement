@@ -20,7 +20,8 @@
     "connexion": "Connexion",
     "inscription": "S'inscrire",
     "admin": "Admin",
-    "deconnexion": "Déconnexion"
+    "deconnexion": "Déconnexion",
+    "nouveautes_aria": "{n} nouveauté sur vos demandes | {n} nouveautés sur vos demandes"
   },
   "footer": {
     "description": "Aide aux personnes âgées à Mayotte : soins, courses, ménage et service de garde, avec du personnel de santé et des particuliers de confiance.",
@@ -276,7 +277,9 @@
     "historique_texte": "Missions terminées ou annulées.",
     "profil_titre": "Mon profil",
     "bonjour": "Bonjour {prenom}",
-    "sous_titre": "Que souhaitez-vous faire aujourd'hui ?"
+    "sous_titre": "Que souhaitez-vous faire aujourd'hui ?",
+    "nouvelles_reponses": "{n} nouvelle réponse | {n} nouvelles réponses",
+    "nouvelles_demandes": "{n} nouvelle demande | {n} nouvelles demandes"
   },
   "carte_position": {
     "titre": "Ma position",

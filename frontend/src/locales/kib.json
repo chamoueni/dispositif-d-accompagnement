@@ -20,7 +20,8 @@
     "connexion": "Midira",
     "inscription": "Misoratra anarana",
     "admin": "Mpitantana",
-    "deconnexion": "Mivoaka"
+    "deconnexion": "Mivoaka",
+    "nouveautes_aria": "Vaovao {n} amin'ny fangatahanao"
   },
   "footer": {
     "description": "Fanampiana ho an'ny olo-be ao Maore : fikarakarana, fividianana, fanadiovana ary fiambenana, miaraka amin'ny mpiasan'ny fahasalamana sy olona tsotra azo itokisana.",
@@ -276,7 +277,9 @@
     "historique_texte": "Asa vita na nofoanana.",
     "profil_titre": "Ny mombamomba ahy",
     "bonjour": "Salama {prenom}",
-    "sous_titre": "Inona no tianao hatao androany ?"
+    "sous_titre": "Inona no tianao hatao androany ?",
+    "nouvelles_reponses": "Valiny vaovao {n}",
+    "nouvelles_demandes": "Fangatahana vaovao {n}"
   },
   "carte_position": {
     "titre": "Ny toerako",

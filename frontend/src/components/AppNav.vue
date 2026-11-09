@@ -26,12 +26,15 @@ import SelecteurLangue from './SelecteurLangue.vue'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import IconBadge from './IconBadge.vue'
 import { nomCourt } from '../lib/nom'
+// Pastille « nouveautés » sur le lien Mon compte (réponses / demandes reçues).
+import { useNouveautesDemandes } from '../composables/useNouveautesDemandes'
 // Logo fourni par l'utilisateur (rond teal, cœur + sourire) : remplace l'icône
 // coeur codée en SVG à la main, réutilisée aussi comme favicon (voir index.html).
 import logo from '../assets/logo.png'
 import '../styles/AppNav.css'
 
 const { user, isAdmin, logout } = useAuth()
+const { nombre: nouveautesDemandes, rafraichir: rafraichirNouveautes } = useNouveautesDemandes()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
@@ -124,6 +127,8 @@ watch(menuOuvert, (ouvert) => {
 // (page Profil). Voir lib/nom.js pour le détail du calcul.
 const nomAffiche = nomCourt
 
+watch(() => route.fullPath, () => rafraichirNouveautes())
+
 function handleLogout() {
   fermerMenu()
   logout()
@@ -211,6 +216,11 @@ function handleLogout() {
                   name="profile"
                   compact
                 />{{ t('nav.mon_compte') }}
+                <span
+                  v-if="nouveautesDemandes"
+                  class="pastille-nav"
+                  :aria-label="t('nav.nouveautes_aria', nouveautesDemandes)"
+                >{{ nouveautesDemandes }}</span>
               </router-link>
             </li>
           </ul>

@@ -19,6 +19,7 @@ import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import IconeAction from '../components/IconeAction.vue'
 import IconBadge from '../components/IconBadge.vue'
+import { useNouveautesDemandes } from '../composables/useNouveautesDemandes'
 import '../styles/MesDemandes.css'
 
 const { t } = useI18n()
@@ -32,6 +33,8 @@ const SERVICE_KEYS = {
 }
 
 const { user } = useAuth()
+// Ouvrir cette page = voir les nouveautés : la pastille disparaît.
+const { marquerDemandesVues } = useNouveautesDemandes()
 const router = useRouter()
 
 const demandes = ref([])
@@ -68,6 +71,7 @@ async function charger() {
   )
 
   chargement.value = false
+  marquerDemandesVues(demandes.value)
 }
 
 onMounted(() => {
