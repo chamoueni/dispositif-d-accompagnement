@@ -2,8 +2,19 @@
   padding: 40px 0 64px;
 }
 
+/* Petit surtitre « MON COMPTE » au-dessus de la salutation : la page garde
+   son nom sans que le titre principal soit générique. */
+.compte-surtitre {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
 .compte-tile {
   display: block;
+  padding: 20px;
   text-decoration: none;
   color: inherit;
   border-radius: 14px;
@@ -16,4 +27,21 @@
 
 .compte-tile .icon-badge {
   margin-bottom: 10px;
+}
+
+/* Téléphone : tuiles en ligne (icône à gauche, textes à droite) et moins
+   hautes. Avant, chaque tuile occupait presque un écran à elle seule et la
+   carte « Ma position » se retrouvait très loin en bas. */
+@media (max-width: 575px) {
+  .compte-tile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+
+  .compte-tile .icon-badge {
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
 }

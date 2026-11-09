@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { FORMULES } from '../data/store'
+import { prenomDe } from '../lib/nom'
 import IconBadge from '../components/IconBadge.vue'
 // Carte "Ma position" : sa commune, sa position GPS sur demande et les
 // aidants autour. Réservée à cette page, donc aux utilisateurs connectés.
@@ -46,6 +47,13 @@ const LIENS = computed(() => {
   ]
 })
 
+// Salutation personnalisée : "Bonjour Mariama" plutôt qu'un titre générique.
+const prenom = computed(() => prenomDe(user.value?.nom) || user.value?.email || '')
+
+// Toutes les tuiles sur une seule ligne sur grand écran (5 pour une personne
+// âgée, 4 pour un aidant) : avant, la 5e tuile restait seule sur sa ligne.
+const colonnesGrandEcran = computed(() => `row-cols-lg-${LIENS.value.length}`)
+
 async function seDeconnecter() {
   await logout()
   router.push('/')
@@ -55,11 +63,16 @@ async function seDeconnecter() {
 <template>
   <section class="mon-compte-page">
     <div class="container">
-      <div class="d-flex align-items-center gap-2 mb-4">
-        <h1 class="h3 mb-0">
+      <div class="mb-4">
+        <p class="compte-surtitre mb-1">
           {{ t('mon_compte_page.titre') }}
+        </p>
+        <h1 class="h3 mb-1">
+          {{ t('mon_compte_page.bonjour', { prenom }) }}
         </h1>
-        <span class="text-muted">— {{ user?.nom || user?.email }}</span>
+        <p class="text-muted mb-0">
+          {{ t('mon_compte_page.sous_titre') }}
+        </p>
       </div>
 
       <!-- Les formules d'accompagnement sont réservées aux personnes âgées
@@ -88,23 +101,30 @@ async function seDeconnecter() {
         </router-link>
       </div>
 
-      <div class="row g-4">
+      <div
+        class="row g-3 row-cols-1 row-cols-sm-2"
+        :class="colonnesGrandEcran"
+      >
         <div
           v-for="lien in LIENS"
           :key="lien.to"
-          class="col-sm-6 col-lg-3"
+          class="col"
         >
           <router-link
             :to="lien.to"
-            class="card p-4 h-100 compte-tile"
+            class="card h-100 compte-tile"
           >
             <IconBadge :name="lien.icon" />
-            <h2 class="h6 mb-1">
-              {{ lien.titre }}
-            </h2>
-            <p class="text-muted small mb-0">
-              {{ lien.texte }}
-            </p>
+            <!-- Titre + texte groupés : sur téléphone, la tuile passe en
+                 ligne (icône à gauche, textes à droite), voir MonCompte.css. -->
+            <div>
+              <h2 class="h6 mb-1">
+                {{ lien.titre }}
+              </h2>
+              <p class="text-muted small mb-0">
+                {{ lien.texte }}
+              </p>
+            </div>
           </router-link>
         </div>
       </div>

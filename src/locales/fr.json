@@ -274,7 +274,9 @@
     "accompagnements_texte_aidant": "Accompagnements en cours.",
     "historique_titre": "Historique",
     "historique_texte": "Missions terminées ou annulées.",
-    "profil_titre": "Mon profil"
+    "profil_titre": "Mon profil",
+    "bonjour": "Bonjour {prenom}",
+    "sous_titre": "Que souhaitez-vous faire aujourd'hui ?"
   },
   "carte_position": {
     "titre": "Ma position",

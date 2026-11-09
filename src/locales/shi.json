@@ -273,7 +273,9 @@
     "accompagnements_texte_aidant": "Musaada unaoendelea.",
     "historique_titre": "Historia",
     "historique_texte": "Kazi zilizomalizika au kughairiwa.",
-    "profil_titre": "Wasifu wangu"
+    "profil_titre": "Wasifu wangu",
+    "bonjour": "Jeje {prenom}",
+    "sous_titre": "Unataka kufanya nini leo ?"
   },
   "carte_position": {
     "titre": "Mahali pangu",

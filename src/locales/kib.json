@@ -274,7 +274,9 @@
     "accompagnements_texte_aidant": "Fanampiana mandeha.",
     "historique_titre": "Tantara",
     "historique_texte": "Asa vita na nofoanana.",
-    "profil_titre": "Ny mombamomba ahy"
+    "profil_titre": "Ny mombamomba ahy",
+    "bonjour": "Salama {prenom}",
+    "sous_titre": "Inona no tianao hatao androany ?"
   },
   "carte_position": {
     "titre": "Ny toerako",
