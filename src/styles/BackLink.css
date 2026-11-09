@@ -16,6 +16,13 @@
   color: var(--accent);
 }
 
+/* Quand le trait jaune décoratif (.section-label, voir ui.css) suit le lien
+   « Retour », il passait sur la même ligne, collé à droite du lien (page
+   Rechercher). On le renvoie à la ligne, au-dessus du titre comme ailleurs. */
+.back-link + .section-label {
+  display: block;
+}
+
 .back-link svg {
   width: 18px;
   height: 18px;
