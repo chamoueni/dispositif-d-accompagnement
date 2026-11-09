@@ -1,8 +1,9 @@
 <script setup>
 // Coquille commune à toutes les pages : menu + zone de contenu (router-view) + pied de page.
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useAuth } from './stores/auth'
 import AppNav from './components/AppNav.vue'
 import SosButton from './components/SosButton.vue'
 import ConnexionBanner from './components/ConnexionBanner.vue'
@@ -21,6 +22,16 @@ const route = useRoute()
 const estEspaceAdmin = computed(() => route.meta.requiresAdmin === true || route.name === 'admin-connexion')
 
 const anneeCourante = new Date().getFullYear()
+
+// Colonne « Votre compte » du pied de page : un utilisateur connecté n'a que
+// faire de « S'inscrire / Connexion », on lui montre ses propres raccourcis.
+const { user, logout } = useAuth()
+const router = useRouter()
+
+async function seDeconnecter() {
+  await logout()
+  router.push('/')
+}
 </script>
 
 <template>
@@ -80,12 +91,33 @@ const anneeCourante = new Date().getFullYear()
         <p class="footer-col-title">
           {{ t('footer.compte_titre') }}
         </p>
-        <router-link to="/inscription">
-          {{ t('nav.inscription') }}
-        </router-link>
-        <router-link to="/connexion">
-          {{ t('nav.connexion') }}
-        </router-link>
+        <template v-if="user">
+          <router-link to="/mon-compte">
+            {{ t('nav.mon_compte') }}
+          </router-link>
+          <router-link to="/profil">
+            {{ t('mon_compte_page.profil_titre') }}
+          </router-link>
+          <router-link to="/mes-demandes">
+            {{ t('mes_demandes_page.titre') }}
+          </router-link>
+          <!-- Bouton (et non lien) : la déconnexion est une action, pas une page. -->
+          <button
+            type="button"
+            class="footer-lien-bouton"
+            @click="seDeconnecter"
+          >
+            {{ t('nav.deconnexion') }}
+          </button>
+        </template>
+        <template v-else>
+          <router-link to="/inscription">
+            {{ t('nav.inscription') }}
+          </router-link>
+          <router-link to="/connexion">
+            {{ t('nav.connexion') }}
+          </router-link>
+        </template>
       </nav>
 
       <div class="footer-col">
@@ -207,6 +239,23 @@ const anneeCourante = new Date().getFullYear()
 }
 
 .footer-col a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Bouton « Déconnexion » habillé comme les liens voisins. */
+.footer-lien-bouton {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.footer-lien-bouton:hover {
   color: var(--accent);
   text-decoration: underline;
 }
