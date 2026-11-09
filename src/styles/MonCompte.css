@@ -35,9 +35,12 @@
 @media (max-width: 575px) {
   .compte-tile {
     display: flex;
+    /* .card de Bootstrap impose flex-direction: column : on le remplace. */
+    flex-direction: row;
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
+    text-align: left;
   }
 
   .compte-tile .icon-badge {
