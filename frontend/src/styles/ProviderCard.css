@@ -1,3 +1,12 @@
 .provider-card {
   height: 100%;
 }
+
+/* Bouton « Numéro après acceptation » : même place que « Appeler », mais
+   visiblement inactif (le numéro est masqué par le serveur). */
+.numero-masque {
+  opacity: 0.75;
+  cursor: help;
+  white-space: normal;
+  line-height: 1.2;
+}

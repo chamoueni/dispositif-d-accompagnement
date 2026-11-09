@@ -25,6 +25,49 @@ function clientAnonyme() {
   })
 }
 
+// --- Vie privée des profils (téléphone, adresse) ----------------------------
+// La base laisse tout utilisateur connecté lire tous les profils (nécessaire à
+// la recherche). Le téléphone et l'adresse d'une personne ne sont pourtant pas
+// à donner à n'importe qui : le serveur ne les renvoie qu'à elle-même, à
+// l'administrateur, et aux personnes avec qui elle a une demande ACCEPTÉE ou
+// TERMINÉE (une vraie mise en relation). Le navigateur n'ayant plus de jeton
+// Supabase (voir sessions.js), il ne peut pas contourner ce filtre.
+const STATUTS_EN_RELATION = ['acceptee', 'terminee']
+
+// Identifiants des personnes en relation avec l'utilisateur connecté.
+async function contactsAutorises(client, req) {
+  const moi = req.authSession.user.id
+  const { data, error } = await client
+    .from('demandes')
+    .select('demandeur_id, aidant_id, statut')
+    .or(`demandeur_id.eq.${moi},aidant_id.eq.${moi}`)
+    .in('statut', STATUTS_EN_RELATION)
+  if (error) throw error
+  const contacts = new Set()
+  for (const d of data || []) contacts.add(d.demandeur_id === moi ? d.aidant_id : d.demandeur_id)
+  return contacts
+}
+
+function masquerCoordonnees(profil, req, contacts) {
+  const autorise = isAdmin(req) || profil.id === req.authSession.user.id || contacts.has(profil.id)
+  if (autorise) return profil
+  // contact_masque : le front affiche « Numéro après acceptation » (ProviderCard.vue).
+  return { ...profil, telephone: '', adresse: '', contact_masque: true }
+}
+
+// --- Comptes de démonstration -------------------------------------------------
+// Les comptes dont le nom contient « (démo) » servent aux tests du propriétaire
+// du site. Ils n'apparaissent dans la recherche et sur la carte que pour
+// l'administrateur et pour les autres comptes de démo (qui peuvent ainsi
+// toujours tester une mise en relation entre eux), jamais pour les vrais
+// utilisateurs.
+const estDemo = (profil) => /\(démo\)/i.test(profil?.nom || '')
+
+function visibleDansLaListe(profil, moi, req) {
+  if (!estDemo(profil)) return true
+  return isAdmin(req) || estDemo(moi) || profil.id === req.authSession.user.id
+}
+
 function isUuid(value) {
   return typeof value === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -86,13 +129,20 @@ router.post('/data', async (req, res, next) => {
       case 'profiles.list': {
         const { data, error } = await client.from('profiles').select('*')
         if (error) throw error
-        return res.json(data)
+        const contacts = await contactsAutorises(client, req)
+        const moi = data.find((p) => p.id === req.authSession.user.id)
+        return res.json(
+          data
+            .filter((p) => visibleDansLaListe(p, moi, req))
+            .map((p) => masquerCoordonnees(p, req, contacts)),
+        )
       }
       case 'profiles.find': {
         if (!isUuid(payload.id)) return res.status(400).json({ message: 'Identifiant invalide.' })
         const { data, error } = await client.from('profiles').select('*').eq('id', payload.id).maybeSingle()
         if (error) throw error
-        return data ? res.json(data) : res.status(404).json({ message: 'Profil introuvable.' })
+        if (!data) return res.status(404).json({ message: 'Profil introuvable.' })
+        return res.json(masquerCoordonnees(data, req, await contactsAutorises(client, req)))
       }
       case 'profiles.updateOwn':
       case 'profiles.updateAdmin': {

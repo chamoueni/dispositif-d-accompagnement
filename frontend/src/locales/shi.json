@@ -379,7 +379,9 @@
     "aucune_bio": "Hakuna maelezo yaliyoandikwa.",
     "disponibilites": "Wakati unaopatikana",
     "appeler": "Piga simu",
-    "envoyer_demande": "Tuma ombi"
+    "envoyer_demande": "Tuma ombi",
+    "numero_masque": "Nambari baada ya kukubaliwa",
+    "numero_masque_aide": "Ili kulinda faragha ya wasaidizi, nambari yao inaonekana ombi lako likikubaliwa."
   },
   "paiement_page": {
     "formule_inexistante": "Mpango huu haupo.",

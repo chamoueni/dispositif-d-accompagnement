@@ -121,11 +121,21 @@ const resume = computed(() => {
 
     <div class="d-flex gap-2">
       <a
+        v-if="provider.telephone"
         :href="`tel:${provider.telephone}`"
         class="btn btn-secondary btn-sm flex-fill"
       >
         {{ t('provider_card.appeler') }}
       </a>
+      <!-- Numéro masqué par le serveur tant qu'aucune demande n'a été acceptée
+           (vie privée des aidants, voir backend/dataRoutes.js). -->
+      <span
+        v-else
+        class="btn btn-secondary btn-sm flex-fill numero-masque"
+        :title="t('provider_card.numero_masque_aide')"
+      >
+        🔒 {{ t('provider_card.numero_masque') }}
+      </span>
       <router-link
         v-if="user && user.role === 'senior'"
         :to="`/nouvelle-demande/${provider.id}`"

@@ -380,7 +380,9 @@
     "aucune_bio": "Tsy misy famelabelarana voasoratra.",
     "disponibilites": "Fotoana azo antenaina",
     "appeler": "Antsoy",
-    "envoyer_demande": "Alefaso ny fangatahana"
+    "envoyer_demande": "Alefaso ny fangatahana",
+    "numero_masque": "Laharana rehefa voaray",
+    "numero_masque_aide": "Mba hiarovana ny fiainana manokan'ny mpanampy, hiseho ny laharany rehefa voaray ny fangatahanao."
   },
   "paiement_page": {
     "formule_inexistante": "Tsy misy ity fandaharana ity.",

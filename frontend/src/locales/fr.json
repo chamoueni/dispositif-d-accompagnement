@@ -380,7 +380,9 @@
     "aucune_bio": "Aucune présentation renseignée.",
     "disponibilites": "Disponibilités",
     "appeler": "Appeler",
-    "envoyer_demande": "Envoyer une demande"
+    "envoyer_demande": "Envoyer une demande",
+    "numero_masque": "Numéro après acceptation",
+    "numero_masque_aide": "Pour protéger la vie privée des aidants, leur numéro s'affiche une fois votre demande acceptée."
   },
   "paiement_page": {
     "formule_inexistante": "Cette formule n'existe pas.",
