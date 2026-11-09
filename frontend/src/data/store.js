@@ -51,6 +51,22 @@ export function getCoordonneesCommune(nomCommune) {
   return commune ? { lat: commune.lat, lng: commune.lng } : null
 }
 
+// Distance à vol d'oiseau, en km, entre les chefs-lieux de deux communes
+// (formule de haversine). Sert au tri « du plus proche au plus loin » de la
+// recherche. Volontairement à la maille de la commune : on ne connaît jamais
+// l'adresse exacte des gens. null si l'une des communes est inconnue.
+export function distanceEntreCommunes(communeA, communeB) {
+  const a = getCoordonneesCommune(communeA)
+  const b = getCoordonneesCommune(communeB)
+  if (!a || !b) return null
+  const R = 6371
+  const rad = Math.PI / 180
+  const dLat = (b.lat - a.lat) * rad
+  const dLng = (b.lng - a.lng) * rad
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
 // Retrouve la zone d'une commune (utilisé pour le tri par proximité des demandes).
 export function getZoneCommune(nomCommune) {
   const commune = COMMUNES_MAYOTTE.find((c) => c.nom === nomCommune)

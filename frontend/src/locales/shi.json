@@ -376,7 +376,8 @@
     "offre_titre": "Zawadi ya ugunduzi : mawasiliano 3 ya bure yanapatikana kwa utafutaji huu.",
     "essai_gratuit_cta": "Tumia jaribio la bure",
     "resultat": "jibu | majibu",
-    "aucun_resultat": "Hakuna jibu kwa masharti haya. Jaribu mji mwingine au huduma nyingine."
+    "aucun_resultat": "Hakuna jibu kwa masharti haya. Jaribu mji mwingine au huduma nyingine.",
+    "tri_proximite": "wamepangwa kuanzia aliye karibu zaidi na {commune}"
   },
   "provider_card": {
     "aucune_bio": "Hakuna maelezo yaliyoandikwa.",
@@ -384,7 +385,9 @@
     "appeler": "Piga simu",
     "envoyer_demande": "Tuma ombi",
     "numero_masque": "Nambari baada ya kukubaliwa",
-    "numero_masque_aide": "Ili kulinda faragha ya wasaidizi, nambari yao inaonekana ombi lako likikubaliwa."
+    "numero_masque_aide": "Ili kulinda faragha ya wasaidizi, nambari yao inaonekana ombi lako likikubaliwa.",
+    "distance": "≈ km {km} kutoka kwako",
+    "meme_commune": "Katika mji wako"
   },
   "paiement_page": {
     "formule_inexistante": "Mpango huu haupo.",

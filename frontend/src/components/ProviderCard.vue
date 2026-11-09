@@ -66,6 +66,11 @@ const resume = computed(() => {
 
 <template>
   <article class="provider-card card p-4">
+    <!-- Distance depuis la commune de l'utilisateur (page Recherche, N5). -->
+    <span
+      v-if="provider.distanceKm !== undefined && provider.distanceKm !== null"
+      class="distance-chip"
+    >📍 {{ provider.distanceKm < 1 ? t('provider_card.meme_commune') : t('provider_card.distance', { km: Math.round(provider.distanceKm) }) }}</span>
     <div class="d-flex justify-content-between align-items-start mb-2">
       <h3 class="h6 mb-0">
         {{ provider.nom }}

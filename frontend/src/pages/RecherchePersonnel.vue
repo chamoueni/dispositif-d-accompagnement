@@ -4,12 +4,14 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { getUsers, COMMUNES_MAYOTTE } from '../data/store.js'
+import { getUsers, COMMUNES_MAYOTTE, distanceEntreCommunes } from '../data/store.js'
+import { useAuth } from '../stores/auth'
 import ProviderCard from '../components/ProviderCard.vue'
 import BackLink from '../components/BackLink.vue'
 import '../styles/Recherche.css'
 
 const { t } = useI18n()
+const { user } = useAuth()
 
 const TYPES = [
   { value: 'sante', labelKey: 'type_sante' },
@@ -44,14 +46,23 @@ onMounted(async () => {
 
 // "sante" filtre sur le rôle ; "coursier"/"menage" filtrent les particuliers
 // selon le service qu'ils ont coché dans leur profil.
+// Puis tri du plus proche au plus loin de la commune de l'utilisateur
+// connecté (distance entre communes, voir distanceEntreCommunes dans store.js).
+// Commune inconnue (profil incomplet) : ordre d'origine, sans distance.
 const results = computed(() => {
-  return users.value.filter((u) => {
+  const filtres = users.value.filter((u) => {
     const matchesType =
       filters.type === 'sante' ? u.role === 'sante' : u.role === 'particulier' && u.services.includes(filters.type)
     const matchesVille = !filters.ville || u.ville === filters.ville
     return matchesType && matchesVille
   })
+  return filtres
+    .map((u) => ({ ...u, distanceKm: distanceEntreCommunes(user.value?.ville, u.ville) }))
+    .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
 })
+
+// La phrase « triés du plus proche » n'a de sens que si on connaît la commune.
+const triParProximite = computed(() => results.value.some((u) => u.distanceKm !== null))
 
 const offreEssaiDisponible = computed(() => {
   return results.value.length > 0 && results.value.some((provider) => provider.role === 'sante' || provider.services?.length)
@@ -124,6 +135,9 @@ const offreEssaiDisponible = computed(() => {
         class="text-muted small mb-3"
       >
         {{ results.length }} {{ t('recherche_page.resultat', results.length) }}
+        <template v-if="triParProximite && results.length > 1">
+          · <strong>{{ t('recherche_page.tri_proximite', { commune: user.ville }) }}</strong>
+        </template>
       </p>
 
       <p

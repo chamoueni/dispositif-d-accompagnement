@@ -377,7 +377,8 @@
     "offre_titre": "Tolotra hita vaovao : fifandraisana 3 maimaim-poana azo atao amin'ity fikarohana ity.",
     "essai_gratuit_cta": "Mampiasà ny fitsapana maimaim-poana",
     "resultat": "valiny | valiny",
-    "aucun_resultat": "Tsy misy valiny mifanaraka amin'ireo sivana ireo. Andramo tanàna hafa na tolotra hafa."
+    "aucun_resultat": "Tsy misy valiny mifanaraka amin'ireo sivana ireo. Andramo tanàna hafa na tolotra hafa.",
+    "tri_proximite": "nalahatra manomboka amin'ny akaiky indrindra an'i {commune}"
   },
   "provider_card": {
     "aucune_bio": "Tsy misy famelabelarana voasoratra.",
@@ -385,7 +386,9 @@
     "appeler": "Antsoy",
     "envoyer_demande": "Alefaso ny fangatahana",
     "numero_masque": "Laharana rehefa voaray",
-    "numero_masque_aide": "Mba hiarovana ny fiainana manokan'ny mpanampy, hiseho ny laharany rehefa voaray ny fangatahanao."
+    "numero_masque_aide": "Mba hiarovana ny fiainana manokan'ny mpanampy, hiseho ny laharany rehefa voaray ny fangatahanao.",
+    "distance": "≈ {km} km miala aminao",
+    "meme_commune": "Ao amin'ny tanànanao"
   },
   "paiement_page": {
     "formule_inexistante": "Tsy misy ity fandaharana ity.",

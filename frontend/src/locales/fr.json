@@ -377,7 +377,8 @@
     "offre_titre": "Offre découverte : 3 mises en relation gratuites disponibles pour cette recherche.",
     "essai_gratuit_cta": "Profiter de l'essai gratuit",
     "resultat": "résultat | résultats",
-    "aucun_resultat": "Aucun résultat pour ces critères. Essayez une autre commune ou un autre service."
+    "aucun_resultat": "Aucun résultat pour ces critères. Essayez une autre commune ou un autre service.",
+    "tri_proximite": "triés du plus proche au plus loin de {commune}"
   },
   "provider_card": {
     "aucune_bio": "Aucune présentation renseignée.",
@@ -385,7 +386,9 @@
     "appeler": "Appeler",
     "envoyer_demande": "Envoyer une demande",
     "numero_masque": "Numéro après acceptation",
-    "numero_masque_aide": "Pour protéger la vie privée des aidants, leur numéro s'affiche une fois votre demande acceptée."
+    "numero_masque_aide": "Pour protéger la vie privée des aidants, leur numéro s'affiche une fois votre demande acceptée.",
+    "distance": "≈ {km} km de chez vous",
+    "meme_commune": "Dans votre commune"
   },
   "paiement_page": {
     "formule_inexistante": "Cette formule n'existe pas.",
