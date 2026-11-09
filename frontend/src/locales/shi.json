@@ -219,7 +219,7 @@
     "nouveau_label": "Neno la siri jipya",
     "confirmer_label": "Thibitisha neno la siri",
     "cta_valider": "Thibitisha neno la siri jipya",
-    "erreur_court": "Neno la siri lazima liwe na herufi 6 angalau.",
+    "erreur_court": "Neno la siri lazima liwe na herufi 8 angalau.",
     "erreur_diff": "Maneno mawili ya siri hayafanani."
   },
   "inscription_page": {
@@ -249,7 +249,7 @@
     "erreur_champs": "Tafadhali jaza sehemu zote za lazima.",
     "erreur_email": "Tafadhali andika barua pepe sahihi.",
     "erreur_telephone": "Tafadhali andika namba ya simu sahihi (Ufaransa, Réunion au Maore), kwa mfumo 06 12 34 56 78 au +262 6 12 34 56 78.",
-    "erreur_password": "Neno la siri lazima liwe na herufi 6 angalau."
+    "erreur_password": "Neno la siri lazima liwe na herufi 8 angalau."
   },
   "mon_compte_page": {
     "titre": "Akaunti yangu",
@@ -326,7 +326,7 @@
     "apres_midi": "Mchana",
     "soir": "Jioni",
     "autres_creneaux": "Wakati mwingine uliohifadhiwa :",
-    "erreur_court": "Neno la siri lazima liwe na herufi 6 angalau.",
+    "erreur_court": "Neno la siri lazima liwe na herufi 8 angalau.",
     "erreur_diff": "Maneno mawili ya siri hayafanani."
   },
   "historique_page": {
@@ -547,5 +547,15 @@
     "dictee_en_cours": "Ninakusikiliza…",
     "dicter_aria": "Andika ujumbe kwa sauti",
     "ecoute_aria": "Kusikiliza kunaendelea"
+  },
+  "mot_de_passe": {
+    "niveau_faible": "Dhaifu sana",
+    "niveau_moyen": "Wastani",
+    "niveau_bon": "Nzuri",
+    "niveau_solide": "Imara",
+    "il_manque": "inakosa :",
+    "manque_longueur": "herufi {n} angalau",
+    "manque_chiffre": "tarakimu moja",
+    "manque_majuscule": "herufi kubwa moja"
   }
 }

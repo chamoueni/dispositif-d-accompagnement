@@ -15,6 +15,10 @@ const router = Router()
 const ADMIN_EMAIL = 'moustakimsinina05@gmail.com'
 const rolesAutorises = ['senior', 'sante', 'particulier']
 
+// Longueur minimale des mots de passe, la même que côté site
+// (frontend/src/lib/motDePasse.js). C'est cette vérification-ci qui fait foi.
+const MOT_DE_PASSE_MIN = 8
+
 const limiterConnexion = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -127,8 +131,8 @@ router.post('/auth/register', validerOrigine, limiterInscription, async (req, re
   try {
     const body = req.body || {}
     if (!emailValide(body.email)) return res.status(400).json({ message: 'Adresse email invalide.' })
-    if (typeof body.password !== 'string' || body.password.length < 6 || body.password.length > 1024) {
-      return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères.' })
+    if (typeof body.password !== 'string' || body.password.length < MOT_DE_PASSE_MIN || body.password.length > 1024) {
+      return res.status(400).json({ message: `Le mot de passe doit contenir au moins ${MOT_DE_PASSE_MIN} caractères.` })
     }
     if (!rolesAutorises.includes(body.role)) return res.status(400).json({ message: 'Le profil sélectionné est invalide.' })
     if (typeof body.nom !== 'string' || !body.nom.trim() || body.nom.length > 120) {
@@ -157,7 +161,7 @@ router.post('/auth/register', validerOrigine, limiterInscription, async (req, re
         return res.status(429).json({ message: 'Trop de tentatives, merci de réessayer dans quelques minutes.' })
       }
       if (/password.*at least|password.*characters/i.test(error.message)) {
-        return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères.' })
+        return res.status(400).json({ message: `Le mot de passe doit contenir au moins ${MOT_DE_PASSE_MIN} caractères.` })
       }
       if (/already registered|already been registered/i.test(error.message)) {
         return res.status(409).json({ message: 'Un compte existe déjà avec cet email.' })
@@ -276,8 +280,8 @@ router.post('/auth/recovery', validerOrigine, limiterReinitialisation, async (re
     if (typeof accessToken !== 'string' || accessToken.length > 8192) {
       return res.status(400).json({ message: 'Le lien de réinitialisation est invalide ou expiré.' })
     }
-    if (typeof password !== 'string' || password.length < 6 || password.length > 1024) {
-      return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères.' })
+    if (typeof password !== 'string' || password.length < MOT_DE_PASSE_MIN || password.length > 1024) {
+      return res.status(400).json({ message: `Le mot de passe doit contenir au moins ${MOT_DE_PASSE_MIN} caractères.` })
     }
     if (!supabaseAdmin) return res.status(503).json({ message: 'La réinitialisation n’est pas configurée.' })
     const { data, error } = await supabaseAdmin.auth.getUser(accessToken)
@@ -300,8 +304,8 @@ router.post('/auth/recovery', validerOrigine, limiterReinitialisation, async (re
 router.put('/auth/password', validerOrigine, requireAuth, async (req, res, next) => {
   try {
     const password = req.body?.password
-    if (typeof password !== 'string' || password.length < 6 || password.length > 1024) {
-      return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères.' })
+    if (typeof password !== 'string' || password.length < MOT_DE_PASSE_MIN || password.length > 1024) {
+      return res.status(400).json({ message: `Le mot de passe doit contenir au moins ${MOT_DE_PASSE_MIN} caractères.` })
     }
     const { error } = await req.supabase.auth.updateUser({ password })
     if (error) throw error

@@ -220,7 +220,7 @@
     "nouveau_label": "Tenimiafina vaovao",
     "confirmer_label": "Hamafiso ny tenimiafina",
     "cta_valider": "Hamafiso ny tenimiafina vaovao",
-    "erreur_court": "Tsy maintsy misy litera 6 farafahakeliny ny tenimiafina.",
+    "erreur_court": "Tsy maintsy misy litera 8 farafahakeliny ny tenimiafina.",
     "erreur_diff": "Tsy mitovy ny tenimiafina roa."
   },
   "inscription_page": {
@@ -250,7 +250,7 @@
     "erreur_champs": "Azafady fenoy ny saha rehetra takiana.",
     "erreur_email": "Azafady manorata mailaka mety.",
     "erreur_telephone": "Azafady manorata laharana telefaona mety (Frantsa, Reyniona na Maore), amin'ny endrika 06 12 34 56 78 na +262 6 12 34 56 78.",
-    "erreur_password": "Tsy maintsy misy litera 6 farafahakeliny ny tenimiafina."
+    "erreur_password": "Tsy maintsy misy litera 8 farafahakeliny ny tenimiafina."
   },
   "mon_compte_page": {
     "titre": "Ny kaontiko",
@@ -327,7 +327,7 @@
     "apres_midi": "Tolakandro",
     "soir": "Hariva",
     "autres_creneaux": "Fotoana hafa voatahiry :",
-    "erreur_court": "Tsy maintsy misy litera 6 farafahakeliny ny tenimiafina.",
+    "erreur_court": "Tsy maintsy misy litera 8 farafahakeliny ny tenimiafina.",
     "erreur_diff": "Tsy mitovy ny tenimiafina roa."
   },
   "historique_page": {
@@ -542,5 +542,15 @@
     "dictee_en_cours": "Mihaino anao aho…",
     "dicter_aria": "Soraty amin'ny feo ny hafatra",
     "ecoute_aria": "Mihaino"
+  },
+  "mot_de_passe": {
+    "niveau_faible": "Malemy loatra",
+    "niveau_moyen": "Antonony",
+    "niveau_bon": "Tsara",
+    "niveau_solide": "Matanjaka",
+    "il_manque": "mbola tsy ampy :",
+    "manque_longueur": "litera {n} farafahakeliny",
+    "manque_chiffre": "isa iray",
+    "manque_majuscule": "litera lehibe iray"
   }
 }

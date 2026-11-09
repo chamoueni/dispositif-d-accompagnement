@@ -4,6 +4,9 @@ import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
+// Jauge de force sous le champ + longueur minimale commune (8 caractères).
+import JaugeMotDePasse from '../components/JaugeMotDePasse.vue'
+import { MOT_DE_PASSE_MIN } from '../lib/motDePasse'
 import '../styles/Connexion.css'
 
 const { t } = useI18n()
@@ -36,7 +39,7 @@ const reussi = ref(false)
 async function handleSubmit() {
   erreur.value = ''
 
-  if (form.nouveau.length < 6) {
+  if (form.nouveau.length < MOT_DE_PASSE_MIN) {
     erreur.value = t('reinit_mdp_page.erreur_court')
     return
   }
@@ -113,6 +116,7 @@ async function handleSubmit() {
               autocomplete="new-password"
               required
             />
+            <JaugeMotDePasse :mot-de-passe="form.nouveau" />
           </div>
           <div class="mb-3">
             <label

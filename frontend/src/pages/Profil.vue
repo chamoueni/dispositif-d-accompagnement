@@ -7,6 +7,9 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
+// Jauge de force sous le champ + longueur minimale commune (8 caractères).
+import JaugeMotDePasse from '../components/JaugeMotDePasse.vue'
+import { MOT_DE_PASSE_MIN } from '../lib/motDePasse'
 import BackLink from '../components/BackLink.vue'
 import '../styles/Profil.css'
 
@@ -134,7 +137,7 @@ async function handleChangerMotDePasse() {
   motDePasseErreur.value = ''
   motDePasseMessage.value = ''
 
-  if (motDePasse.nouveau.length < 6) {
+  if (motDePasse.nouveau.length < MOT_DE_PASSE_MIN) {
     motDePasseErreur.value = t('profil_page.erreur_court')
     return
   }
@@ -327,6 +330,7 @@ async function handleChangerMotDePasse() {
                     v-model="motDePasse.nouveau"
                     autocomplete="new-password"
                   />
+                  <JaugeMotDePasse :mot-de-passe="motDePasse.nouveau" />
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">{{ t('profil_page.confirmer_mdp') }}</label>

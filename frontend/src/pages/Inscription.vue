@@ -8,6 +8,9 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
 import { COMMUNES_MAYOTTE } from '../data/store'
 import ChampMotDePasse from '../components/ChampMotDePasse.vue'
+// Jauge de force sous le champ + longueur minimale commune (8 caractères).
+import JaugeMotDePasse from '../components/JaugeMotDePasse.vue'
+import { MOT_DE_PASSE_MIN } from '../lib/motDePasse'
 import '../styles/Inscription.css'
 
 const { t } = useI18n()
@@ -64,7 +67,7 @@ async function handleSubmit() {
     error.value = t('inscription_page.erreur_telephone')
     return
   }
-  if (form.password.length < 6) {
+  if (form.password.length < MOT_DE_PASSE_MIN) {
     error.value = t('inscription_page.erreur_password')
     return
   }
@@ -191,6 +194,7 @@ async function handleSubmit() {
                 autocomplete="new-password"
                 required
               />
+              <JaugeMotDePasse :mot-de-passe="form.password" />
             </div>
             <div class="col-md-6 mb-3">
               <label
