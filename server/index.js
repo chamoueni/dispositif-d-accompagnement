@@ -202,6 +202,31 @@ app.post('/api/chat-ia', limiteAssistant, async (req, res, next) => {
   }
 })
 
+// Bilan de santé, appelé par le robot de maintenance "Mlezi"
+// (.github/workflows/mlezi-gardien.yml) toutes les 10 minutes en journée.
+// Un seul appel suffit à : réveiller ce serveur (Render gratuit l'endort après
+// 15 min sans visite) ET faire une vraie lecture dans Supabase (qui met en pause
+// les projets gratuits inactifs). Public et sans donnée sensible : on ne renvoie
+// que des "ok"/"erreur", jamais le contenu de la base.
+app.get('/api/sante', async (_req, res) => {
+  let supabase = 'non configuré'
+  const url = process.env.SUPABASE_URL
+  const cle = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  if (url && cle) {
+    try {
+      const reponse = await fetch(`${url.replace(/\/$/, '')}/rest/v1/avis?select=id&limit=1`, {
+        headers: { apikey: cle, Authorization: `Bearer ${cle}` },
+        signal: AbortSignal.timeout(10000),
+      })
+      supabase = reponse.ok ? 'ok' : 'erreur'
+    } catch {
+      supabase = 'erreur'
+    }
+  }
+  const ok = supabase === 'ok'
+  res.status(ok ? 200 : 503).json({ ok, api: 'ok', supabase, date: new Date().toISOString() })
+})
+
 app.use('/api', (_req, res) => res.status(404).json({ message: 'Route API introuvable.' }))
 
 app.use((error, _req, res, _next) => {

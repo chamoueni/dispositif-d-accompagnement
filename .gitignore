@@ -30,3 +30,6 @@ dist-ssr
 
 # Ancienne copie du projet imbriquée par erreur : ne jamais la commiter
 /dispositif d'accompagnement/
+
+# Notes privées (ex. identifiants des comptes de démo) : jamais sur GitHub
+*.local.md

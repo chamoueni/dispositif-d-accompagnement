@@ -63,7 +63,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 ## 5. Communication frontend ↔ backend
 
 - En développement, Vite redirige `/api` vers `http://localhost:3001` ([vite.config.js](../vite.config.js)).
-- En production, l'adresse vient de `VITE_API_URL` ([apiBase.js](../src/lib/apiBase.js)).
+- En production aussi, le site appelle `/api/...` sur sa propre adresse : une règle de réécriture Render transmet ces appels au serveur Express (voir [11-deploiement.md](11-deploiement.md)). Les cookies de session restent donc « du même site ».
 - Pour les routes admin, le frontend ajoute `Authorization: Bearer <jeton de session>` (`createCompteAdmin`, `deleteCompteAdmin` dans [store.js](../src/data/store.js)).
 - Les routes `/api/adherents` et `/api/chat-ia` sont appelées **sans jeton**.
 

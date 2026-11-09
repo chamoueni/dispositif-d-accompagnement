@@ -10,7 +10,7 @@ Ce document donne la vue d'ensemble : quelles sont les grandes parties du projet
 | Backend Express | Node.js + Express | `server/` | Petite API REST pour trois choses que le navigateur ne peut pas faire seul : créer/supprimer un compte depuis l'admin, gérer les adhérents, interroger l'assistant IA. |
 | Base de données et authentification | Supabase (PostgreSQL + Supabase Auth) | `supabase/schema.sql` | Stocke les profils, demandes, mises en relation, avis, messages de contact, adhérents. Gère aussi les comptes (e-mail + mot de passe). |
 | Fonction Edge | Deno (Supabase Edge Function) | `supabase/functions/notify-contact-message/index.ts` | Envoie un e-mail à l'administrateur quand un message de contact est créé. |
-| Tâche planifiée | GitHub Actions | `.github/workflows/keep-supabase-alive.yml` | Fait une petite lecture sur Supabase tous les 3 jours pour éviter la mise en pause du projet gratuit. |
+| Robot de maintenance « Mlezi » | GitHub Actions | `.github/workflows/mlezi-gardien.yml` | Toutes les 10 min en journée : réveille l’API Render et fait travailler Supabase (`/api/sante`). Chaque matin : contrôle complet et ticket GitHub en cas de panne. |
 
 Services externes appelés par le projet :
 
@@ -66,7 +66,7 @@ Dossiers générés ou externes non listés : `node_modules/`, `dist/`, `.git/`.
 .
 ├── .env.example                 Modèle des variables d'environnement (sans valeurs)
 ├── .github/workflows/
-│   └── keep-supabase-alive.yml  Tâche planifiée : garde le projet Supabase actif
+│   └── mlezi-gardien.yml        Robot de maintenance : garde l’API et Supabase actifs, signale les pannes
 ├── .gitignore
 ├── eslint.config.js             Règles ESLint (JS + Vue, globals Node pour server/)
 ├── index.html                   Page HTML unique ; script anti-flash du thème ; polices

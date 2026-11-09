@@ -1,0 +1,103 @@
+name: Mlezi, la gardienne du site
+
+# Robot de maintenance automatique et gratuit (GitHub Actions, dépôt public).
+# "Mlezi" = "celle qui prend soin" en swahili.
+#
+# - Toutes les 10 minutes en journée : appelle /api/sante, ce qui réveille l'API
+#   Render (endormie après 15 min sans visite sur l'offre gratuite) et fait une
+#   lecture dans Supabase (qui met en pause les projets gratuits inactifs).
+# - Chaque matin : contrôle complet (pages du site, API, règle de réécriture,
+#   Supabase). En cas de panne, ouvre un ticket GitHub "mlezi" : le propriétaire
+#   du dépôt reçoit un email. Quand tout remarche, le ticket est fermé.
+#
+# Remplace l'ancien workflow keep-supabase-alive.yml (ping tous les 3 jours, qui
+# n'avait pas suffi à empêcher la pause de Supabase en octobre 2026).
+on:
+  schedule:
+    - cron: "*/10 4-19 * * *" # de 7 h à 22 h 50, heure de Mayotte (UTC+3)
+    - cron: "0 5 * * *"       # contrôle complet à 8 h, heure de Mayotte
+  workflow_dispatch:           # bouton "Run workflow" pour un contrôle à la demande
+
+env:
+  SITE_URL: https://dispositif-d-accompagnement.onrender.com
+  API_URL: https://dispositif-d-accompagnement-ulzn.onrender.com
+
+jobs:
+  reveil:
+    if: github.event.schedule == '*/10 4-19 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Réveiller l'API et Supabase
+        # Pas d'échec bloquant ici : un raté ponctuel ne doit pas envoyer
+        # d'email toutes les 10 minutes. Le contrôle du matin signale les pannes.
+        run: |
+          curl --silent --show-error --max-time 100 --retry 2 --retry-all-errors \
+            --output /dev/null --write-out "API : %{http_code} en %{time_total}s\n" \
+            "$API_URL/api/sante" || true
+
+  controle:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 5 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    steps:
+      - name: Contrôler le site, l'API et Supabase
+        id: controle
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          pannes=0
+          printf '| | Vérification | Code |\n|---|---|---|\n' > rapport.md
+
+          # $1 = libellé, $2 = texte attendu dans la réponse ("" = peu importe),
+          # le reste = arguments de curl. Réussi si code 2xx ET texte trouvé.
+          verifier() {
+            local libelle="$1" attendu="$2"; shift 2
+            local code
+            code=$(curl --silent --fail --max-time 100 --retry 2 --retry-all-errors \
+              --output corps.txt --write-out "%{http_code}" "$@") || true
+            if [[ "$code" =~ ^2 ]] && { [[ -z "$attendu" ]] || grep -q "$attendu" corps.txt; }; then
+              echo "| ✅ | $libelle | $code |" >> rapport.md
+            else
+              echo "| ❌ | $libelle | ${code:-injoignable} |" >> rapport.md
+              pannes=$((pannes + 1))
+            fi
+          }
+
+          verifier "API + Supabase (/api/sante)" '"ok":true' "$API_URL/api/sante"
+          verifier "API via l'adresse du site (règle de réécriture Render)" '"ok":true' "$SITE_URL/api/sante"
+          verifier "Page d'accueil" "" "$SITE_URL/"
+          verifier "Page de connexion" "" "$SITE_URL/connexion"
+          verifier "Base Supabase en direct (table avis)" "" \
+            "${SUPABASE_URL%/}/rest/v1/avis?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY"
+
+          cat rapport.md >> "$GITHUB_STEP_SUMMARY"
+          echo "pannes=$pannes" >> "$GITHUB_OUTPUT"
+
+      - name: Ouvrir ou fermer le ticket de panne
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PANNES: ${{ steps.controle.outputs.pannes }}
+        run: |
+          gh label create mlezi --color D93F0B --description "Pannes détectées par Mlezi" --force > /dev/null
+          ticket=$(gh issue list --label mlezi --state open --json number --jq '.[0].number // empty')
+          lien="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          if [[ "${PANNES:-1}" != "0" ]]; then
+            corps=$(printf 'Mlezi a détecté un problème sur le site.\n\n%s\n\nDétail : %s' "$(cat rapport.md 2>/dev/null)" "$lien")
+            if [[ -n "$ticket" ]]; then
+              gh issue comment "$ticket" --body "$corps"
+            else
+              gh issue create --title "🚨 Mlezi : le site a un problème" --label mlezi --body "$corps"
+            fi
+            exit 1
+          elif [[ -n "$ticket" ]]; then
+            gh issue comment "$ticket" --body "✅ Tout fonctionne de nouveau. $lien"
+            gh issue close "$ticket"
+          fi

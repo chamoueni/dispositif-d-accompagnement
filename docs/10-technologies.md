@@ -61,7 +61,7 @@ Aucun outil de test (Vitest, Jest, Cypress…) : **non trouvé dans le code**.
 | **Google Fonts** | Polices Fraunces, Inter, Nunito Sans | `index.html` | aucune |
 | **Unsplash** | Trois photos de la page « Pour qui » | `PourQui.vue` | aucune |
 | **SMTP Gmail** | Envoi de l'e-mail à l'administrateur | fonction Edge | secrets `GMAIL_USER`, `GMAIL_APP_PASSWORD` |
-| **GitHub Actions** | Tâche planifiée | `.github/workflows/keep-supabase-alive.yml` | secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY` |
+| **GitHub Actions** | Robot de maintenance « Mlezi » | `.github/workflows/mlezi-gardien.yml` | secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY` |
 | **Render** | Hébergement | — | aucun fichier de configuration dans le dépôt |
 
 ## 5. Fonctions du navigateur utilisées

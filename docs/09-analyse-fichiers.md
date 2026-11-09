@@ -32,7 +32,7 @@ Règles recommandées JavaScript et Vue. Variables globales du navigateur partou
 
 Modèle sans valeurs. Six variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`. Voir [11-deploiement.md](11-deploiement.md).
 
-### `.github/workflows/keep-supabase-alive.yml`
+### `.github/workflows/mlezi-gardien.yml` (remplace `keep-supabase-alive.yml`)
 
 Tâche planifiée (`cron: "0 6 */3 * *"`) qui lit une ligne de la table `avis` avec `curl`. Elle lit deux secrets GitHub : `SUPABASE_URL` et `SUPABASE_ANON_KEY`. But : empêcher la mise en pause d'un projet Supabase gratuit inactif.
 

@@ -34,7 +34,7 @@ Les noms viennent de [.env.example](../.env.example). **Ne jamais écrire leurs 
 |---|---|---|---|
 | `VITE_SUPABASE_URL` | Frontend | `src/lib/supabaseClient.js` | Adresse du projet Supabase |
 | `VITE_SUPABASE_ANON_KEY` | Frontend | `src/lib/supabaseClient.js` | Clé publique « anon » |
-| `VITE_API_URL` | Frontend | `src/lib/apiBase.js` | Adresse du backend Express en production, sans `/` final ; vide en local |
+| `VITE_API_URL` | Frontend | `src/lib/apiBase.js` | **Vide** en local comme en production : le site appelle `/api/...` sur sa propre adresse (proxy Vite en local, règle de réécriture Render en ligne) |
 | `SUPABASE_URL` | Backend | `server/supabaseAdmin.js` | Adresse du projet Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Backend | `server/supabaseAdmin.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
 | `ANTHROPIC_API_KEY` | Backend | `server/index.js` | Clé de l'API d'IA |
@@ -50,7 +50,7 @@ Autres secrets, hors `.env` :
 | Nom | Où le régler | Utilisé par |
 |---|---|---|
 | `GMAIL_USER`, `GMAIL_APP_PASSWORD` | Secrets des fonctions Edge, dans Supabase | `supabase/functions/notify-contact-message/index.ts` |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Secrets du dépôt GitHub | `.github/workflows/keep-supabase-alive.yml` |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Secrets du dépôt GitHub | `.github/workflows/mlezi-gardien.yml` |
 
 ## 3. Construction (build)
 
@@ -78,7 +78,8 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 
 - Commande de construction : `npm install && npm run build`.
 - Dossier publié : `dist`.
-- Variables à définir avant la construction : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`.
+- Variables à définir avant la construction : `VITE_SITE_URL` et `SITE_URL` (adresse publique du site). `VITE_API_URL` reste vide.
+- **Règle de réécriture à placer en premier** (Redirects/Rewrites) : `/api/*` → `https://dispositif-d-accompagnement-ulzn.onrender.com/api/*`, action *Rewrite*. Le navigateur parle ainsi à l’API par l’adresse du site : les cookies de session restent « du même site » (deux sous-domaines `onrender.com` comptent comme deux sites différents, et les navigateurs bloquent de plus en plus les cookies tiers).
 - **Règle de réécriture indispensable** : toutes les adresses doivent renvoyer `index.html`. Le routeur utilise `createWebHistory()` ; sans cette règle, recharger `/mon-compte` donne une erreur 404. Un commentaire de `src/composables/useSpeech.js` indique que l'hébergement renvoie bien `index.html` pour un chemin inconnu.
 
 **Backend (service web)**
@@ -89,6 +90,18 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 - Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
 
 **Point de vigilance.** Sans `MONGODB_URI`, les adhérents sont enregistrés dans le fichier `server/data/adherents.json`, effacé par Render à chaque redéploiement. En production, renseigner `MONGODB_URI` (base gratuite MongoDB Atlas : créer un cluster, un utilisateur, autoriser l'accès réseau `0.0.0.0/0`, puis copier la chaîne `mongodb+srv://…`). Voir [05-backend.md](05-backend.md), section 8.
+
+## 4 bis. Maintenance automatique : Mlezi
+
+[.github/workflows/mlezi-gardien.yml](../.github/workflows/mlezi-gardien.yml), gratuit (GitHub Actions, dépôt public) :
+
+| Quand | Action | Effet |
+|---|---|---|
+| Toutes les 10 min, 7 h – 23 h (Mayotte) | appelle `GET /api/sante` | réveille l’API Render (endormie après 15 min sans visite) et lit la table `avis` dans Supabase (évite la pause du projet gratuit) |
+| Chaque jour à 8 h | contrôle l’API, la règle de réécriture, les pages et Supabase | en cas de panne : ticket GitHub étiqueté `mlezi` (email au propriétaire) ; ticket fermé automatiquement quand tout remarche |
+| À la demande | onglet *Actions* › Mlezi › *Run workflow* | contrôle complet immédiat |
+
+L’ancien `keep-supabase-alive.yml` (un appel tous les 3 jours) a été remplacé : il n’avait pas empêché la pause de Supabase mi-octobre 2026.
 
 ## 5. Supabase
 
@@ -135,7 +148,8 @@ Puis, selon ce qui a changé :
 
 - La page d'accueil s'affiche, et recharger `/services` ne donne pas d'erreur 404.
 - Connexion avec un compte de test.
-- Dans l'espace admin, la page Adhérents se charge (preuve que `VITE_API_URL` pointe sur le backend).
+- Dans l'espace admin, la page Adhérents se charge (preuve que la règle `/api/*` atteint le backend).
+- `https://dispositif-d-accompagnement.onrender.com/api/sante` renvoie `{"ok":true,...}` (et non une page HTML).
 - L'assistant SOS répond (preuve que la clé d'IA est définie) ; sinon il renvoie des réponses automatiques.
 - Accepter une demande de test affiche un code à 4 chiffres (preuve que la colonne `code_arrivee` existe).
 
