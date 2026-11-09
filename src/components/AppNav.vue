@@ -25,6 +25,7 @@ import { useAuth } from '../stores/auth'
 import SelecteurLangue from './SelecteurLangue.vue'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import IconBadge from './IconBadge.vue'
+import { nomCourt } from '../lib/nom'
 // Logo fourni par l'utilisateur (rond teal, cœur + sourire) : remplace l'icône
 // coeur codée en SVG à la main, réutilisée aussi comme favicon (voir index.html).
 import logo from '../assets/logo.png'
@@ -120,16 +121,8 @@ watch(menuOuvert, (ouvert) => {
 
 // Affiche "Prénom N." plutôt que le rôle (senior/santé/particulier) dans la
 // navbar : plus personnel, et le rôle est de toute façon déjà visible ailleurs
-// (page Profil). "nom" est saisi comme un nom complet en un seul champ à
-// l'inscription (voir Inscription.vue) : on ne garde que le 1er mot comme
-// prénom et l'initiale du dernier mot comme nom, sans supposer qu'il y a
-// forcément 2 mots (un seul mot renseigné reste affiché tel quel).
-function nomAffiche(nom) {
-  if (!nom) return ''
-  const mots = nom.trim().split(/\s+/)
-  if (mots.length === 1) return mots[0]
-  return `${mots[0]} ${mots[mots.length - 1][0]}.`
-}
+// (page Profil). Voir lib/nom.js pour le détail du calcul.
+const nomAffiche = nomCourt
 
 function handleLogout() {
   fermerMenu()
@@ -325,10 +318,16 @@ function handleLogout() {
               >
                 {{ t('nav.admin') }}
               </router-link>
-              <span
+              <!-- Pastille du prénom : cliquable, elle mène à Mon compte. -->
+              <router-link
                 v-else
+                to="/mon-compte"
                 class="badge text-bg-light border badge-role"
-              >{{ nomAffiche(user.nom) }}</span>
+                :title="user.nom"
+                @click="fermerMenu"
+              >
+                {{ nomAffiche(user.nom) }}
+              </router-link>
               <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm"

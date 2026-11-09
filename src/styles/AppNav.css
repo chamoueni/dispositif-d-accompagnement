@@ -403,6 +403,13 @@
   padding: 0 14px;
   border-radius: 50rem;
   font-size: 14px;
+  text-decoration: none;
+}
+
+/* La pastille est un lien vers Mon compte : on le signale au survol/focus. */
+.nav-actions .badge-role:hover,
+.nav-actions .badge-role:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-border);
 }
 
 @media (min-width: 992px) {
