@@ -188,15 +188,33 @@ app.post('/api/chat-ia', limiteAssistant, async (req, res, next) => {
       { role: 'user', content: message },
     ]
 
-    const reponse = await anthropic.messages.create({
-      model: 'claude-opus-5',
-      max_tokens: 400,
+    const reponse = await anthropic.beta.messages.create({
+      model: 'claude-opus-5-5',
+      // La réflexion du modèle compte dans max_tokens : 2000 laisse de la
+      // marge pour une réponse de 2 à 4 phrases.
+      max_tokens: 2000,
+      // Effort "low" : questions simples d'un chat d'aide, on privilégie la
+      // rapidité (le widget abandonne au bout de 12 s, voir SosButton.vue).
+      output_config: { effort: 'low' },
+      // Si le modèle refuse une question (filtre de sécurité trop prudent),
+      // l'API la repose automatiquement à un autre modèle adapté.
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
       system: CONTEXTE_SITE,
       messages,
     })
 
-    const bloc = reponse.content.find((b) => b.type === 'text')
-    res.json({ reponse: bloc?.text ?? '' })
+    // Refus définitif ou réponse sans texte : 502, et le widget affiche
+    // alors la réponse de la FAQ hors-ligne (src/data/faqAssistant.js).
+    const texte = reponse.content
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('')
+      .trim()
+    if (reponse.stop_reason === 'refusal' || !texte) {
+      return res.status(502).json({ message: "L'assistant n'a pas pu répondre à cette question." })
+    }
+    res.json({ reponse: texte })
   } catch (error) {
     next(error)
   }

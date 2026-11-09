@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n'
 import { useVoiceInput } from '../composables/useVoiceInput'
 import DictateButton from './DictateButton.vue'
 import { addMessageContact } from '../data/store'
+import { repondreHorsLigne } from '../data/faqAssistant'
 import { API_BASE_URL } from '../lib/apiBase'
 import '../styles/SosButton.css'
 
@@ -95,30 +96,11 @@ const historique = ref([])
 const reponseEnCours = ref(false)
 const chatMessagesEl = ref(null)
 
-const DELAI_MAYOTTE_MINUTES = 12
-
 // Réponses de secours si l'assistant IA est injoignable (pas de clé API
-// configurée côté serveur, serveur non déployé, hors-ligne...).
+// configurée côté serveur, serveur endormi, hors-ligne...) : voir
+// data/faqAssistant.js, qui couvre une quinzaine de sujets fréquents.
 function formulaireReponseAutomatique(texte) {
-  const contenu = texte.toLowerCase()
-
-  if (contenu.includes('mayotte') || contenu.includes('zone') || contenu.includes('délai')) {
-    return `À Mayotte, le délai moyen de réponse est d'environ ${DELAI_MAYOTTE_MINUTES} minutes pour les demandes de première aide et de mise en relation, puis selon la zone (Nord, Centre, Sud, Petite-Terre).`
-  }
-
-  if (contenu.includes('inscription') || contenu.includes('s inscrire') || contenu.includes('compte')) {
-    return 'Pour vous inscrire, allez sur la page d’accueil puis choisissez “Je souhaite aider” ou “Je cherche de l’aide”. Le profil est ensuite guidé pas à pas.'
-  }
-
-  if (contenu.includes('service') || contenu.includes('aide') || contenu.includes('soin') || contenu.includes('course')) {
-    return 'Le dispositif propose des services comme les soins à domicile, les courses, le ménage, la garde et le soutien psychologique selon les profils disponibles près de chez vous.'
-  }
-
-  if (contenu.includes('prix') || contenu.includes('gratuit') || contenu.includes('essai')) {
-    return 'La mise en relation de base reste gratuite. Une offre découverte peut proposer 3 essais gratuits selon les critères de la recherche et la disponibilité locale.'
-  }
-
-  return 'Je peux vous orienter vers les services disponibles à Mayotte, la procédure d’inscription, les zones géographiques et les délais de réponse. Posez une question plus précise.'
+  return repondreHorsLigne(texte)
 }
 
 function ouvrirChat() {
@@ -149,12 +131,12 @@ async function scrollVersLeBas() {
   }
 }
 
-// Délai max avant d'abandonner l'appel et de retomber sur la FAQ statique :
-// le widget ne doit jamais faire attendre l'utilisateur plus de quelques
-// secondes, y compris si le serveur Render met du temps à se réveiller
-// (mise en veille du plan gratuit après inactivité) ou si l'API IA répond
-// lentement.
-const DELAI_MAX_REPONSE_IA_MS = 5000
+// Délai max avant d'abandonner l'appel et de retomber sur la FAQ statique.
+// 12 s : une vraie réponse IA prend souvent 3 à 8 s, et l'indicateur
+// "réponse en cours" s'affiche pendant l'attente. Si la clé IA est absente,
+// le serveur répond 503 immédiatement et la FAQ prend le relais sans attendre.
+// (Le robot Mlezi garde le serveur Render éveillé en journée.)
+const DELAI_MAX_REPONSE_IA_MS = 12000
 
 // Interroge l'assistant IA côté serveur (voir server/index.js, endpoint
 // /api/chat-ia). En cas d'échec ou de dépassement du délai (réseau, clé
@@ -176,6 +158,8 @@ async function demanderAssistantIA(texte) {
     })
     if (!reponse.ok) throw new Error('assistant IA indisponible')
     const donnees = await reponse.json()
+    // Réponse vide = l'IA n'a rien produit : on laisse la FAQ répondre.
+    if (!donnees.reponse?.trim()) throw new Error('réponse IA vide')
     return donnees.reponse
   } finally {
     clearTimeout(delai)
