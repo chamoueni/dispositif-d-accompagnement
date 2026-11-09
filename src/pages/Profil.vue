@@ -159,7 +159,13 @@ async function handleChangerMotDePasse() {
 </script>
 
 <template>
-  <section class="dashboard-page">
+  <!-- v-if="user" : à la déconnexion, user devient null un court instant
+       avant que la page ne soit quittée ; sans ce garde-fou, le template
+       lisait user.role et levait une erreur JavaScript. -->
+  <section
+    v-if="user"
+    class="dashboard-page"
+  >
     <div class="container">
       <BackLink />
       <div class="d-flex align-items-center gap-2 mb-4">
