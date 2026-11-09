@@ -85,10 +85,10 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 
 - Commande de démarrage : `npm run server` (ou `node server/index.js`).
 - Installation : `npm install` à la racine, puisque le `package.json` est commun.
-- Variables : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`. `PORT` est en général fourni par l'hébergeur.
+- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI`, `ANTHROPIC_API_KEY` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
 - Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
 
-**Point de vigilance.** Les adhérents sont enregistrés dans le fichier `server/data/adherents.json`. Si le disque de l'hébergeur est réinitialisé à chaque déploiement ou redémarrage, les adhérents saisis en production disparaissent ; seule la copie dans la table Supabase `adherents` subsisterait, et l'application ne la relit pas. À vérifier chez l'hébergeur.
+**Point de vigilance.** Sans `MONGODB_URI`, les adhérents sont enregistrés dans le fichier `server/data/adherents.json`, effacé par Render à chaque redéploiement. En production, renseigner `MONGODB_URI` (base gratuite MongoDB Atlas : créer un cluster, un utilisateur, autoriser l'accès réseau `0.0.0.0/0`, puis copier la chaîne `mongodb+srv://…`). Voir [05-backend.md](05-backend.md), section 8.
 
 ## 5. Supabase
 

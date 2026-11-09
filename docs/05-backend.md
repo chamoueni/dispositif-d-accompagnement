@@ -7,7 +7,7 @@ Le backend est un petit serveur **Express 5** écrit en JavaScript (modules ES).
 | Fichier | Rôle |
 |---|---|
 | [server/index.js](../server/index.js) | Crée le serveur, pose les middleware, déclare **toutes** les routes |
-| [server/adherentsStore.js](../server/adherentsStore.js) | Lit et écrit les adhérents dans `server/data/adherents.json` |
+| [server/adherentsStore.js](../server/adherentsStore.js) | Lit et écrit les adhérents dans **MongoDB** (base NoSQL) si `MONGODB_URI` est définie, sinon dans `server/data/adherents.json` |
 | [server/supabaseAdmin.js](../server/supabaseAdmin.js) | Crée le client Supabase « service role » (ou `null` si non configuré) |
 | [server/supabaseSync.js](../server/supabaseSync.js) | Recopie un adhérent dans la table Supabase `adherents` |
 | `server/data/adherents.json` | Stockage des adhérents |
@@ -141,17 +141,35 @@ Format constant des erreurs : `{ "message": "..." }`.
 | E-mail de l'admin en dur | La constante `ADMIN_EMAIL` est répétée dans `server/index.js`, `src/stores/auth.js`, `supabase/schema.sql` et la fonction Edge. Changer d'administrateur demande de modifier les quatre. |
 | Clé « service role » | Bien cantonnée au serveur. C'est le point fort de ce backend. |
 
-## 8. Stockage des adhérents : deux endroits
+## 8. Stockage des adhérents : base NoSQL MongoDB
 
-1. **Fichier JSON** (`server/data/adherents.json`) : c'est la source lue par `GET /api/adherents`.
-2. **Table Supabase `adherents`** : simple copie, écrite par `synchroniserAdherent` seulement si `supabaseAdmin` existe. Elle n'est jamais relue par l'application.
+Les adhérents sont la partie **NoSQL** du projet : tout le reste (profils, demandes, avis…) est en SQL dans Supabase/PostgreSQL.
+
+1. **MongoDB** (si `MONGODB_URI` est définie, par exemple une base gratuite MongoDB Atlas) : c'est la source lue par `GET /api/adherents`. Chaque adhérent est un **document** de la collection `adherents` (base `MONGODB_DB`, `dispositif` par défaut).
+2. **Fichier JSON** (`server/data/adherents.json`) : utilisé à la place de MongoDB quand `MONGODB_URI` est vide, pratique en local.
+3. **Table Supabase `adherents`** : simple copie, écrite par `synchroniserAdherent` seulement si `supabaseAdmin` existe. Elle n'est jamais relue par l'application.
+
+Opérations MongoDB utilisées (pilote officiel `mongodb`) :
+
+| Fonction | Requête MongoDB |
+|---|---|
+| `obtenirAdherents` | `find({}).sort({ created_at: 1 })` |
+| `ajouterAdherent` | `insertOne(document)` |
+| `modifierAdherent` | `findOneAndUpdate({ id }, { $set: … })` |
+| `supprimerAdherent` | `deleteOne({ id })` |
+
+Détails de conception :
+
+- Le champ technique `_id` de MongoDB n'est jamais renvoyé au front (projection `{ _id: 0 }`) ; l'identifiant public reste `id` (UUID), protégé par un **index unique**.
+- Au premier lancement sur une base vide, les adhérents du fichier JSON y sont importés automatiquement.
+- La connexion est ouverte une seule fois, au premier appel, puis réutilisée.
+
+Pourquoi MongoDB ici : le disque d'un service Render gratuit est effacé à chaque redéploiement, donc les adhérents écrits dans le fichier JSON disparaissaient. Une base externe les conserve.
 
 Conséquences à connaître :
 
-- Si la synchronisation échoue après l'écriture du fichier, la route répond `500` alors que le fichier est déjà modifié.
+- Si la synchronisation Supabase échoue après l'écriture, la route répond `500` alors que l'adhérent est déjà enregistré.
 - Le fichier `adherents.json` est **suivi par Git** et contient actuellement un enregistrement.
-- Sur un hébergement dont le disque est remis à zéro à chaque déploiement, les adhérents ajoutés en production seraient perdus. Le dépôt ne permet pas de dire si c'est le cas ici (voir [11-deploiement.md](11-deploiement.md)).
-- `adherentsStore.js` utilise `crypto.randomUUID()` sans importer `crypto` : cela repose sur l'objet global `crypto` de Node. La version de Node attendue n'est pas déclarée (`engines` absent de `package.json`).
 
 ## À retenir
 

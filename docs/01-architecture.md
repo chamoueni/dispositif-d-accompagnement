@@ -142,12 +142,11 @@ Dossiers générés ou externes non listés : `node_modules/`, `dist/`, `.git/`.
 - **Les règles métier sont dans le navigateur.** Le changement de statut d'une demande, la création de la mise en relation et la génération du code d'arrivée se font dans `updateDemandeStatut` ([store.js](../src/data/store.js), ligne 307), exécuté dans le navigateur. Le serveur ne vérifie pas, par exemple, que seul l'intervenant accepte une demande : la règle RLS autorise les deux participants à modifier la ligne (voir [06-base-de-donnees.md](06-base-de-donnees.md)).
 - **Un seul `package.json`** pour le frontend et le backend. `server/package.json` ne contient que `{"type": "module"}`. Les dépendances Express, cors, dotenv et `@anthropic-ai/sdk` sont donc installées avec celles du frontend.
 - **Une exception à la couche de données** : [ReinitialiserMotDePasse.vue](../src/pages/ReinitialiserMotDePasse.vue) importe directement `supabase` pour écouter l'événement de récupération de mot de passe.
-- **Deux stockages pour les adhérents** : un fichier JSON local (`server/data/adherents.json`) qui fait foi, et une copie facultative dans la table Supabase `adherents`.
+- **Deux types de bases** : SQL (Supabase/PostgreSQL) pour presque toutes les données, et **NoSQL (MongoDB)** pour les adhérents gérés par l'admin, avec repli sur un fichier JSON local si MongoDB n'est pas configuré (voir [05-backend.md](05-backend.md), section 8).
 
 ## 5. Points d'attention relevés dans le dépôt
 
 - Le [README.md](../README.md) cite `src/components/AdherentsManager.vue` et `src/styles/AdherentsManager.css`. **Ces deux fichiers n'existent pas** ; la gestion des adhérents est dans [AdminAdherents.vue](../src/pages/AdminAdherents.vue).
-- Le dossier du projet contient un sous-dossier non suivi par Git, nommé comme le projet, qui est une **copie complète du dépôt** (avec son propre `.git` et son propre `.env`). Il n'est référencé par aucun fichier.
 - Le nom « Au Fil des Âges » **n'apparaît nulle part dans le code**. L'interface affiche « Dispositif d'accompagnement » ([AppNav.vue](../src/components/AppNav.vue), [App.vue](../src/App.vue)) et le titre de la page est « Dispositif d'accompagnement personnalisé » ([index.html](../index.html)).
 - Aucun fichier de test, aucun script `test` dans [package.json](../package.json).
 
