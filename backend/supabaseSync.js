@@ -1,16 +1,21 @@
-// Miroir Supabase facultatif : le fichier JSON reste la source locale de secours.
+// Copie facultative des adhérents dans la table Supabase "adherents".
+// La source de vérité est MongoDB (ou le fichier JSON de secours, voir
+// adherentsStore.js) : si cette copie échoue (table absente, Supabase
+// injoignable...), l'opération de l'administrateur ne doit PAS échouer pour
+// autant. On note simplement l'incident dans les journaux du serveur.
 import { supabaseAdmin } from './supabaseAdmin.js'
 
 export async function synchroniserAdherent(adherent, operation) {
   if (!supabaseAdmin) return
 
-  const table = supabaseAdmin.from('adherents')
-  if (operation === 'supprimer') {
-    const { error } = await table.delete().eq('id', adherent.id)
+  try {
+    const table = supabaseAdmin.from('adherents')
+    const { error } = operation === 'supprimer'
+      ? await table.delete().eq('id', adherent.id)
+      : await table.upsert(adherent)
     if (error) throw error
-    return
+  } catch (error) {
+    // Pas de données personnelles dans le journal : l'opération et le code suffisent.
+    console.warn(`Copie Supabase des adhérents ignorée (${operation}) :`, error.code || error.message)
   }
-
-  const { error } = await table.upsert(adherent)
-  if (error) throw error
 }
