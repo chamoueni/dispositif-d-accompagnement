@@ -9,6 +9,7 @@
 // Les deux modes exposent exactement les mêmes fonctions (obtenir, ajouter,
 // modifier, supprimer) : backend/index.js ne sait pas lequel est utilisé.
 import crypto from 'node:crypto'
+import dns from 'node:dns'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -56,12 +57,30 @@ const SANS_ID_MONGO = { projection: { _id: 0 } }
 // chargé le .env, voir backend/supabaseAdmin.js).
 let collectionPromise = null
 
+// Les adresses Atlas « mongodb+srv:// » demandent une recherche DNS de type SRV.
+// Sur certains PC Windows, Node interroge un DNS local (127.0.0.1, VPN...) qui
+// refuse ce type de recherche : « querySrv ECONNREFUSED ». Dans ce cas
+// seulement, on repasse par des DNS publics et on réessaie. Sans effet sur
+// Render, où la recherche fonctionne du premier coup.
+async function connecter(uri) {
+  try {
+    const client = new MongoClient(uri)
+    await client.connect()
+    return client
+  } catch (error) {
+    if (!/querySrv/.test(error.message)) throw error
+    dns.setServers(['8.8.8.8', '1.1.1.1'])
+    const client = new MongoClient(uri)
+    await client.connect()
+    return client
+  }
+}
+
 function collectionMongo() {
   if (!process.env.MONGODB_URI) return null
   if (!collectionPromise) {
     collectionPromise = (async () => {
-      const client = new MongoClient(process.env.MONGODB_URI)
-      await client.connect()
+      const client = await connecter(process.env.MONGODB_URI)
       const collection = client.db(process.env.MONGODB_DB || 'dispositif').collection('adherents')
       // Index unique : deux documents ne peuvent pas partager le même "id".
       await collection.createIndex({ id: 1 }, { unique: true })
