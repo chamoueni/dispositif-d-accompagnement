@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../stores/auth'
 import BackLink from '../components/BackLink.vue'
 import IconeAction from '../components/IconeAction.vue'
+import IconBadge from '../components/IconBadge.vue'
 import '../styles/MesDemandes.css'
 
 const { t } = useI18n()
@@ -169,12 +170,29 @@ function refaire(demande) {
       </p>
 
       <template v-else>
-        <p
+        <!-- Aucune demande : plutôt qu'une phrase seule, on explique quoi
+             faire ensuite, selon le profil (chercher de l'aide, ou rendre
+             son profil d'aidant plus facile à trouver). -->
+        <div
           v-if="!demandes.length"
-          class="text-muted text-center py-5"
+          class="card demandes-vide text-center mx-auto"
         >
-          {{ t('mes_demandes_page.aucune') }}
-        </p>
+          <div class="d-flex justify-content-center">
+            <IconBadge :name="user?.role === 'senior' ? 'search' : 'connect'" />
+          </div>
+          <h2 class="h5 mt-3 mb-2">
+            {{ t('mes_demandes_page.aucune') }}
+          </h2>
+          <p class="text-muted mb-4">
+            {{ user?.role === 'senior' ? t('mes_demandes_page.vide_senior') : t('mes_demandes_page.vide_aidant') }}
+          </p>
+          <router-link
+            :to="user?.role === 'senior' ? '/recherche' : '/profil'"
+            class="btn btn-primary align-self-center"
+          >
+            {{ user?.role === 'senior' ? t('nav.trouver_aide') : t('mes_demandes_page.vide_aidant_bouton') }}
+          </router-link>
+        </div>
 
         <div
           v-for="demande in demandes"

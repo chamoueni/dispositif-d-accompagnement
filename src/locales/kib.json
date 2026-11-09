@@ -360,7 +360,10 @@
     "intervenant_defaut": "ilay mpanampy",
     "personne_defaut": "ilay olona",
     "confirm_annuler": "Foano ity fangatahana ity ?",
-    "refaire": "Ataovy indray ity fangatahana ity"
+    "refaire": "Ataovy indray ity fangatahana ity",
+    "vide_senior": "Mitadiava mpanampy akaikin'ny anao ary andefaso fangatahana : hiseho eto miaraka amin'ny toerany izany.",
+    "vide_aidant": "Hifandray aminao eto ireo olona mila anao. Mora hita kokoa ianao raha feno ny momba anao (tanàna, tolotra, fotoana malalaka).",
+    "vide_aidant_bouton": "Fenoy ny momba ahy"
   },
   "recherche_page": {
     "type_service_label": "Karazana tolotra",

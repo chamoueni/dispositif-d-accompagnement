@@ -360,7 +360,10 @@
     "intervenant_defaut": "l'intervenant",
     "personne_defaut": "la personne",
     "confirm_annuler": "Annuler cette demande ?",
-    "refaire": "Refaire cette demande"
+    "refaire": "Refaire cette demande",
+    "vide_senior": "Trouvez un aidant près de chez vous et envoyez-lui une demande : elle apparaîtra ici, avec son statut.",
+    "vide_aidant": "Les personnes qui ont besoin de vous vous contacteront ici. Un profil complet (commune, services, disponibilités) vous rend plus facile à trouver.",
+    "vide_aidant_bouton": "Compléter mon profil"
   },
   "recherche_page": {
     "type_service_label": "Type de service",

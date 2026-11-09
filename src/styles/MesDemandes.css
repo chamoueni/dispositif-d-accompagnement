@@ -6,6 +6,15 @@
   border-radius: 14px;
 }
 
+/* Carte affichée quand il n'y a encore aucune demande : centrée, largeur
+   limitée pour rester lisible, avec un bouton vers l'étape suivante. */
+.demandes-vide {
+  max-width: 520px;
+  margin-top: 24px;
+  padding: 36px 28px;
+  border-radius: 18px;
+}
+
 /* Badge "Annulée" : neutre, distinct des couleurs sémantiques (succès/attente/
    danger déjà utilisées), $secondary étant réassigné à l'or dans ce projet et
    donc impropre à représenter un état neutre/grisé. */

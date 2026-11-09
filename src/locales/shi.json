@@ -359,7 +359,10 @@
     "intervenant_defaut": "msaidizi",
     "personne_defaut": "mtu huyo",
     "confirm_annuler": "Ghairi ombi hili ?",
-    "refaire": "Fanya ombi hili tena"
+    "refaire": "Fanya ombi hili tena",
+    "vide_senior": "Tafuta msaidizi karibu na wewe na umtumie ombi : litaonekana hapa pamoja na hali yake.",
+    "vide_aidant": "Watu wanaokuhitaji watakuwasiliana hapa. Wasifu kamili (mji, huduma, nyakati) unakufanya upatikane kwa urahisi.",
+    "vide_aidant_bouton": "Kamilisha wasifu wangu"
   },
   "recherche_page": {
     "type_service_label": "Aina ya huduma",
