@@ -236,6 +236,28 @@ body,
   border-color: var(--border);
 }
 
+/* Couleurs de texte de Bootstrap en mode sombre. Bootstrap est compilé une
+   fois en clair (bootstrap-custom.scss) : ses variables --bs-* gardent donc
+   le gris-vert foncé du thème clair. Les cartes (.card), les libellés de
+   formulaire et les titres s'en servent, d'où un texte foncé sur fond foncé
+   (titre « Connexion », libellés « Email », « Mot de passe »...) quasi
+   invisible. On les rebranche ici sur les couleurs du thème sombre.
+   :root[data-theme] et non [data-theme] seul : il faut une priorité
+   supérieure au :root de Bootstrap pour être sûr de l'emporter. */
+:root[data-theme='dark'] {
+  --bs-body-color: var(--ink);
+  --bs-body-color-rgb: 237, 232, 223;
+  --bs-heading-color: var(--ink);
+  --bs-emphasis-color: var(--ink);
+  --bs-secondary-color: var(--muted);
+  /* Liens (« Mot de passe oublié ? », « S'inscrire ») : turquoise clair
+     (--teal-text) au lieu du turquoise foncé illisible sur fond sombre. */
+  --bs-link-color: var(--teal-text);
+  --bs-link-color-rgb: 143, 216, 211;
+  --bs-link-hover-color: var(--ink);
+  --bs-link-hover-color-rgb: 237, 232, 223;
+}
+
 [data-theme='dark'] .badge.text-bg-light {
   background-color: var(--surface-2) !important;
   color: var(--ink) !important;
