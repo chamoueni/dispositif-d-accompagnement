@@ -151,8 +151,9 @@ Classés par importance. Chaque point renvoie au document qui le détaille.
 
 **Sécurité**
 
-1. Tout utilisateur connecté peut lire le téléphone et l'adresse de tous les profils — [06](06-base-de-donnees.md) § 3.
-2. Les règles RLS ne contrôlent pas les changements de statut ni le rôle — [06](06-base-de-donnees.md) § 3.
+_Réglé en novembre 2026 : routes adhérents protégées, coordonnées des profils masquées sans demande acceptée, limites de tentatives, mots de passe de 8 caractères (voir [05](05-backend.md) § 7 et 7 bis)._
+
+1. Les règles RLS ne contrôlent pas les changements de statut ni le rôle — [06](06-base-de-donnees.md) § 3.
 
 **Fiabilité**
 

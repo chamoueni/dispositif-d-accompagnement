@@ -159,7 +159,7 @@ Opérations **sans règle**, donc refusées depuis le navigateur : suppression d
 
 ### Limites de ces règles
 
-- **Lecture des profils trop large.** Tout compte connecté peut lire le téléphone, l'adresse et l'abonnement de tous les autres. Le schéma l'assume en commentaire (« simplifié pour ce projet »).
+- **Lecture des profils large côté base.** La règle RLS laisse tout compte connecté lire tous les profils (« simplifié pour ce projet »). Depuis novembre 2026, le **serveur** masque le téléphone et l'adresse aux personnes sans demande acceptée commune (voir [05-backend.md](05-backend.md) § 7 bis), et le navigateur n'a plus d'accès direct à la base. Une règle RLS plus fine resterait la protection la plus solide.
 - **Pas de contrôle des transitions de statut.** La règle `demandes_update_participants` laisse les deux participants modifier **toute** la ligne. Rien n'empêche, côté base, une personne âgée d'accepter sa propre demande ou de changer le destinataire. Seule l'interface limite les boutons affichés.
 - **Pas de contrôle du rôle à la création.** `demandes_insert_demandeur` vérifie l'identité, pas que le demandeur est une personne âgée ni que le destinataire est un intervenant.
 - **Un utilisateur peut modifier son propre `role` ou `abonnement`** : `profiles_update_own` n'exclut aucune colonne.

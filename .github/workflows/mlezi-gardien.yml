@@ -12,11 +12,16 @@ name: Mlezi, la gardienne du site
 #
 # Remplace l'ancien workflow keep-supabase-alive.yml (ping tous les 3 jours, qui
 # n'avait pas suffi à empêcher la pause de Supabase en octobre 2026).
+#
+# Horaires décalés sur des minutes « calmes » (7, 17, 27...) : GitHub retarde,
+# voire saute, les tâches programmées aux minutes rondes (:00, :10...), où
+# tout le monde lance les siennes. Aux horaires ronds, Mlezi n'avait fait
+# aucune ronde automatique pendant ses premières heures.
 on:
   schedule:
-    - cron: "*/10 4-19 * * *" # de 7 h à 22 h 50, heure de Mayotte (UTC+3)
-    - cron: "0 5 * * *"       # contrôle complet à 8 h, heure de Mayotte
-  workflow_dispatch:           # bouton "Run workflow" pour un contrôle à la demande
+    - cron: "7-59/10 4-19 * * *" # vers 7 h 07 -> 22 h 57, heure de Mayotte (UTC+3)
+    - cron: "23 5 * * *"         # contrôle complet vers 8 h 23, heure de Mayotte
+  workflow_dispatch:             # bouton "Run workflow" pour un contrôle à la demande
 
 env:
   SITE_URL: https://dispositif-d-accompagnement.onrender.com
@@ -24,7 +29,7 @@ env:
 
 jobs:
   reveil:
-    if: github.event.schedule == '*/10 4-19 * * *'
+    if: github.event.schedule == '7-59/10 4-19 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
@@ -37,7 +42,7 @@ jobs:
             "$API_URL/api/sante" || true
 
   controle:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 5 * * *'
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '23 5 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

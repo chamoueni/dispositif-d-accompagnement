@@ -119,7 +119,8 @@ Bandeau affiché quand `enLigne` (de `useConnexion`) est faux. Aucune prop. Ses 
 - **Événements** : aucun.
 - **Calculé** : `resume`, le texte lu par le bouton « Écouter ».
 - **Enfant** : `SpeakButton`.
-- **Actions** : lien `tel:` vers `provider.telephone` ; lien vers `/nouvelle-demande/:id`, visible seulement si `user.role === 'senior'`.
+- **Actions** : lien `tel:` vers `provider.telephone` **seulement si le serveur a fourni le numéro** (demande acceptée ou terminée entre les deux personnes) ; sinon un bouton inactif « 🔒 Numéro après acceptation ». Lien vers `/nouvelle-demande/:id`, visible seulement si `user.role === 'senior'`.
+- **Distance** : si `provider.distanceKm` est fourni (page Recherche), une étiquette « ≈ N km de chez vous » s'affiche en haut de la fiche.
 - **Parents** : `RecherchePersonnel`, `AssistantBesoin`.
 
 ### FormulesSection — [FormulesSection.vue](../frontend/src/components/FormulesSection.vue)
@@ -152,6 +153,13 @@ Deux boutons ronds : thème clair/sombre (`basculerThemeDirect`) et mode confort
 - **Événement** : `update:modelValue` — c'est ce qui permet d'écrire `v-model="form.password"` côté parent.
 - **État interne** : `visible`.
 - **Parents** : `Connexion`, `Inscription`, `Profil`, `ReinitialiserMotDePasse`.
+
+### JaugeMotDePasse — [JaugeMotDePasse.vue](../frontend/src/components/JaugeMotDePasse.vue)
+
+- **Rôle** : barre de force sous un champ « nouveau mot de passe » et liste de ce qui manque (8 caractères, un chiffre, une majuscule).
+- **Prop** : `motDePasse` (texte). Rien n'est affiché tant qu'il est vide.
+- **Logique** : `evaluerMotDePasse()` et `MOT_DE_PASSE_MIN` dans [lib/motDePasse.js](../frontend/src/lib/motDePasse.js).
+- **Parents** : `Inscription`, `Profil`, `ReinitialiserMotDePasse`.
 
 ### DictateButton — [DictateButton.vue](../frontend/src/components/DictateButton.vue)
 
@@ -192,6 +200,10 @@ Toutes ces icônes sont des SVG dessinés dans le fichier : le projet n'utilise 
 ### StatCard — [StatCard.vue](../frontend/src/components/admin/StatCard.vue)
 
 Carte de chiffre clé. **Props** : `icone` (obligatoire), `tone` (défaut `teal`), `valeur` (obligatoire), `libelle` (obligatoire), `badgeTexte`, `badgeTone`, `lien`. Ne fait aucun calcul. Parent : `AdminDashboard`.
+
+### SanteSite — [SanteSite.vue](../frontend/src/components/admin/SanteSite.vue)
+
+Carte « Santé du site » du tableau de bord : état du serveur (`GET /api/sante`, avec le temps de réponse), de la base Supabase et de la dernière ronde du robot Mlezi (API publique de GitHub). Bouton « Vérifier maintenant ». Aucune prop. Parent : `AdminDashboard`.
 
 ### AdminIcon — [AdminIcon.vue](../frontend/src/components/admin/AdminIcon.vue)
 

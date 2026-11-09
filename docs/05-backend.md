@@ -124,12 +124,24 @@ Format constant des erreurs : `{ "message": "..." }`.
 
 | Constat | Détail |
 |---|---|
-| Routes adhérents ouvertes | `GET/POST/PUT/DELETE /api/adherents` n'exigent aucun jeton. Toute personne connaissant l'adresse de l'API peut lire, créer, modifier ou supprimer des adhérents (nom, e-mail, téléphone, commune). |
-| CORS ouvert | `cors()` sans option : toutes les origines sont acceptées. |
-| Pas de limite de débit, pas d'en-têtes de sécurité | Aucune bibliothèque de type limiteur ou `helmet` : **non trouvé dans le code**. |
-| Validation légère | L'e-mail est jugé valide s'il contient `@`. La taille du message envoyé à l'IA n'est pas bornée (hors limite par défaut d'`express.json()`). |
+| Routes adhérents | `/api/adherents` est réservé à l'administrateur (middleware `verifierAdmin`). Elle était ouverte à tous avant novembre 2026. |
+| CORS et origine | Seules les origines listées (`SITE_URL`, `CORS_ORIGINS`, localhost en développement) sont acceptées ; les requêtes qui modifient des données sans en-tête `Origin` autorisé sont refusées (403). |
+| Limites de débit | `express-rate-limit` : 10 connexions / 15 min, 5 inscriptions / heure, 4 réinitialisations / heure, par adresse IP. En-têtes de sécurité posés à la main (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, HSTS en HTTPS). |
+| Coordonnées des profils | Le téléphone et l'adresse ne sont envoyés qu'à la personne elle-même, à l'administrateur, et aux personnes avec qui elle a une demande acceptée ou terminée (`masquerCoordonnees` dans [dataRoutes.js](../backend/dataRoutes.js)). |
+| Mots de passe | 8 caractères minimum à l'inscription et aux changements de mot de passe (`MOT_DE_PASSE_MIN` dans [authRoutes.js](../backend/authRoutes.js)). |
 | E-mail de l'admin en dur | La constante `ADMIN_EMAIL` est répétée dans `backend/index.js`, `frontend/src/stores/auth.js`, `supabase/schema.sql` et la fonction Edge. Changer d'administrateur demande de modifier les quatre. |
 | Clé « service role » | Bien cantonnée au serveur. C'est le point fort de ce backend. |
+
+## 7 bis. Vie privée des profils et comptes de démonstration
+
+La base laisse tout utilisateur connecté lire tous les profils (c'est nécessaire à la recherche). Le serveur filtre donc ce qu'il renvoie, dans les actions `profiles.list` et `profiles.find` de [dataRoutes.js](../backend/dataRoutes.js) :
+
+| Règle | Fonction | Effet |
+|---|---|---|
+| Coordonnées | `contactsAutorises()`, `masquerCoordonnees()` | `telephone` et `adresse` vidés (et `contact_masque: true`) sauf pour soi-même, l'administrateur et les personnes liées par une demande `acceptee` ou `terminee` |
+| Comptes de démo | `estDemo()`, `visibleDansLaListe()` | les profils dont le nom contient « (démo) » n'apparaissent dans la liste (recherche, carte) que pour l'administrateur et les autres comptes de démo |
+
+Le navigateur n'ayant aucun jeton Supabase (voir [07-authentification-securite.md](07-authentification-securite.md)), il ne peut pas contourner ce filtre en interrogeant la base directement.
 
 ## 8. Stockage des adhérents : base NoSQL MongoDB
 

@@ -77,18 +77,19 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 |---|---|
 | **Injection SQL** | Aucune requête SQL n'est construite par concaténation. Tout passe par le constructeur de requêtes de `supabase-js`, qui envoie les valeurs comme paramètres. |
 | **XSS** (injection de HTML/JS) | Vue échappe par défaut ce qui est affiché avec `{{ }}`. Aucun `v-html` dans le projet. Les infobulles de [CarteMayotte.vue](../frontend/src/components/CarteMayotte.vue), construites en HTML pour `bindPopup`, échappent les textes saisis par les utilisateurs (fonction `echapper`, corrigé en novembre 2026). |
-| **CSRF** | L'authentification repose sur un jeton envoyé dans un en-tête, pas sur un cookie de session : une requête forgée depuis un autre site ne porte pas ce jeton. En revanche, les routes non protégées (`/api/adherents`) sont appelables depuis n'importe quel site, puisqu'elles n'exigent rien. |
+| **CSRF** | La session est un cookie `httpOnly`, `SameSite=Lax` (préfixe `__Host-` en production). Le serveur refuse en plus toute requête qui modifie des données si son en-tête `Origin` n'est pas celui du site. |
 | **Exposition de clés** | La clé « service role » et la clé de l'API d'IA ne sont lues que côté serveur. Le fichier `.env` est dans `.gitignore`. Seules les variables préfixées `VITE_` arrivent dans le navigateur, et la clé « anon » est conçue pour être publique. |
 | **Énumération de comptes** | Message de connexion unique ; la page « mot de passe oublié » affiche la même confirmation que l'adresse existe ou non. |
-| **Force brute** | Aucune limite de tentatives dans le code du projet. Le code traduit un message « rate limit » de Supabase (`messageErreurAuth`), ce qui indique que la limitation est laissée à Supabase. |
+| **Force brute** | Limites par adresse IP côté serveur ([authRoutes.js](../backend/authRoutes.js)) : 10 connexions / 15 min, 5 inscriptions / heure, 4 demandes de réinitialisation / heure. Mots de passe de 8 caractères minimum, avec une jauge de force à la saisie. |
 | **Élévation de privilèges** | L'admin est reconnu par son e-mail, vérifié côté base et côté serveur à partir du jeton, pas à partir d'une donnée modifiable par l'utilisateur. Point faible : un utilisateur peut modifier sa propre colonne `role` (voir [06-base-de-donnees.md](06-base-de-donnees.md)). |
+
+| **Fuite de coordonnées** | Le téléphone et l'adresse d'une personne ne sont envoyés qu'à elle-même, à l'administrateur et aux personnes avec qui elle a une demande acceptée ou terminée. Ailleurs : « Numéro après acceptation ». Voir [05-backend.md](05-backend.md) § 7 bis. |
 
 ### Autres constats
 
 - **Routes backend** : `/api/adherents` est réservé à l’administrateur depuis novembre 2026 (elle était auparavant ouverte à tous).
 - **Code d'arrivée** : généré avec `crypto.getRandomValues` ([store.js](../frontend/src/data/store.js), `genererCodeArrivee`), donc non prévisible. Il est créé dans le navigateur de l'intervenant, pas sur un serveur.
 - **Fonction Edge** : [notify-contact-message](../supabase/functions/notify-contact-message/index.ts) envoie un e-mail pour tout corps contenant `record.message`. Elle ne vérifie pas elle-même l'origine de l'appel ; cela dépend des réglages de la fonction dans Supabase, **non trouvés dans le dépôt**.
-- **Copie du dépôt dans le dépôt** : le sous-dossier non suivi qui duplique le projet contient son propre fichier `.env`. Il n'est pas envoyé sur GitHub tant qu'il reste non suivi, mais il multiplie les endroits où des clés sont stockées.
 
 ## 8. Données personnelles et RGPD
 

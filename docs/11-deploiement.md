@@ -83,7 +83,8 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 
 **Backend (service web)**
 
-- Commande de démarrage : `npm run server` (ou `node backend/index.js`).
+- Commande de démarrage (**Start Command** sur Render) : `npm start`, qui lance `node backend/index.js`. ⚠️ Ne pas écrire de chemin de fichier en dur dans Render : après la réorganisation en `frontend/` + `backend/` (novembre 2026), l'ancienne commande `node server/index.js` faisait échouer chaque déploiement, Render gardant l'ancienne version en ligne sans le signaler aux visiteurs.
+- Contrôle de santé conseillé (**Health Check Path**) : `/api/sante`.
 - Installation : `npm install` à la racine, puisque le `package.json` est commun.
 - Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
 - Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
@@ -96,11 +97,13 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 
 | Quand | Action | Effet |
 |---|---|---|
-| Toutes les 10 min, 7 h – 23 h (Mayotte) | appelle `GET /api/sante` | réveille l’API Render (endormie après 15 min sans visite) et lit la table `avis` dans Supabase (évite la pause du projet gratuit) |
-| Chaque jour à 8 h | contrôle l’API, la règle de réécriture, les pages et Supabase | en cas de panne : ticket GitHub étiqueté `mlezi` (email au propriétaire) ; ticket fermé automatiquement quand tout remarche |
+| Toutes les 10 min (minutes 07, 17, 27…), 7 h – 23 h (Mayotte) | appelle `GET /api/sante` | réveille l’API Render (endormie après 15 min sans visite) et lit la table `avis` dans Supabase (évite la pause du projet gratuit) |
+| Chaque jour vers 8 h 23 | contrôle l’API, la règle de réécriture, les pages et Supabase | en cas de panne : ticket GitHub étiqueté `mlezi` (email au propriétaire) ; ticket fermé automatiquement quand tout remarche |
 | À la demande | onglet *Actions* › Mlezi › *Run workflow* | contrôle complet immédiat |
 
 L’ancien `keep-supabase-alive.yml` (un appel tous les 3 jours) a été remplacé : il n’avait pas empêché la pause de Supabase mi-octobre 2026.
+
+Les horaires sont volontairement décalés sur des minutes « calmes » : GitHub retarde, voire saute, les tâches programmées aux minutes rondes (:00, :10…). L’état de Mlezi est aussi visible dans l’espace admin (carte « Santé du site »).
 
 ## 5. Supabase
 
