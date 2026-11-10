@@ -28,4 +28,17 @@ export default defineConfig([
       'vue/multi-word-component-names': 'off',
     },
   },
+  {
+    // Pages légales : beaucoup de liens <router-link> au milieu d'une phrase.
+    // Écrits sur plusieurs lignes (ce que demande cette règle), ils laissent une
+    // espace parasite avant la ponctuation (« légales ) », « cookies . »).
+    files: [
+      'frontend/src/pages/MentionsLegales.vue',
+      'frontend/src/pages/Confidentialite.vue',
+      'frontend/src/pages/Cookies.vue',
+    ],
+    rules: {
+      'vue/singleline-html-element-content-newline': 'off',
+    },
+  },
 ])

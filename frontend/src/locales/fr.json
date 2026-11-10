@@ -34,7 +34,11 @@
     "aide_titre": "Besoin d'aide",
     "urgence": "Urgence : 112",
     "probleme": "Un souci avec le site ? Utilisez le bouton SOS en bas de l'écran.",
-    "copyright": "© {annee} Dispositif d'accompagnement personnalisé — Mayotte"
+    "copyright": "© {annee} Dispositif d'accompagnement personnalisé — Mayotte",
+    "liens_legaux": "Informations légales",
+    "mentions": "Mentions légales",
+    "confidentialite": "Politique de confidentialité",
+    "cookies": "Cookies"
   },
   "commun": {
     "retour": "Retour",

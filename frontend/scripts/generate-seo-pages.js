@@ -55,6 +55,25 @@ const pages = [
     description: 'Sécurité, fiabilité et disponibilité : découvrez les engagements du dispositif d’accompagnement personnalisé à Mayotte.',
     body: `<main id="contenu"><h1>Nos engagements</h1><p>Le dispositif vise un accompagnement humain, de proximité et adapté aux besoins des personnes âgées.</p><h2>Sécurité et fiabilité</h2><p>Les profils présentent leurs services et leurs disponibilités pour aider chacun à préparer une mise en relation.</p><h2>Disponibilité locale</h2><p>La recherche se fait par commune à Mayotte, selon les intervenants présents sur le territoire.</p><a href="/services">Voir les services</a></main>`,
   },
+  // Pages légales (voir frontend/src/pages/MentionsLegales.vue, Confidentialite.vue, Cookies.vue).
+  {
+    path: '/mentions-legales',
+    title: 'Mentions légales | Dispositif d’accompagnement',
+    description: 'Éditeur, hébergeurs et conditions d’utilisation du dispositif d’accompagnement personnalisé à Mayotte.',
+    body: `<main id="contenu"><h1>Mentions légales</h1><p>Éditeur du site, hébergement, propriété intellectuelle et contact.</p><a href="/confidentialite">Politique de confidentialité</a></main>`,
+  },
+  {
+    path: '/confidentialite',
+    title: 'Politique de confidentialité | Dispositif d’accompagnement',
+    description: 'Quelles données le dispositif d’accompagnement enregistre, qui peut les voir, où elles sont stockées et comment exercer vos droits.',
+    body: `<main id="contenu"><h1>Politique de confidentialité</h1><p>Données enregistrées, visibilité, stockage, durée de conservation et droits RGPD.</p><a href="/cookies">Cookies et préférences</a></main>`,
+  },
+  {
+    path: '/cookies',
+    title: 'Cookies et préférences | Dispositif d’accompagnement',
+    description: 'Ce que le site enregistre dans votre navigateur : aucun cookie publicitaire, seulement la connexion et vos réglages.',
+    body: `<main id="contenu"><h1>Cookies et préférences</h1><p>Le site n’utilise aucun cookie publicitaire ni outil de mesure d’audience.</p><a href="/mentions-legales">Mentions légales</a></main>`,
+  },
 ]
 
 function escapeHtml(value) {

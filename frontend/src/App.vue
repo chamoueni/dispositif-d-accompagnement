@@ -134,9 +134,25 @@ async function seDeconnecter() {
       </div>
     </div>
 
+    <!-- Dernière ligne : copyright à gauche, liens légaux à droite (empilés et
+         centrés sur mobile), séparés par de fines barres verticales. -->
     <div class="footer-bottom">
-      <div class="container text-center text-muted small">
-        {{ t('footer.copyright', { annee: anneeCourante }) }}
+      <div class="container footer-bottom-ligne text-muted small">
+        <span>{{ t('footer.copyright', { annee: anneeCourante }) }}</span>
+        <nav
+          class="footer-legal"
+          :aria-label="t('footer.liens_legaux')"
+        >
+          <router-link to="/mentions-legales">
+            {{ t('footer.mentions') }}
+          </router-link>
+          <router-link to="/confidentialite">
+            {{ t('footer.confidentialite') }}
+          </router-link>
+          <router-link to="/cookies">
+            {{ t('footer.cookies') }}
+          </router-link>
+        </nav>
       </div>
     </div>
   </footer>
@@ -268,5 +284,57 @@ async function seDeconnecter() {
 .footer-bottom {
   border-top: 1px solid var(--border);
   padding: 16px 0;
+}
+
+.footer-bottom-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.footer-legal a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.footer-legal a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Fine barre verticale entre deux liens (comme « A | B | C »). */
+.footer-legal a + a::before {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  margin: 0 12px;
+  vertical-align: middle;
+  background: var(--border);
+}
+
+@media (max-width: 767px) {
+  .footer-bottom-ligne {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-legal {
+    justify-content: center;
+  }
+
+  /* Place libre sous les liens : le bouton SOS flottant (en bas à droite)
+     recouvrait « Cookies », impossible à dégager en faisant défiler. */
+  .footer-bottom {
+    padding-bottom: 88px;
+  }
 }
 </style>

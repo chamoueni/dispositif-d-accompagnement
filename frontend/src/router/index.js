@@ -75,6 +75,41 @@ const routes = [
       },
     },
   },
+  // Pages légales, liées depuis le bas du pied de page (voir App.vue).
+  // Publiques : accessibles connecté ou non.
+  {
+    path: '/mentions-legales',
+    name: 'mentions-legales',
+    component: () => import('../pages/MentionsLegales.vue'),
+    meta: {
+      seo: {
+        title: 'Mentions légales | Dispositif d’accompagnement',
+        description: 'Éditeur, hébergeurs et conditions d’utilisation du dispositif d’accompagnement personnalisé à Mayotte.',
+      },
+    },
+  },
+  {
+    path: '/confidentialite',
+    name: 'confidentialite',
+    component: () => import('../pages/Confidentialite.vue'),
+    meta: {
+      seo: {
+        title: 'Politique de confidentialité | Dispositif d’accompagnement',
+        description: 'Quelles données le dispositif d’accompagnement enregistre, qui peut les voir, où elles sont stockées et comment exercer vos droits.',
+      },
+    },
+  },
+  {
+    path: '/cookies',
+    name: 'cookies',
+    component: () => import('../pages/Cookies.vue'),
+    meta: {
+      seo: {
+        title: 'Cookies et préférences | Dispositif d’accompagnement',
+        description: 'Ce que le site enregistre dans votre navigateur : aucun cookie publicitaire, seulement la connexion et vos réglages.',
+      },
+    },
+  },
   // guestOnly : réservé aux visiteurs non connectés (redirige vers /profil sinon).
   {
     path: '/inscription',
