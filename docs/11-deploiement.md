@@ -16,7 +16,7 @@ npm run dev:full
 | Commande | Ce qu'elle lance | Adresse |
 |---|---|---|
 | `npm run dev` | Vite (frontend seul) | `http://localhost:5173` (port par défaut de Vite, indiqué dans le README) |
-| `npm run server` | Express (`node backend/index.js`) | `http://localhost:3001` (ou `PORT`) |
+| `npm run server` | Express (`node backend/app.js`) | `http://localhost:3001` (ou `PORT`) |
 | `npm run dev:full` | Les deux, avec `concurrently` | — |
 | `npm run build` | Construit le site dans `dist/` | — |
 | `npm run preview` | Sert le contenu de `dist/` pour vérification | — |
@@ -35,9 +35,9 @@ Les noms viennent de [.env.example](../.env.example). **Ne jamais écrire leurs 
 | `VITE_SUPABASE_URL` | Frontend | `frontend/src/lib/supabaseClient.js` | Adresse du projet Supabase |
 | `VITE_SUPABASE_ANON_KEY` | Frontend | `frontend/src/lib/supabaseClient.js` | Clé publique « anon » |
 | `VITE_API_URL` | Frontend | `frontend/src/lib/apiBase.js` | **Vide** en local comme en production : le site appelle `/api/...` sur sa propre adresse (proxy Vite en local, règle de réécriture Render en ligne) |
-| `SUPABASE_URL` | Backend | `backend/supabaseAdmin.js` | Adresse du projet Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Backend | `backend/supabaseAdmin.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
-| `PORT` | Backend | `backend/index.js` | Port d'écoute (fourni par l'hébergeur) |
+| `SUPABASE_URL` | Backend | `backend/config/supabase.js` | Adresse du projet Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Backend | `backend/config/supabase.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
+| `PORT` | Backend | `backend/app.js` | Port d'écoute (fourni par l'hébergeur) |
 
 Deux règles à retenir :
 
@@ -83,7 +83,7 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 
 **Backend (service web)**
 
-- Commande de démarrage (**Start Command** sur Render) : `npm start`, qui lance `node backend/index.js`. ⚠️ Ne pas écrire de chemin de fichier en dur dans Render : après la réorganisation en `frontend/` + `backend/` (novembre 2026), l'ancienne commande `node server/index.js` faisait échouer chaque déploiement, Render gardant l'ancienne version en ligne sans le signaler aux visiteurs.
+- Commande de démarrage (**Start Command** sur Render) : `npm start`, qui lance `node backend/app.js`. ⚠️ Ne pas écrire de chemin de fichier en dur dans Render : après la réorganisation en `frontend/` + `backend/` (novembre 2026), l'ancienne commande `node server/index.js` faisait échouer chaque déploiement, Render gardant l'ancienne version en ligne sans le signaler aux visiteurs.
 - Contrôle de santé conseillé (**Health Check Path**) : `/api/sante`.
 - Installation : `npm install` à la racine, puisque le `package.json` est commun.
 - Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.

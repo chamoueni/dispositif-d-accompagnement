@@ -1,22 +1,17 @@
-// Stockage des adhérents : base NoSQL MongoDB (documents) si MONGODB_URI est
-// renseignée, sinon fichier JSON local (backend/data/adherents.json).
-//
-// Pourquoi MongoDB : sur Render, le disque est effacé à chaque redéploiement,
-// donc les adhérents écrits dans le fichier JSON disparaissaient. Une base
-// externe (ex. MongoDB Atlas, offre gratuite) les conserve. Chaque adhérent est
-// un document indépendant, sans schéma imposé, dans la collection "adherents".
+// Modèle « adhérent » : lecture et écriture des adhérents, soit dans MongoDB
+// (documents de la collection « adherents », voir config/mongodb.js), soit,
+// si MongoDB n'est pas configuré, dans le fichier backend/data/adherents.json.
 //
 // Les deux modes exposent exactement les mêmes fonctions (obtenir, ajouter,
-// modifier, supprimer) : backend/index.js ne sait pas lequel est utilisé.
+// modifier, supprimer) : le contrôleur ne sait pas lequel est utilisé.
 import crypto from 'node:crypto'
-import dns from 'node:dns'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { MongoClient } from 'mongodb'
+import { collectionAdherents } from '../config/mongodb.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const fichierAdherents = path.join(__dirname, 'data', 'adherents.json')
+const fichierAdherents = path.join(__dirname, '..', 'data', 'adherents.json')
 
 // Copie les champs modifiables saisis dans le formulaire admin, nettoyés.
 // Partagé par les deux modes pour garantir des documents identiques.
@@ -52,64 +47,30 @@ async function ecrireFichier(adherents) {
 // notre propre identifiant "id" (UUID), déjà utilisé dans les URL /api/adherents/:id.
 const SANS_ID_MONGO = { projection: { _id: 0 } }
 
-// Promesse de connexion partagée : une seule connexion pour tout le serveur,
-// ouverte au premier appel (et non au démarrage, pour que dotenv ait déjà
-// chargé le .env, voir backend/supabaseAdmin.js).
-let collectionPromise = null
+// Exécuté une seule fois, juste après la connexion à MongoDB.
+async function preparerCollection(collection) {
+  // Index uniques : deux documents ne peuvent partager ni le même "id",
+  // ni le même email (protège des doublons même si deux envois arrivent
+  // en même temps ; le serveur répond alors 409, voir le contrôleur).
+  await collection.createIndex({ id: 1 }, { unique: true })
+  await collection.createIndex({ email: 1 }, { unique: true }).catch((error) => {
+    // Doublons déjà présents : l'index ne peut pas être créé, on le signale
+    // sans empêcher le site de fonctionner.
+    console.warn('Index unique sur l’email des adhérents non créé :', error.codeName || error.message)
+  })
 
-// Les adresses Atlas « mongodb+srv:// » demandent une recherche DNS de type SRV.
-// Sur certains PC Windows, Node interroge un DNS local (127.0.0.1, VPN...) qui
-// refuse ce type de recherche : « querySrv ECONNREFUSED ». Dans ce cas
-// seulement, on repasse par des DNS publics et on réessaie. Sans effet sur
-// Render, où la recherche fonctionne du premier coup.
-async function connecter(uri) {
-  try {
-    const client = new MongoClient(uri)
-    await client.connect()
-    return client
-  } catch (error) {
-    if (!/querySrv/.test(error.message)) throw error
-    dns.setServers(['8.8.8.8', '1.1.1.1'])
-    const client = new MongoClient(uri)
-    await client.connect()
-    return client
+  // Premier lancement sur une base vide : on y importe les adhérents du
+  // fichier JSON pour ne rien perdre lors du passage à MongoDB.
+  if ((await collection.countDocuments()) === 0) {
+    const existants = await lireFichier().catch(() => [])
+    if (existants.length) await collection.insertMany(existants)
   }
 }
 
-function collectionMongo() {
-  if (!process.env.MONGODB_URI) return null
-  if (!collectionPromise) {
-    collectionPromise = (async () => {
-      const client = await connecter(process.env.MONGODB_URI)
-      const collection = client.db(process.env.MONGODB_DB || 'dispositif').collection('adherents')
-      // Index uniques : deux documents ne peuvent partager ni le même "id",
-      // ni le même email (protège des doublons même si deux envois arrivent
-      // en même temps ; le serveur répond alors 409, voir index.js).
-      await collection.createIndex({ id: 1 }, { unique: true })
-      await collection.createIndex({ email: 1 }, { unique: true }).catch((error) => {
-        // Doublons déjà présents : l'index ne peut pas être créé, on le signale
-        // sans empêcher le site de fonctionner.
-        console.warn('Index unique sur l’email des adhérents non créé :', error.codeName || error.message)
-      })
-
-      // Premier lancement sur une base vide : on y importe les adhérents du
-      // fichier JSON pour ne rien perdre lors du passage à MongoDB.
-      if ((await collection.countDocuments()) === 0) {
-        const existants = await lireFichier().catch(() => [])
-        if (existants.length) await collection.insertMany(existants)
-      }
-      return collection
-    })().catch((error) => {
-      // Connexion ratée : on oublie la promesse pour réessayer au prochain appel.
-      collectionPromise = null
-      throw error
-    })
-  }
-  return collectionPromise
-}
+const collectionMongo = () => collectionAdherents(preparerCollection)
 
 // ---------------------------------------------------------------------------
-// Fonctions utilisées par backend/index.js
+// Fonctions utilisées par controllers/adherents.controller.js
 // ---------------------------------------------------------------------------
 
 export async function obtenirAdherents() {
@@ -147,7 +108,7 @@ export async function modifierAdherent(id, donnees) {
   const collection = await collectionMongo()
   if (collection) {
     // $set ne remplace que ces champs : "id" et "created_at" sont conservés.
-    // Renvoie null si aucun document ne porte cet id (=> 404 dans index.js).
+    // Renvoie null si aucun document ne porte cet id (=> 404 dans le contrôleur).
     return collection.findOneAndUpdate(
       { id },
       { $set: modifications },

@@ -3,7 +3,7 @@
 // modification et suppression (logique reprise telle quelle de l'ancienne
 // page Admin.vue, seulement déplacée dans le store partagé useAdminDashboard),
 // plus la création d'un compte complet (nouveauté, voir POST /api/admin/comptes
-// dans backend/index.js — un email est nécessaire, aucun champ mot de passe
+// dans backend/app.js — un email est nécessaire, aucun champ mot de passe
 // n'étant proposé ici, voir le commentaire de cette route côté serveur).
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

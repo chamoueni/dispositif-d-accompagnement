@@ -14,7 +14,7 @@ Ce document donne la vue d'ensemble : quelles sont les grandes parties du projet
 
 Services externes appelés par le projet :
 
-- **Supabase** : appelé uniquement par le backend ([supabaseAdmin.js](../backend/supabaseAdmin.js), [sessions.js](../backend/sessions.js)) ; le navigateur passe par l’API ([api.js](../frontend/src/lib/api.js)).
+- **Supabase** : appelé uniquement par le backend ([config/supabase.js](../backend/config/supabase.js), [services/session.service.js](../backend/services/session.service.js)) ; le navigateur passe par l’API ([api.js](../frontend/src/lib/api.js)).
 - **Géoplateforme IGN** : tuiles de carte chargées par le navigateur ([CarteMayotte.vue](../frontend/src/components/CarteMayotte.vue), constante `MODELE_IGN`).
 - **Google Fonts** : polices Fraunces, Inter et Nunito Sans chargées dans [index.html](../frontend/index.html).
 - **Unsplash** : trois photos chargées par URL dans [PourQui.vue](../frontend/src/pages/PourQui.vue).
@@ -95,13 +95,13 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 │       └── styles/              Un fichier CSS par page ou composant + ui.css + bootstrap-custom.scss
 │
 ├── backend/                     LE SERVEUR (Node.js + Express), l'API /api/...
-│   ├── index.js                 Serveur, middleware, routes adhérents et /api/sante
-│   ├── authRoutes.js            Connexion, inscription, mot de passe (/api/auth/...)
-│   ├── dataRoutes.js            Données Supabase pour le site (/api/data)
-│   ├── sessions.js              Sessions sécurisées (cookie httpOnly + table auth_sessions)
-│   ├── adherentsStore.js        Adhérents : MongoDB (NoSQL) ou fichier JSON de secours
-│   ├── supabaseAdmin.js         Client Supabase « service role »
-│   ├── supabaseSync.js          Copie des adhérents vers la table Supabase "adherents"
+│   ├── app.js                   Point d'entrée : middlewares + routes, démarrage du serveur
+│   ├── config/                  .env, constantes, origines autorisées, connexions Supabase et MongoDB
+│   ├── middleware/              Sécurité (CORS, origine), session, admin, limites, erreurs
+│   ├── routes/                  auth, admin, data, adherents, sante : adresse → contrôleur
+│   ├── controllers/             Traitement de chaque requête et réponse JSON
+│   ├── services/                Règles de gestion : sessions, confidentialité, demandes, validation
+│   ├── models/adherent.model.js Adhérents : MongoDB (NoSQL) ou fichier JSON de secours
 │   ├── package.json             Contient seulement {"type": "module"}
 │   └── data/adherents.json      Fichier des adhérents (si MongoDB n'est pas configuré)
 │
@@ -125,8 +125,8 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 
 **Ce qui est bien séparé**
 
-- Les clés sensibles restent côté serveur. `SUPABASE_SERVICE_ROLE_KEY` et `AUTH_SESSION_SECRET` ne sont lues que dans `backend/` ([supabaseAdmin.js](../backend/supabaseAdmin.js), [sessions.js](../backend/sessions.js)).
-- Les opérations qui exigent la clé « service role » (création et suppression d'un compte Auth) sont bien dans le backend, protégées par le middleware `verifierAdmin` ([backend/index.js](../backend/index.js), ligne 31).
+- Les clés sensibles restent côté serveur. `SUPABASE_SERVICE_ROLE_KEY` et `AUTH_SESSION_SECRET` ne sont lues que dans `backend/` ([config/supabase.js](../backend/config/supabase.js), [services/session.service.js](../backend/services/session.service.js)).
+- Les opérations qui exigent la clé « service role » (création et suppression d'un compte Auth) sont bien dans le backend, protégées par le middleware `verifierAdmin` ([backend/app.js](../backend/app.js), ligne 31).
 - Côté frontend, les pages n'écrivent jamais de requête Supabase elles-mêmes (une seule exception, voir plus bas) : elles appellent les fonctions de [store.js](../frontend/src/data/store.js) ou de [auth.js](../frontend/src/stores/auth.js).
 
 **Ce qui n'est pas séparé**

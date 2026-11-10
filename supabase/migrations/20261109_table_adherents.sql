@@ -1,6 +1,6 @@
 -- Table "adherents" : copie dans Supabase des adhérents gérés par l'espace admin
--- (la source principale est MongoDB, voir backend/adherentsStore.js et
--- backend/supabaseSync.js). Cette partie de schema.sql n'avait jamais été
+-- (la source principale est MongoDB, voir backend/models/adherent.model.js et
+-- backend/services/adherentSync.service.js). Cette partie de schema.sql n'avait jamais été
 -- exécutée sur le projet en ligne : la copie échouait (« table introuvable »).
 -- Script rejouable, à exécuter une fois dans l'éditeur SQL de Supabase.
 

@@ -59,21 +59,21 @@ Table de correspondance : « je veux… » → les fichiers à ouvrir. Les chemi
 | Je veux… | Fichier(s) | Remarque |
 |---|---|---|
 | **Ajouter un service** (ex. « garde ») | `frontend/src/pages/Inscription.vue` et `frontend/src/pages/Profil.vue` (cases à cocher), `frontend/src/pages/RecherchePersonnel.vue` (`TYPES`), `frontend/src/components/CarteMayotte.vue` (`BESOINS`, `libelleAidant`), `frontend/src/components/ProviderCard.vue` (`SERVICE_KEYS`, `resume`), `frontend/src/pages/AssistantBesoin.vue` (`TYPES_AIDE`, `resultats`), `frontend/src/pages/MesDemandes.vue`, `MesAccompagnements.vue`, `Historique.vue` (`SERVICE_KEYS`), `frontend/src/pages/AdminDashboard.vue` et `AdminDemandes.vue` (`SERVICE_LABELS`), fichiers de langue (`demande.service_*`) | Les services n'ont pas de table : la liste est répétée dans une dizaine de fichiers. C'est la modification la plus dispersée du projet. |
-| Modifier une formule ou un prix | `frontend/src/data/store.js` (`FORMULES`) | Mettre aussi à jour `CONTEXTE_SITE` dans `backend/index.js`, sinon l'assistant annonce l'ancien prix |
+| Modifier une formule ou un prix | `frontend/src/data/store.js` (`FORMULES`) | Mettre aussi à jour `CONTEXTE_SITE` dans `backend/app.js`, sinon l'assistant annonce l'ancien prix |
 | Changer le délai « Acceptée » → « En cours » | `frontend/src/data/store.js` (`DELAI_DEMARRAGE_MISSION_MS`) | |
 | Changer la logique d'acceptation d'une demande | `frontend/src/data/store.js` (`updateDemandeStatut`) | |
 | Ajouter un statut de demande | `supabase/schema.sql` (contrainte `check`), `frontend/src/pages/MesDemandes.vue` (`statutAffiche`), pages admin, clés `statut.*` | Rejouer le SQL |
 | Changer les filtres de la recherche | `frontend/src/pages/RecherchePersonnel.vue` (`filters`, `results`) | |
 | Changer les mots-clés de la commande vocale | `frontend/src/components/SosButton.vue` (`MOTS_CLES`) | |
-| Changer d'administrateur | `frontend/src/stores/auth.js`, `backend/index.js`, `supabase/schema.sql` (toutes les règles), `supabase/functions/notify-contact-message/index.ts` | Quatre endroits ; rejouer le SQL et redéployer la fonction |
+| Changer d'administrateur | `frontend/src/stores/auth.js`, `backend/app.js`, `supabase/schema.sql` (toutes les règles), `supabase/functions/notify-contact-message/index.ts` | Quatre endroits ; rejouer le SQL et redéployer la fonction |
 
 ## 6. Backend et base de données
 
 | Je veux… | Fichier(s) | Étapes |
 |---|---|---|
-| **Ajouter une route backend** | `backend/index.js` | 1. `app.get/post(...)` avec `try/catch` et `next(error)` ; 2. ajouter `verifierAdmin` si la route est réservée ; 3. appeler la route depuis le frontend avec `API_BASE_URL` |
-| Protéger une route existante | `backend/index.js` | Ajouter `verifierAdmin` en deuxième argument, et envoyer le jeton côté frontend (modèle : `createCompteAdmin` dans `store.js`) |
-| Restreindre les origines autorisées (CORS) | `backend/index.js` (`app.use(cors())`) | |
+| **Ajouter une route backend** | `backend/app.js` | 1. `app.get/post(...)` avec `try/catch` et `next(error)` ; 2. ajouter `verifierAdmin` si la route est réservée ; 3. appeler la route depuis le frontend avec `API_BASE_URL` |
+| Protéger une route existante | `backend/app.js` | Ajouter `verifierAdmin` en deuxième argument, et envoyer le jeton côté frontend (modèle : `createCompteAdmin` dans `store.js`) |
+| Restreindre les origines autorisées (CORS) | `backend/app.js` (`app.use(cors())`) | |
 | **Ajouter une table** | `supabase/schema.sql` | 1. `create table if not exists` ; 2. `alter table … enable row level security` ; 3. une règle par opération permise ; 4. **exécuter le SQL dans Supabase** ; 5. ajouter les fonctions d'accès dans `frontend/src/data/store.js` |
 | Ajouter une colonne | `supabase/schema.sql` avec `alter table … add column if not exists` | `create table if not exists` ne modifie pas une table existante |
 | Modifier une règle RLS | `supabase/schema.sql` | Garder le `drop policy if exists` avant le `create policy` ; rejouer le SQL |
@@ -102,6 +102,6 @@ Table de correspondance : « je veux… » → les fichiers à ouvrir. Les chemi
 
 ## À retenir
 
-- Couleurs : `frontend/src/assets/theme.css`. Textes : `frontend/src/locales/`. Routes : `frontend/src/router/index.js`. Requêtes : `frontend/src/data/store.js`. Routes d'API : `backend/index.js`. Tables : `supabase/schema.sql`.
+- Couleurs : `frontend/src/assets/theme.css`. Textes : `frontend/src/locales/`. Routes : `frontend/src/router/index.js`. Requêtes : `frontend/src/data/store.js`. Routes d'API : `backend/app.js`. Tables : `supabase/schema.sql`.
 - Ajouter un service ou changer d'administrateur demande de toucher de nombreux fichiers, car ces informations sont répétées.
 - Toute modification du schéma se termine par une exécution manuelle dans Supabase.

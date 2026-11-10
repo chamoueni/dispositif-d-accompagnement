@@ -144,7 +144,7 @@ AdminComptes.vue (« Nouveau compte » → formulaire) → valider()
       → dashboard.creerCompte(payload)          [stores/adminDashboard.js]
       → createCompteAdmin(payload)              [store.js, ligne 166]
             → fetch POST /api/admin/comptes  + Authorization: Bearer <jeton>
-                  → verifierAdmin               [backend/index.js, ligne 31]
+                  → verifierAdmin               [backend/app.js, ligne 31]
                   → supabaseAdmin.auth.admin.createUser()   → auth.users
                   → supabaseAdmin.from('profiles').insert() → profiles
                   ← 201 + profil
@@ -162,14 +162,14 @@ AdminComptes.vue (« Nouveau compte » → formulaire) → valider()
 AdminAdherents.vue → enregistrer()
       → store.creerAdherent(formulaire)         [stores/adherents.js]
             → fetch POST /api/adherents
-                  → validerAdherent()           [backend/index.js]
-                  → ajouterAdherent()           [backend/adherentsStore.js] → adherents.json
-                  → synchroniserAdherent()      [backend/supabaseSync.js]   → table adherents
+                  → validerAdherent()           [backend/app.js]
+                  → ajouterAdherent()           [backend/models/adherent.model.js] → adherents.json
+                  → synchroniserAdherent()      [backend/services/adherentSync.service.js]   → table adherents
                   ← 201 + adhérent
       → adherents.value.push(...) → le tableau se met à jour → notifier('Adhérent ajouté…')
 ```
 
-Ici la correspondance avec un découpage classique est : route + controller = la fonction dans `index.js` ; service = `adherentsStore.js` et `supabaseSync.js`.
+Correspondance avec le découpage classique : route = `routes/adherents.routes.js` ; controller = `controllers/adherents.controller.js` ; model = `models/adherent.model.js` ; service = `services/adherentSync.service.js`.
 
 ## 12. Message de contact
 

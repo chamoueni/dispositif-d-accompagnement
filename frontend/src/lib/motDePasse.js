@@ -1,6 +1,6 @@
 // Règle commune des mots de passe, partagée par l'inscription, le profil et la
 // réinitialisation. Le serveur applique la même longueur minimale
-// (MOT_DE_PASSE_MIN dans backend/authRoutes.js) : la vérification du navigateur
+// (MOT_DE_PASSE_MIN dans backend/controllers/auth.controller.js) : la vérification du navigateur
 // n'est qu'un confort, c'est le serveur qui fait foi.
 export const MOT_DE_PASSE_MIN = 8
 

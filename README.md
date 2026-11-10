@@ -28,14 +28,17 @@ frontend/     Le site (Vue 3 + Vite) : ce que voit le navigateur
   public/     fichiers servis tels quels (favicon, icônes, audio)
   scripts/    génération des pages SEO après le build
 backend/      Le serveur (Node.js + Express) : l'API /api/...
+  app.js        point d'entrée (middlewares + routes)
+  config/ middleware/ routes/ controllers/ services/ models/
 supabase/     La base de données : schéma, migrations, fonction Edge
 docs/         Documentation détaillée (commencer par docs/README.md)
 .github/      Mlezi, le robot de maintenance (GitHub Actions)
 ```
 
-- `backend/index.js`, `authRoutes.js`, `dataRoutes.js`, `sessions.js` : API Express, connexion par sessions sécurisées et accès aux données sous RLS.
-- `backend/adherentsStore.js` : adhérents dans MongoDB (NoSQL), ou dans `backend/data/adherents.json` si MongoDB n'est pas configuré.
-- `backend/supabaseSync.js` : copie facultative des adhérents dans la table Supabase `adherents`.
+- `backend/app.js` : point d'entrée de l'API Express ; le code suit le découpage routes → controllers → services / models (détail dans `docs/05-backend.md`).
+- `backend/controllers/auth.controller.js`, `backend/controllers/data.controller.js`, `backend/services/session.service.js` : connexion par sessions sécurisées et accès aux données sous RLS.
+- `backend/models/adherent.model.js` : adhérents dans MongoDB (NoSQL), ou dans `backend/data/adherents.json` si MongoDB n'est pas configuré.
+- `backend/services/adherentSync.service.js` : copie facultative des adhérents dans la table Supabase `adherents`.
 - `frontend/src/stores/adherents.js` et `frontend/src/pages/AdminAdherents.vue` : gestion des adhérents dans l'espace admin.
 - `frontend/vite.config.js` : proxy de développement `/api` vers Express ; le build est écrit dans `dist/` à la racine.
 - `supabase/schema.sql` : tables, index et règles RLS.
@@ -63,7 +66,7 @@ Un adhérent contient `id`, `nom`, `email`, `telephone`, `ville`, `role`, `statu
 
 ### Backend
 
-Dans `backend/index.js`, les imports chargent Express, CORS et les fonctions de stockage. `express()` crée l'application, `cors()` autorise les appels du frontend et `express.json()` transforme le corps JSON des requêtes en objet JavaScript. `validerAdherent()` vérifie les champs obligatoires et les valeurs autorisées. Chaque route appelle le stockage JSON, puis `synchroniserAdherent()` met à jour Supabase si les variables serveur existent. Le middleware final transforme les erreurs inattendues en réponse HTTP 500.
+Dans `backend/app.js`, `express()` crée l'application ; les middlewares de `backend/middleware/` (CORS, `express.json()`, cookies, sécurité, session) s'appliquent à chaque requête, puis les fichiers de `backend/routes/` envoient chaque adresse vers son contrôleur. Pour les adhérents, `routes/adherents.routes.js` vérifie que l'utilisateur est l'administrateur, `controllers/adherents.controller.js` contrôle les champs (`validerAdherent()`) et appelle `models/adherent.model.js` (MongoDB), puis `synchroniserAdherent()` recopie l'adhérent dans Supabase. `middleware/erreurs.js` transforme les erreurs inattendues en réponse HTTP 500.
 
 ### Frontend
 

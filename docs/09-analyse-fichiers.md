@@ -167,22 +167,22 @@ Un `ref` `enLigne` tenu à jour par les événements `online` et `offline` du na
 
 Voir [05-backend.md](05-backend.md) pour les routes. Résumé par fichier :
 
-### `backend/index.js`
+### `backend/app.js`
 
-- **Utilise** : `express`, `cors`, `cookie-parser`, `adherentsStore.js`, `supabaseSync.js`, `authRoutes.js`, `dataRoutes.js`, `sessions.js`.
+- **Utilise** : `express`, `cors`, `cookie-parser`, `models/adherent.model.js`, `services/adherentSync.service.js`, `controllers/auth.controller.js`, `controllers/data.controller.js`, `services/session.service.js`.
 - **Fonctions** : `verifierAdmin` (middleware), `validerAdherent(body)` (renvoie un message d'erreur ou `null`), les 7 routes, le gestionnaire d'erreurs.
 - **Constantes** : `rolesAutorises`, `statutsAutorises`, `ADMIN_EMAIL`, `CONTEXTE_SITE`.
 - **Partie délicate** : dans `POST /api/admin/comptes`, si l'insertion du profil échoue après la création du compte Auth, le compte est supprimé pour éviter un compte sans profil.
 
-### `backend/adherentsStore.js`
+### `backend/models/adherent.model.js`
 
 `lireAdherents` / `ecrireAdherents` (privées) lisent et réécrivent **tout le fichier** à chaque opération. Exporte `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent` (renvoie `null` si introuvable), `supprimerAdherent` (renvoie `false` si introuvable). Deux requêtes simultanées peuvent s'écraser, puisqu'il n'y a pas de verrou.
 
-### `backend/supabaseAdmin.js`
+### `backend/config/supabase.js`
 
 Charge `.env` puis exporte `supabaseAdmin`, ou `null` si l'adresse ou la clé manque. Ce `null` permet au serveur de démarrer sans Supabase.
 
-### `backend/supabaseSync.js`
+### `backend/services/adherentSync.service.js`
 
 `synchroniserAdherent(adherent, operation)` : ne fait rien si `supabaseAdmin` est `null` ; sinon `upsert` ou `delete` dans la table `adherents`.
 
@@ -216,7 +216,7 @@ Détaillé dans [06-base-de-donnees.md](06-base-de-donnees.md).
 
 ## À retenir
 
-- Pour comprendre le projet, lire dans cet ordre : `router/index.js`, `stores/auth.js`, `data/store.js`, `supabase/schema.sql`, `backend/index.js`.
+- Pour comprendre le projet, lire dans cet ordre : `router/index.js`, `stores/auth.js`, `data/store.js`, `supabase/schema.sql`, `backend/app.js`.
 - `stores/auth.js` n'est pas un store Pinia, contrairement à `adminDashboard.js` et `adherents.js`.
 - `store.js` est le seul endroit où modifier une requête Supabase métier.
 - `updateDemandeStatut` porte la règle métier centrale : accepter = code d'arrivée + mission.

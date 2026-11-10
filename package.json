@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config frontend/vite.config.js",
-    "server": "node backend/index.js",
-    "start": "node backend/index.js",
+    "server": "node backend/app.js",
+    "start": "node backend/app.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build --config frontend/vite.config.js && node frontend/scripts/generate-seo-pages.js",
     "lint": "eslint .",

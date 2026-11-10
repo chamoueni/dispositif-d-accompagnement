@@ -2,7 +2,7 @@
 // Carte « Santé du site » du tableau de bord admin : état du serveur, de la
 // base Supabase et de la dernière ronde de Mlezi, le robot de maintenance
 // (.github/workflows/mlezi-gardien.yml). Lecture seule, rien à configurer :
-// - /api/sante : bilan public du serveur (voir backend/index.js) ;
+// - /api/sante : bilan public du serveur (voir backend/app.js) ;
 // - l'API publique de GitHub : dernière exécution du workflow Mlezi.
 import { onMounted, ref } from 'vue'
 import { API_BASE_URL } from '../../lib/apiBase'

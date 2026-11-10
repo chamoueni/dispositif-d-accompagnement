@@ -1,9 +1,9 @@
 // Copie facultative des adhérents dans la table Supabase "adherents".
 // La source de vérité est MongoDB (ou le fichier JSON de secours, voir
-// adherentsStore.js) : si cette copie échoue (table absente, Supabase
+// models/adherent.model.js) : si cette copie échoue (table absente, Supabase
 // injoignable...), l'opération de l'administrateur ne doit PAS échouer pour
 // autant. On note simplement l'incident dans les journaux du serveur.
-import { supabaseAdmin } from './supabaseAdmin.js'
+import { supabaseAdmin } from '../config/supabase.js'
 
 export async function synchroniserAdherent(adherent, operation) {
   if (!supabaseAdmin) return

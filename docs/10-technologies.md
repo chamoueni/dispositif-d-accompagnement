@@ -11,7 +11,7 @@ Les versions de la colonne « Déclarée » sont lues dans [package.json](../pac
 | **Pinia** | `^3.0.3` | 3.0.4 | Stores partagés | `stores/adminDashboard.js`, `stores/adherents.js` | les pages admin |
 | **vue-i18n** | `^11.4.12` | 11.4.12 | Traductions fr / shi / kib | `frontend/src/i18n/index.js`, `frontend/src/locales/` | tous les composants publics |
 | **Bootstrap** | `^5.3.8` | 5.3.8 | Grille, boutons, formulaires, cartes | `styles/bootstrap-custom.scss`, `main.js` | recompilé avec Sass |
-| **@supabase/supabase-js** | `^2.112.3` | 2.112.3 | Client Supabase (auth + requêtes), côté serveur uniquement | `backend/supabaseAdmin.js`, `backend/sessions.js`, `backend/dataRoutes.js` | l'API Supabase |
+| **@supabase/supabase-js** | `^2.112.3` | 2.112.3 | Client Supabase (auth + requêtes), côté serveur uniquement | `backend/config/supabase.js`, `backend/services/session.service.js`, `backend/controllers/data.controller.js` | l'API Supabase |
 | **Leaflet** | `^1.9.4` | 1.9.4 | Carte interactive | `components/CarteMayotte.vue` | tuiles IGN |
 | **leaflet.markercluster** | `^1.5.3` | 1.5.3 | Regroupement des marqueurs | `components/CarteMayotte.vue` | Leaflet |
 
@@ -27,9 +27,9 @@ Le JavaScript de Bootstrap est importé dans `main.js`, mais le menu mobile est 
 
 | Nom | Déclarée | Installée | Rôle | Où | Communique avec |
 |---|---|---|---|---|---|
-| **Express** | `^5.1.0` | 5.2.1 | Serveur HTTP et routes | `backend/index.js` | le frontend |
-| **cors** | `^2.8.5` | 2.8.6 | Autorise les appels depuis une autre origine | `backend/index.js` | — |
-| **dotenv** | `^17.2.2` | 17.4.2 | Charge le fichier `.env` | `backend/supabaseAdmin.js` | — |
+| **Express** | `^5.1.0` | 5.2.1 | Serveur HTTP et routes | `backend/app.js` | le frontend |
+| **cors** | `^2.8.5` | 2.8.6 | Autorise les appels depuis une autre origine | `backend/app.js` | — |
+| **dotenv** | `^17.2.2` | 17.4.2 | Charge le fichier `.env` | `backend/config/supabase.js` | — |
 | **Node.js** | non déclarée | — | Exécute le serveur | — | — |
 
 La version de Node attendue n'est pas déclarée (`engines` absent). Le code utilise les modules ES (`"type": "module"`) et l'objet global `crypto`.
@@ -54,7 +54,7 @@ Aucun outil de test (Vitest, Jest, Cypress…) : **non trouvé dans le code**.
 
 | Service | Rôle | Où il est appelé | Configuration |
 |---|---|---|---|
-| **Supabase** | Base PostgreSQL, authentification, règles RLS, fonction Edge | `backend/supabaseAdmin.js`, `backend/sessions.js`, `supabase/` | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
+| **Supabase** | Base PostgreSQL, authentification, règles RLS, fonction Edge | `backend/config/supabase.js`, `backend/services/session.service.js`, `supabase/` | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
 | **Géoplateforme IGN** | Fonds de carte « Plan » et « Satellite » | `CarteMayotte.vue` (`MODELE_IGN`) | aucune clé |
 | **Google Fonts** | Polices Fraunces, Inter, Nunito Sans | `index.html` | aucune |
 | **Unsplash** | Trois photos de la page « Pour qui » | `PourQui.vue` | aucune |

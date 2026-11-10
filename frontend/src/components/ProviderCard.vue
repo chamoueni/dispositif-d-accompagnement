@@ -133,7 +133,7 @@ const resume = computed(() => {
         {{ t('provider_card.appeler') }}
       </a>
       <!-- Numéro masqué par le serveur tant qu'aucune demande n'a été acceptée
-           (vie privée des aidants, voir backend/dataRoutes.js). -->
+           (vie privée des aidants, voir backend/controllers/data.controller.js). -->
       <span
         v-else
         class="btn btn-secondary btn-sm flex-fill numero-masque"

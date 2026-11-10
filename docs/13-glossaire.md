@@ -15,7 +15,7 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **Mise en relation / mission / accompagnement** | Trois mots pour la même chose : ce qui est créé quand une demande est acceptée | table `mises_en_relation` |
 | **Code d'arrivée** | Code à 4 chiffres que l'intervenant annonce en arrivant | `demandes.code_arrivee` |
 | **Formule** | Offre d'accompagnement (Basique, Essentiel, Confort, Premium) | `FORMULES` |
-| **Adhérent** | Personne suivie par l'administrateur, gérée à part des comptes | `backend/adherentsStore.js` |
+| **Adhérent** | Personne suivie par l'administrateur, gérée à part des comptes | `backend/models/adherent.model.js` |
 | **Zone** | Regroupement de communes : Nord, Centre, Sud, Petite-Terre | `COMMUNES_MAYOTTE` |
 | **Mode confort** | Affichage avec texte et boutons plus grands | classe `mode-confort` |
 | **Shimaoré, kibushi** | Deux langues parlées à Mayotte | codes `shi`, `kib` |
@@ -92,8 +92,8 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 
 | Terme | Explication | Exemple |
 |---|---|---|
-| **Node.js** | Programme qui exécute du JavaScript hors du navigateur | `node backend/index.js` |
-| **Express** | Bibliothèque pour créer un serveur web en Node | `backend/index.js` |
+| **Node.js** | Programme qui exécute du JavaScript hors du navigateur | `node backend/app.js` |
+| **Express** | Bibliothèque pour créer un serveur web en Node | `backend/app.js` |
 | **Middleware** | Fonction qui s'exécute avant la route (contrôle, transformation) | `verifierAdmin`, `cors()` |
 | **CORS** | Règle des navigateurs qui limite les appels d'un site vers un autre ; le serveur dit qui il accepte | `app.use(cors())` |
 | **Supabase** | Service en ligne qui fournit une base PostgreSQL, l'authentification et des fonctions | |
@@ -114,7 +114,7 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **`auth.uid()`** | Dans une règle : l'identifiant de l'utilisateur qui fait la requête | |
 | **Clé « anon »** | Clé publique de Supabase, utilisée dans le navigateur, limitée par la RLS | `VITE_SUPABASE_ANON_KEY` |
 | **Clé « service role »** | Clé d'administration qui **contourne** la RLS ; uniquement côté serveur | `SUPABASE_SERVICE_ROLE_KEY` |
-| **`upsert`** | Insère la ligne, ou la met à jour si elle existe déjà | `supabaseSync.js` |
+| **`upsert`** | Insère la ligne, ou la met à jour si elle existe déjà | `services/adherentSync.service.js` |
 | **Fonction Edge** | Petit programme hébergé par Supabase, exécuté par Deno | `notify-contact-message` |
 | **Deno** | Environnement d'exécution JavaScript/TypeScript, différent de Node | |
 | **Webhook** | Appel automatique d'une adresse quand un événement se produit | insertion dans `messages_contact` |

@@ -14,7 +14,7 @@ L'authentification est entièrement confiée à **Supabase Auth** (e-mail + mot 
 | Restaurer la session au chargement | auth.js | `supabase.auth.getSession()` puis `onAuthStateChange` |
 | Protéger les pages | [frontend/src/router/index.js](../frontend/src/router/index.js) | `router.beforeEach` |
 | Protéger les données | [supabase/schema.sql](../supabase/schema.sql) | règles RLS |
-| Protéger les routes admin du backend | [backend/index.js](../backend/index.js) | `verifierAdmin` |
+| Protéger les routes admin du backend | [backend/app.js](../backend/app.js) | `verifierAdmin` |
 
 ## 2. Connexion et vérification de l'identité
 
@@ -30,7 +30,7 @@ L'authentification est entièrement confiée à **Supabase Auth** (e-mail + mot 
 
 ## 3. Conservation de la session
 
-- Le navigateur ne parle plus directement à Supabase : la connexion passe par le serveur ([authRoutes.js](../backend/authRoutes.js)), qui garde les jetons Supabase chiffrés côté serveur et ne donne au navigateur qu’un cookie de session `httpOnly` ([sessions.js](../backend/sessions.js)).
+- Le navigateur ne parle plus directement à Supabase : la connexion passe par le serveur ([controllers/auth.controller.js](../backend/controllers/auth.controller.js)), qui garde les jetons Supabase chiffrés côté serveur et ne donne au navigateur qu’un cookie de session `httpOnly` ([services/session.service.js](../backend/services/session.service.js)).
 - Au chargement de la page, `supabase.auth.getSession()` restaure la session puis passe `state.initialized` à `true`. Le routeur attend ce signal avant de décider d'une redirection (`attendreInitialisation`).
 - `onAuthStateChange` recharge le profil à chaque changement (connexion ou déconnexion dans un autre onglet, expiration).
 
@@ -43,7 +43,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | Personne âgée | `profiles.role = 'senior'` | choisi à l'inscription |
 | Personnel de santé | `profiles.role = 'sante'` | choisi à l'inscription |
 | Particulier | `profiles.role = 'particulier'` | choisi à l'inscription |
-| Administrateur | l'e-mail du compte est égal à la constante `ADMIN_EMAIL` | `isAdmin` dans auth.js ; `verifierAdmin` dans backend/index.js ; règles RLS |
+| Administrateur | l'e-mail du compte est égal à la constante `ADMIN_EMAIL` | `isAdmin` dans auth.js ; `verifierAdmin` dans backend/app.js ; règles RLS |
 
 ### Où les permissions sont appliquées
 
@@ -69,7 +69,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 
 ## 6. CORS
 
-`app.use(cors())` sans option dans [backend/index.js](../backend/index.js) : toutes les origines sont acceptées. Aucune liste d'origines autorisées n'est définie.
+`app.use(cors())` sans option dans [backend/app.js](../backend/app.js) : toutes les origines sont acceptées. Aucune liste d'origines autorisées n'est définie.
 
 ## 7. Protections contre les failles courantes
 
@@ -80,7 +80,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | **CSRF** | La session est un cookie `httpOnly`, `SameSite=Lax` (préfixe `__Host-` en production). Le serveur refuse en plus toute requête qui modifie des données si son en-tête `Origin` n'est pas celui du site. |
 | **Exposition de clés** | La clé « service role » et la clé de l'API d'IA ne sont lues que côté serveur. Le fichier `.env` est dans `.gitignore`. Seules les variables préfixées `VITE_` arrivent dans le navigateur, et la clé « anon » est conçue pour être publique. |
 | **Énumération de comptes** | Message de connexion unique ; la page « mot de passe oublié » affiche la même confirmation que l'adresse existe ou non. |
-| **Force brute** | Limites par adresse IP côté serveur ([authRoutes.js](../backend/authRoutes.js)) : 10 connexions / 15 min, 5 inscriptions / heure, 4 demandes de réinitialisation / heure. Mots de passe de 8 caractères minimum, avec une jauge de force à la saisie. |
+| **Force brute** | Limites par adresse IP côté serveur ([controllers/auth.controller.js](../backend/controllers/auth.controller.js)) : 10 connexions / 15 min, 5 inscriptions / heure, 4 demandes de réinitialisation / heure. Mots de passe de 8 caractères minimum, avec une jauge de force à la saisie. |
 | **Élévation de privilèges** | L'admin est reconnu par son e-mail, vérifié côté base et côté serveur à partir du jeton, pas à partir d'une donnée modifiable par l'utilisateur. Point faible : un utilisateur peut modifier sa propre colonne `role` (voir [06-base-de-donnees.md](06-base-de-donnees.md)). |
 
 | **Fuite de coordonnées** | Le téléphone et l'adresse d'une personne ne sont envoyés qu'à elle-même, à l'administrateur et aux personnes avec qui elle a une demande acceptée ou terminée. Ailleurs : « Numéro après acceptation ». Voir [05-backend.md](05-backend.md) § 7 bis. |

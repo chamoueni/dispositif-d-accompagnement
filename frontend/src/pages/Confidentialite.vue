@@ -2,8 +2,8 @@
 // Page « Politique de confidentialité » (RGPD) : quelles données le site
 // enregistre, pourquoi, qui les voit, où elles sont stockées, combien de temps,
 // et comment exercer ses droits. Chaque point décrit le fonctionnement réel du
-// site (voir backend/dataRoutes.js pour le masquage des coordonnées,
-// backend/sessions.js pour la durée des sessions).
+// site (voir backend/controllers/data.controller.js pour le masquage des coordonnées,
+// backend/services/session.service.js pour la durée des sessions).
 // Contenu statique, en français : c'est un texte juridique, il n'est pas traduit.
 import BackLink from '../components/BackLink.vue'
 import '../styles/PagesLegales.css'
