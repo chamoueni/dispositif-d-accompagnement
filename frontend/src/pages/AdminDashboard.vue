@@ -102,6 +102,16 @@ function lancerRecherche() {
   router.push({ path: '/admin/comptes', query: rechercheSaisie.value ? { q: rechercheSaisie.value } : {} })
 }
 
+// Validation d'un profil d'intervenant depuis « À traiter aujourd'hui ».
+const ROLE_LIBELLE = { sante: 'personnel de santé', particulier: 'particulier' }
+async function validerProfil(id) {
+  try {
+    await dashboard.validerProfil(id)
+  } catch {
+    // Le profil reste dans la liste « à valider » : l'échec est visible.
+  }
+}
+
 async function marquerLu(id) {
   try {
     await dashboard.marquerLu(id)
@@ -194,6 +204,39 @@ async function marquerLu(id) {
             <h2>À traiter aujourd’hui</h2>
           </div>
           <ul class="admin-a-traiter-liste">
+            <!-- Profils d'intervenants inscrits, invisibles dans la recherche
+                 tant que l'administrateur ne les a pas validés (F08 / BF16). -->
+            <li
+              v-for="u in dashboard.profilsAValider"
+              :key="`profil-${u.id}`"
+              class="admin-a-traiter-item"
+            >
+              <span class="admin-avatar">{{ (u.nom || '?').slice(0, 2).toUpperCase() }}</span>
+              <div class="admin-a-traiter-texte">
+                <p class="mb-0">
+                  <strong>{{ u.nom || 'Nouveau compte' }}</strong> attend la validation de son profil
+                  ({{ ROLE_LIBELLE[u.role] }}{{ u.ville ? ` · ${u.ville}` : '' }})
+                </p>
+                <p class="admin-a-traiter-citation mb-0">
+                  {{ u.specialite || (u.services || []).join(', ') || 'Aucun service renseigné' }}
+                </p>
+              </div>
+              <div class="admin-a-traiter-actions">
+                <router-link
+                  :to="{ path: '/admin/comptes', query: { q: u.nom } }"
+                  class="admin-btn admin-btn-outline admin-btn-sm"
+                >
+                  Voir
+                </router-link>
+                <button
+                  type="button"
+                  class="admin-btn admin-btn-primary admin-btn-sm"
+                  @click="validerProfil(u.id)"
+                >
+                  Valider
+                </button>
+              </div>
+            </li>
             <li
               v-for="m in messagesNonLus"
               :key="m.id"
@@ -225,7 +268,7 @@ async function marquerLu(id) {
               </div>
             </li>
             <li
-              v-if="!messagesNonLus.length"
+              v-if="!messagesNonLus.length && !dashboard.profilsAValider.length"
               class="admin-empty"
             >
               Rien à traiter pour le moment.

@@ -24,7 +24,8 @@ const ouvert = ref(false)
 
 const liens = computed(() => [
   { nom: 'admin', route: '/admin', icone: 'home', texte: 'Tableau de bord' },
-  { nom: 'admin-comptes', route: '/admin/comptes', icone: 'users', texte: 'Comptes', compteur: dashboard.utilisateurs.length },
+  // Pastille = profils d'intervenants à valider ; sinon le nombre de comptes.
+  { nom: 'admin-comptes', route: '/admin/comptes', icone: 'users', texte: 'Comptes', compteur: dashboard.utilisateurs.length, badge: dashboard.profilsAValider.length },
   { nom: 'admin-adherents', route: '/admin/adherents', icone: 'user-plus', texte: 'Adhérents', compteur: adherents.adherents.length },
   {
     nom: 'admin-demandes',

@@ -2,9 +2,10 @@
 // Vue "Comptes" de l'espace admin (/admin/comptes) : liste + recherche/filtre,
 // modification et suppression (logique reprise telle quelle de l'ancienne
 // page Admin.vue, seulement déplacée dans le store partagé useAdminDashboard),
-// plus la création d'un compte complet (nouveauté, voir POST /api/admin/comptes
-// dans backend/app.js — un email est nécessaire, aucun champ mot de passe
-// n'étant proposé ici, voir le commentaire de cette route côté serveur).
+// plus la création d'un compte complet (voir POST /api/admin/comptes dans
+// backend/controllers/admin.controller.js — un email est nécessaire, aucun champ
+// mot de passe n'étant proposé ici) et la validation des profils d'intervenants
+// (filtre « À valider », bouton « Valider », case « Profil vérifié »).
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { COMMUNES_MAYOTTE } from '../data/store'
@@ -29,8 +30,17 @@ const ROLE_BADGE = { senior: 'ylang', particulier: 'teal', sante: 'teal-solid' }
 const recherche = ref(route.query.q?.toString() || '')
 const filtreRole = ref('tous')
 
+const ROLES_INTERVENANT = ['sante', 'particulier']
+const estIntervenant = (role) => ROLES_INTERVENANT.includes(role)
+// Profil d'intervenant pas encore validé : invisible dans la recherche.
+const enAttente = (u) => estIntervenant(u.role) && u.verifie === false
+// La colonne « verifie » n'existe qu'après la migration SQL
+// 20261110_validation_profils.sql : avant, on n'envoie pas ce champ.
+const colonneVerifie = computed(() => dashboard.utilisateurs.some((u) => 'verifie' in u))
+
 const filtres = computed(() => [
   { valeur: 'tous', label: 'Tous', nb: dashboard.utilisateurs.length },
+  { valeur: 'a-valider', label: 'À valider', nb: dashboard.profilsAValider.length },
   { valeur: 'senior', label: 'Personnes âgées', nb: dashboard.utilisateurs.filter((u) => u.role === 'senior').length },
   { valeur: 'particulier', label: 'Particuliers', nb: dashboard.utilisateurs.filter((u) => u.role === 'particulier').length },
   { valeur: 'sante', label: 'Personnel de santé', nb: dashboard.utilisateurs.filter((u) => u.role === 'sante').length },
@@ -39,7 +49,9 @@ const filtres = computed(() => [
 const utilisateursFiltres = computed(() => {
   const q = recherche.value.trim().toLowerCase()
   return dashboard.utilisateurs.filter((u) => {
-    if (filtreRole.value !== 'tous' && u.role !== filtreRole.value) return false
+    if (filtreRole.value === 'a-valider') {
+      if (!enAttente(u)) return false
+    } else if (filtreRole.value !== 'tous' && u.role !== filtreRole.value) return false
     if (!q) return true
     return (
       (u.nom || '').toLowerCase().includes(q) ||
@@ -66,7 +78,7 @@ const enCours = ref(false)
 const erreur = ref('')
 
 function formulaireVide() {
-  return { nom: '', role: 'senior', telephone: '', ville: COMMUNES_MAYOTTE[0].nom, email: '', actif: true }
+  return { nom: '', role: 'senior', telephone: '', ville: COMMUNES_MAYOTTE[0].nom, email: '', actif: true, verifie: true }
 }
 const formulaire = reactive(formulaireVide())
 
@@ -86,6 +98,7 @@ function ouvrirEdition(u) {
     ville: u.ville || COMMUNES_MAYOTTE[0].nom,
     email: '',
     actif: u.actif ?? true,
+    verifie: u.verifie !== false,
   })
   modeEdition.value = true
   compteEnEditionId.value = u.id
@@ -112,6 +125,7 @@ async function valider() {
         telephone: formulaire.telephone,
         ville: formulaire.ville,
         actif: formulaire.actif,
+        ...(colonneVerifie.value ? { verifie: formulaire.verifie } : {}),
       })
     } else {
       const cree = await dashboard.creerCompte({ ...formulaire })
@@ -128,6 +142,19 @@ async function valider() {
     erreur.value = err.message
   } finally {
     enCours.value = false
+  }
+}
+
+// Bouton « Valider » de la liste : rend le profil visible dans la recherche.
+const validationEnCours = ref(null)
+async function validerDepuisListe(u) {
+  validationEnCours.value = u.id
+  try {
+    await dashboard.validerProfil(u.id)
+  } catch (err) {
+    alert(`Échec de la validation : ${err.message}`)
+  } finally {
+    validationEnCours.value = null
   }
 }
 
@@ -252,10 +279,24 @@ onMounted(() => {
                 />
                 {{ u.actif === false ? 'Inactif' : 'Actif' }}
               </span>
+              <span
+                v-if="enAttente(u)"
+                class="admin-badge admin-badge-ylang ms-2"
+              >À valider</span>
             </td>
             <td>{{ formatDate(u.created_at) }}</td>
             <td>
               <div class="admin-row-actions">
+                <button
+                  v-if="enAttente(u)"
+                  type="button"
+                  class="admin-btn admin-btn-primary admin-btn-sm"
+                  :disabled="validationEnCours === u.id"
+                  @click="validerDepuisListe(u)"
+                >
+                  <AdminIcon nom="check-circle" />
+                  Valider
+                </button>
                 <button
                   type="button"
                   class="admin-icon-btn"
@@ -384,6 +425,17 @@ onMounted(() => {
             type="checkbox"
           >
           Compte actif
+        </label>
+
+        <label
+          v-if="estIntervenant(formulaire.role) && (colonneVerifie || !modeEdition)"
+          class="admin-checkbox"
+        >
+          <input
+            v-model="formulaire.verifie"
+            type="checkbox"
+          >
+          Profil vérifié (visible dans la recherche)
         </label>
 
         <p

@@ -24,9 +24,13 @@ const PROFIL_FIELDS = [
 
 // Garde uniquement les champs autorisés et vérifie leur format.
 // Renvoie null si une valeur est invalide.
-export function patchProfil(value) {
+// admin = true : modification depuis l'espace admin, qui seul peut valider un
+// profil (champ verifie). Un utilisateur ne peut donc pas se valider lui-même.
+export function patchProfil(value, { admin = false } = {}) {
   if (!jsonObject(value)) return null
-  const patch = Object.fromEntries(Object.entries(value).filter(([key]) => PROFIL_FIELDS.includes(key)))
+  const champs = admin ? [...PROFIL_FIELDS, 'verifie'] : PROFIL_FIELDS
+  const patch = Object.fromEntries(Object.entries(value).filter(([key]) => champs.includes(key)))
+  if (patch.verifie !== undefined && typeof patch.verifie !== 'boolean') return null
   if (patch.role && !ROLES_AUTORISES.includes(patch.role)) return null
   if (patch.nom !== undefined && (typeof patch.nom !== 'string' || patch.nom.length > 120)) return null
   if (patch.telephone !== undefined && (typeof patch.telephone !== 'string' || patch.telephone.length > 40)) return null

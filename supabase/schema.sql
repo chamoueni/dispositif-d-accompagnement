@@ -38,6 +38,21 @@ alter table profiles add column if not exists adresse text not null default '';
 -- de suivi côté admin plutôt qu'un vrai verrou d'accès.
 alter table profiles add column if not exists actif boolean not null default true;
 
+-- Profil vérifié par l'administrateur (F08 / BF16) : un intervenant non vérifié
+-- n'apparaît pas dans la recherche. Les profils déjà présents quand la colonne
+-- est créée sont marqués vérifiés (détail et déclencheur de protection dans
+-- migrations/20261110_validation_profils.sql, à exécuter aussi).
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'verifie'
+  ) then
+    alter table profiles add column verifie boolean not null default false;
+    update profiles set verifie = true;
+  end if;
+end $$;
+
 -- Un même numéro de téléphone ne doit pas pouvoir être utilisé sur deux
 -- comptes différents. Index unique PARTIEL (where telephone <> '') plutôt
 -- qu'une contrainte unique classique : la colonne a un défaut '' et plusieurs

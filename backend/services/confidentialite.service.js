@@ -43,7 +43,22 @@ export function masquerCoordonnees(profil, req, contacts) {
 // utilisateurs.
 const estDemo = (profil) => /\(démo\)/i.test(profil?.nom || '')
 
+// --- Validation des profils par l'administrateur (F08 / BF16) ---------------
+// Un personnel de santé ou un particulier n'apparaît dans la recherche et sur
+// la carte qu'une fois son profil vérifié par l'administrateur (colonne
+// verifie, voir supabase/migrations/20261110_validation_profils.sql).
+// « === false » et non « !verifie » : tant que la colonne n'existe pas encore
+// dans la base, la valeur est absente et tout le monde reste visible.
+const ROLES_INTERVENANT = ['sante', 'particulier']
+
+export function enAttenteDeValidation(profil) {
+  return ROLES_INTERVENANT.includes(profil?.role) && profil?.verifie === false
+}
+
 export function visibleDansLaListe(profil, moi, req) {
+  // Soi-même et l'administrateur voient toujours le profil.
+  if (isAdmin(req) || profil.id === req.authSession.user.id) return true
+  if (enAttenteDeValidation(profil)) return false
   if (!estDemo(profil)) return true
-  return isAdmin(req) || estDemo(moi) || profil.id === req.authSession.user.id
+  return estDemo(moi)
 }

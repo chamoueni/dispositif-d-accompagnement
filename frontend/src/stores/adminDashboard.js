@@ -44,6 +44,16 @@ export const useAdminDashboard = defineStore('admin-dashboard', () => {
   const messagesNonLus = computed(() => messages.value.filter((m) => !m.lu).length)
   const demandesEnAttente = computed(() => demandes.value.filter((d) => d.statut === 'en_attente').length)
   const missionsEnCours = computed(() => missions.value.filter((m) => m.statutMission === 'en_cours').length)
+  // Intervenants (santé, particulier) inscrits mais pas encore vérifiés : ils
+  // n'apparaissent pas dans la recherche tant que l'admin ne les a pas validés.
+  // « === false » : avant la migration SQL, la colonne n'existe pas encore.
+  const profilsAValider = computed(() => utilisateurs.value.filter(
+    (u) => ['sante', 'particulier'].includes(u.role) && u.verifie === false,
+  ))
+
+  async function validerProfil(id) {
+    await modifierCompte(id, { verifie: true })
+  }
 
   const nomParId = computed(() => {
     const map = {}
@@ -92,6 +102,8 @@ export const useAdminDashboard = defineStore('admin-dashboard', () => {
     messagesNonLus,
     demandesEnAttente,
     missionsEnCours,
+    profilsAValider,
+    validerProfil,
     nomCompte,
     charger,
     modifierCompte,

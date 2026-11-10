@@ -259,6 +259,8 @@
   },
   "mon_compte_page": {
     "titre": "Mon compte",
+    "attente_titre": "Profil en attente de validation.",
+    "attente_texte": "L'équipe vérifie votre profil : il apparaîtra dans la recherche dès qu'il aura été validé. Vous pouvez déjà compléter vos services et vos disponibilités.",
     "formule_active": "Formule active :",
     "gratuite": "gratuite",
     "prix_mois": "{prix} €/mois",

@@ -54,6 +54,11 @@ const LIENS = computed(() => {
   ]
 })
 
+// Intervenant inscrit mais pas encore validé par l'administrateur : il
+// n'apparaît pas encore dans la recherche, on le lui dit clairement.
+// (« === false » : avant la migration SQL, le champ n'existe pas.)
+const profilEnAttente = computed(() => ['sante', 'particulier'].includes(user.value?.role) && user.value?.verifie === false)
+
 // Salutation personnalisée : "Bonjour Mariama" plutôt qu'un titre générique.
 const prenom = computed(() => prenomDe(user.value?.nom) || user.value?.email || '')
 
@@ -80,6 +85,15 @@ async function seDeconnecter() {
         <p class="text-muted mb-0">
           {{ t('mon_compte_page.sous_titre') }}
         </p>
+      </div>
+
+      <div
+        v-if="profilEnAttente"
+        class="alert alert-warning mb-4"
+        role="status"
+      >
+        <strong>{{ t('mon_compte_page.attente_titre') }}</strong>
+        {{ t('mon_compte_page.attente_texte') }}
       </div>
 
       <!-- Les formules d'accompagnement sont réservées aux personnes âgées

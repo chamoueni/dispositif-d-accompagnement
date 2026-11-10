@@ -52,11 +52,17 @@ export async function creerCompte(req, res, next) {
       return res.status(400).json({ message })
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .insert({ id: data.user.id, ...metadata, actif: req.body?.actif !== false })
-      .select()
-      .single()
+    // Compte créé par l'administrateur lui-même : profil vérifié, sauf s'il
+    // décoche « Profil vérifié » dans le formulaire (verifie: false).
+    const ligne = { id: data.user.id, ...metadata, actif: req.body?.actif !== false, verifie: req.body?.verifie !== false }
+    let { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles').insert(ligne).select().single()
+    // Base pas encore migrée (colonne verifie absente) : on crée le profil sans.
+    if (profileError && /verifie/i.test(profileError.message)) {
+      delete ligne.verifie
+      ;({ data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles').insert(ligne).select().single())
+    }
     if (profileError) {
       // Pas de compte sans profil : on annule la création.
       const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(data.user.id)

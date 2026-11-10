@@ -71,11 +71,14 @@ export async function inscrire(req, res, next) {
 
     const { error: sessionError } = await client.auth.setSession(data.session)
     if (sessionError) throw sessionError
-    const { error: profileError } = await client.from('profiles').insert({ id: data.user.id, ...metadata })
+    // .select() : on renvoie le profil tel qu'enregistré (avec verifie, pour
+    // que « Mon compte » affiche tout de suite « profil en attente de validation »).
+    const { data: profil, error: profileError } = await client
+      .from('profiles').insert({ id: data.user.id, ...metadata }).select().single()
     if (profileError) throw profileError
     const { data: sessionData } = await client.auth.getSession()
     await createSession(data.user.id, sessionData.session || data.session, false, res)
-    return res.status(201).json({ user: { ...metadata, id: data.user.id, email: data.user.email } })
+    return res.status(201).json({ user: { ...metadata, ...profil, id: data.user.id, email: data.user.email } })
   } catch (error) {
     next(error)
   }

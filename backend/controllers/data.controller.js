@@ -74,7 +74,7 @@ export async function traiterAction(req, res, next) {
       case 'profiles.updateAdmin': {
         if (action === 'profiles.updateAdmin' && !isAdmin(req)) return res.status(403).json(ADMIN_SEULEMENT)
         const id = action === 'profiles.updateOwn' ? req.authSession.user.id : payload.id
-        const patch = patchProfil(payload.patch)
+        const patch = patchProfil(payload.patch, { admin: action === 'profiles.updateAdmin' })
         if (!isUuid(id) || !patch || Object.keys(patch).length === 0) {
           return res.status(400).json({ message: 'Profil ou champs de modification invalides.' })
         }
@@ -105,6 +105,14 @@ export async function traiterAction(req, res, next) {
             typeof body.message !== 'string' || body.message.length > 3000 ||
             (body.urgence !== undefined && !['normale', 'urgente'].includes(body.urgence))) {
           return res.status(400).json({ message: 'Les informations de la demande sont invalides.' })
+        }
+        // Une demande s'adresse à un intervenant qui existe (personnel de santé
+        // ou particulier), jamais à soi-même ni à une autre personne âgée.
+        const { data: aidant, error: aidantError } = await client
+          .from('profiles').select('id, role').eq('id', body.aidantId).maybeSingle()
+        if (aidantError) throw aidantError
+        if (!aidant || !['sante', 'particulier'].includes(aidant.role) || aidant.id === req.authSession.user.id) {
+          return res.status(404).json({ message: 'Intervenant introuvable.' })
         }
         const { data, error } = await client.from('demandes').insert({
           demandeur_id: req.authSession.user.id,
