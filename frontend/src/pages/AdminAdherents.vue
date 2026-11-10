@@ -58,7 +58,13 @@ function editer(adherent) {
   afficherFormulaire.value = true
 }
 
+// Vrai pendant l'envoi : le bouton est désactivé et les clics suivants sont
+// ignorés (un double-clic créait plusieurs fois le même adhérent).
+const envoiEnCours = ref(false)
+
 async function enregistrer() {
+  if (envoiEnCours.value) return
+  envoiEnCours.value = true
   try {
     if (editionId.value) {
       await store.modifierAdherent(editionId.value, formulaire)
@@ -71,6 +77,8 @@ async function enregistrer() {
     editionId.value = null
   } catch (err) {
     notifier(err.message, 'danger')
+  } finally {
+    envoiEnCours.value = false
   }
 }
 
@@ -213,8 +221,9 @@ onMounted(async () => {
       <button
         type="submit"
         class="admin-btn admin-btn-primary"
+        :disabled="envoiEnCours"
       >
-        {{ editionId ? 'Enregistrer' : "Ajouter l'adhérent" }}
+        {{ envoiEnCours ? 'Enregistrement…' : editionId ? 'Enregistrer' : "Ajouter l'adhérent" }}
       </button>
     </div>
   </form>

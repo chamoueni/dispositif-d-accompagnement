@@ -82,8 +82,15 @@ function collectionMongo() {
     collectionPromise = (async () => {
       const client = await connecter(process.env.MONGODB_URI)
       const collection = client.db(process.env.MONGODB_DB || 'dispositif').collection('adherents')
-      // Index unique : deux documents ne peuvent pas partager le même "id".
+      // Index uniques : deux documents ne peuvent partager ni le même "id",
+      // ni le même email (protège des doublons même si deux envois arrivent
+      // en même temps ; le serveur répond alors 409, voir index.js).
       await collection.createIndex({ id: 1 }, { unique: true })
+      await collection.createIndex({ email: 1 }, { unique: true }).catch((error) => {
+        // Doublons déjà présents : l'index ne peut pas être créé, on le signale
+        // sans empêcher le site de fonctionner.
+        console.warn('Index unique sur l’email des adhérents non créé :', error.codeName || error.message)
+      })
 
       // Premier lancement sur une base vide : on y importe les adhérents du
       // fichier JSON pour ne rien perdre lors du passage à MongoDB.

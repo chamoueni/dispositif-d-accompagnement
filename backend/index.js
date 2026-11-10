@@ -95,10 +95,20 @@ app.post('/api/adherents', verifierAdmin, async (req, res, next) => {
   try {
     const erreur = validerAdherent(req.body)
     if (erreur) return res.status(400).json({ message: erreur })
+    // Pas deux adhérents avec le même email : évite aussi les doublons créés
+    // par un double-clic ou un envoi répété du formulaire.
+    const email = req.body.email.trim().toLowerCase()
+    if ((await obtenirAdherents()).some((a) => a.email === email)) {
+      return res.status(409).json({ message: 'Un adhérent existe déjà avec cet email.' })
+    }
     const adherent = await ajouterAdherent(req.body)
     await synchroniserAdherent(adherent, 'ajouter')
     return res.status(201).json(adherent)
   } catch (error) {
+    // 11000 = clé en double dans MongoDB (index unique sur l'email).
+    if (error?.code === 11000) {
+      return res.status(409).json({ message: 'Un adhérent existe déjà avec cet email.' })
+    }
     next(error)
   }
 })
