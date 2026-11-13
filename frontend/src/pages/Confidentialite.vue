@@ -150,16 +150,12 @@ const DONNEES = [
         <h2>4. Où sont stockées vos données</h2>
         <ul>
           <li>
-            <strong>Comptes, profils, demandes, avis et messages</strong> : base de données Supabase,
-            dans l’Union européenne (Francfort, Allemagne).
+            <strong>Comptes, profils, demandes, avis, messages et liste des adhérents</strong> : base
+            de données Supabase, dans l’Union européenne (Francfort, Allemagne).
           </li>
           <li>
             <strong>Site et serveur</strong> : hébergés par Render (société américaine). Les données
             y transitent pour être affichées, sans y être conservées.
-          </li>
-          <li>
-            <strong>Liste des adhérents</strong> gérée par l’administration (nom, e-mail, téléphone,
-            commune) : MongoDB Atlas, serveur situé en Afrique du Sud (Le Cap).
           </li>
           <li>
             <strong>Messages SOS</strong> : une copie est envoyée par e-mail à l’administration

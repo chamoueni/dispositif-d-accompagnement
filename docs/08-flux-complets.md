@@ -162,14 +162,14 @@ AdminComptes.vue (« Nouveau compte » → formulaire) → valider()
 AdminAdherents.vue → enregistrer()
       → store.creerAdherent(formulaire)         [stores/adherents.js]
             → fetch POST /api/adherents
-                  → validerAdherent()           [backend/app.js]
-                  → ajouterAdherent()           [backend/models/adherent.model.js] → adherents.json
-                  → synchroniserAdherent()      [backend/services/adherentSync.service.js]   → table adherents
+                  → verifierAdmin()             [backend/middleware/admin.js]
+                  → validerAdherent()           [backend/services/validation.service.js]
+                  → ajouterAdherent()           [backend/models/adherent.model.js] → table adherents (Supabase)
                   ← 201 + adhérent
       → adherents.value.push(...) → le tableau se met à jour → notifier('Adhérent ajouté…')
 ```
 
-Correspondance avec le découpage classique : route = `routes/adherents.routes.js` ; controller = `controllers/adherents.controller.js` ; model = `models/adherent.model.js` ; service = `services/adherentSync.service.js`.
+Correspondance avec le découpage classique : route = `routes/adherents.routes.js` ; controller = `controllers/adherents.controller.js` ; model = `models/adherent.model.js` ; service = `services/validation.service.js`.
 
 ## 12. Message de contact
 

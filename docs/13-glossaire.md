@@ -114,7 +114,6 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **`auth.uid()`** | Dans une règle : l'identifiant de l'utilisateur qui fait la requête | |
 | **Clé « anon »** | Clé publique de Supabase, utilisée dans le navigateur, limitée par la RLS | `VITE_SUPABASE_ANON_KEY` |
 | **Clé « service role »** | Clé d'administration qui **contourne** la RLS ; uniquement côté serveur | `SUPABASE_SERVICE_ROLE_KEY` |
-| **`upsert`** | Insère la ligne, ou la met à jour si elle existe déjà | `services/adherentSync.service.js` |
 | **Fonction Edge** | Petit programme hébergé par Supabase, exécuté par Deno | `notify-contact-message` |
 | **Deno** | Environnement d'exécution JavaScript/TypeScript, différent de Node | |
 | **Webhook** | Appel automatique d'une adresse quand un événement se produit | insertion dans `messages_contact` |

@@ -86,10 +86,10 @@ Le propriétaire indique que le backend est sur **Render**. Voici ce que le dép
 - Commande de démarrage (**Start Command** sur Render) : `npm start`, qui lance `node backend/app.js`. ⚠️ Ne pas écrire de chemin de fichier en dur dans Render : après la réorganisation en `frontend/` + `backend/` (novembre 2026), l'ancienne commande `node server/index.js` faisait échouer chaque déploiement, Render gardant l'ancienne version en ligne sans le signaler aux visiteurs.
 - Contrôle de santé conseillé (**Health Check Path**) : `/api/sante`.
 - Installation : `npm install` à la racine, puisque le `package.json` est commun.
-- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production`, `MONGODB_URI` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
+- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
 - Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
 
-**Point de vigilance.** Sans `MONGODB_URI`, les adhérents sont enregistrés dans le fichier `backend/data/adherents.json`, effacé par Render à chaque redéploiement. En production, renseigner `MONGODB_URI` (base gratuite MongoDB Atlas : créer un cluster, un utilisateur, autoriser l'accès réseau `0.0.0.0/0`, puis copier la chaîne `mongodb+srv://…`). Voir [05-backend.md](05-backend.md), section 8.
+**Point de vigilance.** Toutes les données (adhérents compris) sont dans Supabase : rien n'est écrit sur le disque de Render, qui est effacé à chaque redéploiement. Les anciennes variables `MONGODB_URI` et `MONGODB_DB` ne servent plus et peuvent être supprimées de Render.
 
 ## 4 bis. Maintenance automatique : Mlezi
 

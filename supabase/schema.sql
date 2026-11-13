@@ -90,12 +90,13 @@ create policy "profiles_update_admin" on profiles
   using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
 
 -- ---------------------------------------------------------------------------
--- ADHERENTS : table métier alimentée par l'API Express (miroir Supabase).
--- La clé de service du backend contourne RLS, tandis que cette policy permet
--- aussi une lecture contrôlée depuis les outils Supabase pour l'administrateur.
+-- ADHERENTS : liste gérée par l'administrateur (espace admin › Adhérents),
+-- via l'API Express /api/adherents (backend/models/adherent.model.js).
+-- Le serveur utilise le client de l'administrateur connecté : les policies
+-- ci-dessous réservent donc la table à l'administrateur.
 -- ---------------------------------------------------------------------------
 create table if not exists adherents (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
   nom text not null,
   email text not null,
   telephone text not null default '',
@@ -120,6 +121,9 @@ create policy "adherents_modify_admin" on adherents
   for all to authenticated
   using (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com')
   with check (auth.jwt() ->> 'email' = 'moustakimsinina05@gmail.com');
+
+-- Deux adhérents ne peuvent pas avoir le même email (le serveur répond 409).
+create unique index if not exists adherents_email_unique on adherents (email);
 
 -- ---------------------------------------------------------------------------
 -- AVIS : témoignages/commentaires publics postés par les utilisateurs sur la

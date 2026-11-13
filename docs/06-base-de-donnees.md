@@ -194,7 +194,7 @@ Toutes passent par le constructeur de requêtes de `@supabase/supabase-js` ; il 
 | `chargerProfil` | [auth.js](../frontend/src/stores/auth.js) l. 68 | `from('profiles').select('*').eq('id', authUser.id).single()` |
 | `signup`, `creerProfilDepuisMetadata` | auth.js | `from('profiles').insert({...})` |
 | `updateProfile` | auth.js l. 187 | `from('profiles').update(patch).eq('id', user.id)` |
-| `synchroniserAdherent` | [services/adherentSync.service.js](../backend/services/adherentSync.service.js) | `from('adherents').upsert(...)` ou `.delete().eq('id', …)` |
+| `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent`, `supprimerAdherent` | [models/adherent.model.js](../backend/models/adherent.model.js) | `from('adherents')` : `select`, `insert`, `update`, `delete` |
 
 Deux détails utiles :
 

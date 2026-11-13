@@ -7,7 +7,7 @@ Ce document donne la vue d'ensemble : quelles sont les grandes parties du projet
 | Partie | Technologie | Où | Rôle |
 |---|---|---|---|
 | Frontend | Vue 3 + Vite | `frontend/src/`, `index.html` | Toute l'interface : pages publiques, espace personnel, espace admin. C'est une application à page unique (SPA). |
-| Backend Express | Node.js + Express | `backend/` | API REST par laquelle passe tout le site : connexion (sessions sécurisées), données Supabase, adhérents (MongoDB), comptes admin et bilan de santé `/api/sante`. |
+| Backend Express | Node.js + Express | `backend/` | API REST par laquelle passe tout le site : connexion (sessions sécurisées), données Supabase, adhérents, comptes admin et bilan de santé `/api/sante`. |
 | Base de données et authentification | Supabase (PostgreSQL + Supabase Auth) | `supabase/schema.sql` | Stocke les profils, demandes, mises en relation, avis, messages de contact, adhérents. Gère aussi les comptes (e-mail + mot de passe). |
 | Fonction Edge | Deno (Supabase Edge Function) | `supabase/functions/notify-contact-message/index.ts` | Envoie un e-mail à l'administrateur quand un message de contact est créé. |
 | Robot de maintenance « Mlezi » | GitHub Actions | `.github/workflows/mlezi-gardien.yml` | Toutes les 10 min en journée : réveille l’API Render et fait travailler Supabase (`/api/sante`). Chaque matin : contrôle complet et ticket GitHub en cas de panne. |
@@ -96,14 +96,13 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 │
 ├── backend/                     LE SERVEUR (Node.js + Express), l'API /api/...
 │   ├── app.js                   Point d'entrée : middlewares + routes, démarrage du serveur
-│   ├── config/                  .env, constantes, origines autorisées, connexions Supabase et MongoDB
+│   ├── config/                  .env, constantes, origines autorisées, connexion Supabase
 │   ├── middleware/              Sécurité (CORS, origine), session, admin, limites, erreurs
 │   ├── routes/                  auth, admin, data, adherents, sante : adresse → contrôleur
 │   ├── controllers/             Traitement de chaque requête et réponse JSON
 │   ├── services/                Règles de gestion : sessions, confidentialité, demandes, validation
-│   ├── models/adherent.model.js Adhérents : MongoDB (NoSQL) ou fichier JSON de secours
+│   ├── models/adherent.model.js Adhérents : table Supabase « adherents »
 │   ├── package.json             Contient seulement {"type": "module"}
-│   └── data/adherents.json      Fichier des adhérents (si MongoDB n'est pas configuré)
 │
 ├── supabase/                    LA BASE DE DONNÉES
 │   ├── schema.sql               Tables, index, règles RLS
@@ -132,9 +131,9 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 **Ce qui n'est pas séparé**
 
 - **Les règles métier sont dans le navigateur.** Le changement de statut d'une demande, la création de la mise en relation et la génération du code d'arrivée se font dans `updateDemandeStatut` ([store.js](../frontend/src/data/store.js), ligne 307), exécuté dans le navigateur. Le serveur ne vérifie pas, par exemple, que seul l'intervenant accepte une demande : la règle RLS autorise les deux participants à modifier la ligne (voir [06-base-de-donnees.md](06-base-de-donnees.md)).
-- **Un seul `package.json`** pour le frontend et le backend. `backend/package.json` ne contient que `{"type": "module"}`. Les dépendances Express, cors, dotenv, cookie-parser et mongodb sont donc installées avec celles du frontend.
+- **Un seul `package.json`** pour le frontend et le backend. `backend/package.json` ne contient que `{"type": "module"}`. Les dépendances Express, cors, dotenv, cookie-parser et le SDK Supabase sont donc installées avec celles du frontend.
 - **Une exception à la couche de données** : [ReinitialiserMotDePasse.vue](../frontend/src/pages/ReinitialiserMotDePasse.vue) importe directement `supabase` pour écouter l'événement de récupération de mot de passe.
-- **Deux types de bases** : SQL (Supabase/PostgreSQL) pour presque toutes les données, et **NoSQL (MongoDB)** pour les adhérents gérés par l'admin, avec repli sur un fichier JSON local si MongoDB n'est pas configuré (voir [05-backend.md](05-backend.md), section 8).
+- **Une seule base de données** : Supabase/PostgreSQL contient toutes les données, adhérents compris. MongoDB a été utilisé pour les adhérents puis retiré (novembre 2026) : une seconde base n'apportait rien, car les adhérents sont des données structurées comme le reste (voir [05-backend.md](05-backend.md), section 8).
 
 ## 5. Points d'attention relevés dans le dépôt
 
@@ -145,7 +144,7 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 ## À retenir
 
 - Trois blocs : un frontend Vue, un petit backend Express, et Supabase pour la base et les comptes.
-- Le navigateur ne parle qu'au serveur Express (`/api/...`), qui interroge Supabase et MongoDB à sa place.
+- Le navigateur ne parle qu'au serveur Express (`/api/...`), qui interroge Supabase à sa place.
 - La sécurité des données repose donc surtout sur les règles RLS de `supabase/schema.sql`.
 - Les règles métier (statuts, code d'arrivée) sont exécutées dans le navigateur, pas sur un serveur.
 - Frontend et backend partagent un seul `package.json`.

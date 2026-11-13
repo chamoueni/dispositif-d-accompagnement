@@ -2,12 +2,12 @@
 // les middlewares puis les routes, et démarre l'écoute.
 //
 // Organisation du dossier backend/ :
-//   config/       réglages et connexions aux bases (Supabase, MongoDB)
+//   config/       réglages et connexion à la base Supabase (PostgreSQL)
 //   middleware/   contrôles exécutés avant les routes (sécurité, session, admin…)
 //   routes/       adresses de l'API et contrôleur appelé pour chacune
 //   controllers/  traitement de chaque requête et réponse JSON
 //   services/     règles de gestion réutilisables (sessions, confidentialité…)
-//   models/       accès aux données des adhérents (MongoDB ou fichier JSON)
+//   models/       accès aux données des adhérents (table Supabase « adherents »)
 import './config/env.js'
 import express from 'express'
 import cookieParser from 'cookie-parser'

@@ -1,6 +1,6 @@
 # 05 — Backend (`backend/`)
 
-Le backend est un serveur **Express 5** écrit en JavaScript (modules ES). C'est le seul intermédiaire entre le site et les bases de données : le navigateur n'a aucune clé d'accès à Supabase ni à MongoDB (voir [01-architecture.md](01-architecture.md)).
+Le backend est un serveur **Express 5** écrit en JavaScript (modules ES). C'est le seul intermédiaire entre le site et les bases de données : le navigateur n'a aucune clé d'accès secrète à Supabase (voir [01-architecture.md](01-architecture.md)).
 
 ## 1. Organisation des dossiers
 
@@ -13,8 +13,7 @@ backend/
 │   ├── env.js            charge le fichier .env (dotenv)
 │   ├── constantes.js     ADMIN_EMAIL, rôles, statuts, longueur minimale des mots de passe
 │   ├── origines.js       adresses autorisées à appeler l'API (SITE_URL, CORS_ORIGINS, localhost)
-│   ├── supabase.js       connexion Supabase : client « service role » + client par utilisateur
-│   └── mongodb.js        connexion MongoDB Atlas (une seule, partagée)
+│   └── supabase.js       connexion Supabase : client « service role » + client par utilisateur
 ├── middleware/       contrôles exécutés avant les routes
 │   ├── securite.js       CORS, en-têtes de sécurité, contrôle de l'origine (CSRF)
 │   ├── session.js        retrouve l'utilisateur à partir du cookie ; requireAuth
@@ -39,11 +38,9 @@ backend/
 │   ├── profil.service.js     lecture (et création si besoin) du profil connecté
 │   ├── confidentialite.service.js  masquage du téléphone et de l'adresse, comptes de démo
 │   ├── demande.service.js    changement de statut d'une demande (code d'arrivée, mission)
-│   ├── validation.service.js contrôle des données reçues
-│   └── adherentSync.service.js  copie des adhérents dans Supabase
+│   └── validation.service.js contrôle des données reçues
 ├── models/
-│   └── adherent.model.js     accès aux adhérents : MongoDB, ou fichier JSON de secours
-├── data/adherents.json   fichier de secours (si MongoDB n'est pas configuré)
+│   └── adherent.model.js     accès aux adhérents : table Supabase « adherents »
 └── package.json          {"type": "module"}
 ```
 
@@ -52,7 +49,7 @@ backend/
 | À quoi servent les routes ? | Associer une adresse et une méthode HTTP (GET, POST, PUT, DELETE) à une fonction de contrôleur, avec les middlewares propres à cette route. |
 | Pourquoi séparer les controllers ? | Le fichier de routes se lit comme un sommaire de l'API ; le contrôleur contient le traitement (contrôle des données, appel à la base, réponse). |
 | Où sont les traitements métier ? | Dans `services/` (confidentialité des profils, cycle de vie des demandes, sessions). |
-| Où se trouve la connexion à la base ? | Dans `config/supabase.js` (PostgreSQL) et `config/mongodb.js` (MongoDB). |
+| Où se trouve la connexion à la base ? | Dans `config/supabase.js` (PostgreSQL, la seule base du projet). |
 | Où sont les middlewares ? | Dans `middleware/`, branchés dans `app.js` ou dans les fichiers de routes. |
 
 ## 2. Démarrage
@@ -121,30 +118,25 @@ La base laisse tout utilisateur connecté lire tous les profils (c'est nécessai
 | Coordonnées | `contactsAutorises()`, `masquerCoordonnees()` | `telephone` et `adresse` vidés (et `contact_masque: true`) sauf pour soi-même, l'administrateur et les personnes liées par une demande `acceptee` ou `terminee` |
 | Comptes de démo | `visibleDansLaListe()` | les profils dont le nom contient « (démo) » n'apparaissent dans la liste (recherche, carte) que pour l'administrateur et les autres comptes de démo |
 
-## 8. Stockage des adhérents : base NoSQL MongoDB
+## 8. Stockage des adhérents : table PostgreSQL `adherents`
 
-Les adhérents sont la partie **NoSQL** du projet : tout le reste (profils, demandes, avis…) est en SQL dans Supabase/PostgreSQL.
+Les adhérents sont rangés dans la même base que tout le reste : la table `adherents` de Supabase/PostgreSQL. `models/adherent.model.js` reçoit le client de l'administrateur connecté (`req.supabase`) : la base applique donc ses règles RLS, qui réservent la table à l'administrateur, en plus du contrôle `verifierAdmin` de la route.
 
-1. **MongoDB** (si `MONGODB_URI` est définie) : collection `adherents` de la base `MONGODB_DB` (`dispositif` par défaut). Connexion dans `config/mongodb.js`.
-2. **Fichier JSON** (`backend/data/adherents.json`) : utilisé à la place de MongoDB quand `MONGODB_URI` est vide.
-3. **Table Supabase `adherents`** : simple copie (`services/adherentSync.service.js`). Si elle échoue, l'opération réussit quand même et l'incident est noté dans le journal.
-
-| Fonction (`models/adherent.model.js`) | Requête MongoDB |
+| Fonction (`models/adherent.model.js`) | Requête Supabase |
 |---|---|
-| `obtenirAdherents` | `find({}).sort({ created_at: 1 })` |
-| `ajouterAdherent` | `insertOne(document)` |
-| `modifierAdherent` | `findOneAndUpdate({ id }, { $set: … })` |
-| `supprimerAdherent` | `deleteOne({ id })` |
+| `obtenirAdherents` | `from('adherents').select('*').order('created_at')` |
+| `ajouterAdherent` | `insert({ id, ...champs }).select().single()` |
+| `modifierAdherent` | `update({ ...champs, updated_at }).eq('id', id)` (renvoie `null` si introuvable → 404) |
+| `supprimerAdherent` | `delete().eq('id', id)` (renvoie `false` si introuvable → 404) |
 
-- Le champ technique `_id` n'est jamais renvoyé au front ; l'identifiant public reste `id` (UUID).
-- Index uniques sur `id` et sur `email` : un même e-mail ne peut pas être ajouté deux fois (`409`).
-- Au premier lancement sur une base vide, les adhérents du fichier JSON y sont importés.
+- L'e-mail est enregistré en minuscules ; un index unique (`adherents_email_unique`) empêche deux adhérents d'avoir le même e-mail. PostgreSQL renvoie alors l'erreur `23505`, transformée en `409` par le contrôleur.
+- Un identifiant qui n'est pas un UUID reçoit directement un `404`.
 
-Pourquoi MongoDB ici : le disque d'un service Render gratuit est effacé à chaque redéploiement, donc les adhérents écrits dans le fichier JSON disparaissaient.
+**Historique.** Les adhérents étaient d'abord dans un fichier JSON (effacé par Render à chaque redéploiement), puis dans MongoDB Atlas avec une copie dans Supabase. MongoDB a été retiré en novembre 2026 : les adhérents sont des données structurées comme les autres, et une seule base est plus simple à sécuriser, sauvegarder et expliquer. Les données étaient identiques dans les deux bases au moment du passage (migration `supabase/migrations/20261112_adherents_sans_mongodb.sql`).
 
 ## À retenir
 
 - Point d'entrée : `backend/app.js`. Découpage routes → controllers → services / models, middlewares et configuration à part.
 - Toutes les données passent par le serveur ; le navigateur n'a qu'un cookie de session.
 - Routes d'administration protégées par `verifierAdmin`.
-- Adhérents dans MongoDB, copiés dans Supabase.
+- Une seule base : Supabase/PostgreSQL, adhérents compris.

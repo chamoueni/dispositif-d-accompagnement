@@ -105,7 +105,7 @@ Quatre profils d'utilisation existent, mais seulement trois valeurs de rôle en 
 | Type de service demandé (dont « soins »), urgence | `NouvelleDemande.vue` | `demandes` | Idem |
 | Avis | `PourQui.vue` | `avis` (avec le nom) | Tout le monde, même non connecté |
 | Message de contact | `SosButton.vue` | `messages_contact` ; recopié par e-mail à l'admin | Admin |
-| Adhérents (nom, e-mail, téléphone, commune) | `AdminAdherents.vue` | `backend/data/adherents.json` + table `adherents` | Quiconque appelle `GET /api/adherents` |
+| Adhérents (nom, e-mail, téléphone, commune) | `AdminAdherents.vue` | table `adherents` (Supabase) | L'administrateur seulement (`verifierAdmin` + RLS) |
 | Données de carte bancaire | `PaiementFormule.vue` | **Nulle part** : contrôlées dans le navigateur puis ignorées | — |
 
 ### Données de santé
@@ -119,8 +119,8 @@ Le projet n'a **pas de champ médical structuré** (pas de pathologie, de traite
 - **Droit à l'effacement** : il n'existe pas de bouton « supprimer mon compte » pour l'utilisateur. La suppression n'est possible que par l'administrateur (`DELETE /api/admin/comptes/:id`). Elle efface alors le compte, le profil, les demandes, les missions et les avis par cascade ; les messages de contact sont conservés avec `user_id` à `null` et le nom saisi.
 - **Information des utilisateurs** : aucune page de mentions légales, de politique de confidentialité ni de recueil de consentement — **non trouvé dans le code**.
 - **Export des données personnelles, durée de conservation** : non trouvé dans le code.
-- **Sous-traitants** : Supabase, Render (hébergement), MongoDB Atlas (si configuré), Google (polices, SMTP Gmail), IGN (cartes), Unsplash (photos). Aucun document du dépôt ne les liste pour l'utilisateur.
-- **Fichier d'adhérents dans Git** : `backend/data/adherents.json` est suivi par Git et contient un enregistrement. S'il s'agit d'une personne réelle, ses données sont dans l'historique du dépôt.
+- **Sous-traitants** : Supabase, Render (hébergement), Google (polices, SMTP Gmail), IGN (cartes), Unsplash (photos). Aucun document du dépôt ne les liste pour l'utilisateur.
+- **Ancien fichier d'adhérents dans Git** : `backend/data/adherents.json` a été supprimé (novembre 2026), mais il reste dans l'historique du dépôt. Il ne contenait qu'un adhérent d'exemple (adresse en `@example.com`).
 
 ## À retenir
 

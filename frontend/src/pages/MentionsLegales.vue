@@ -73,14 +73,6 @@ import '../styles/PagesLegales.css'
               rel="noopener"
             >supabase.com</a>
           </li>
-          <li>
-            <strong>MongoDB, Inc.</strong> (service MongoDB Atlas) — liste des adhérents gérée
-            par l’administration — <a
-              href="https://www.mongodb.com"
-              target="_blank"
-              rel="noopener"
-            >mongodb.com</a>
-          </li>
         </ul>
       </article>
 

@@ -37,8 +37,7 @@ docs/         Documentation détaillée (commencer par docs/README.md)
 
 - `backend/app.js` : point d'entrée de l'API Express ; le code suit le découpage routes → controllers → services / models (détail dans `docs/05-backend.md`).
 - `backend/controllers/auth.controller.js`, `backend/controllers/data.controller.js`, `backend/services/session.service.js` : connexion par sessions sécurisées et accès aux données sous RLS.
-- `backend/models/adherent.model.js` : adhérents dans MongoDB (NoSQL), ou dans `backend/data/adherents.json` si MongoDB n'est pas configuré.
-- `backend/services/adherentSync.service.js` : copie facultative des adhérents dans la table Supabase `adherents`.
+- `backend/models/adherent.model.js` : adhérents dans la table Supabase (PostgreSQL) `adherents`.
 - `frontend/src/stores/adherents.js` et `frontend/src/pages/AdminAdherents.vue` : gestion des adhérents dans l'espace admin.
 - `frontend/vite.config.js` : proxy de développement `/api` vers Express ; le build est écrit dans `dist/` à la racine.
 - `supabase/schema.sql` : tables, index et règles RLS.
@@ -66,7 +65,7 @@ Un adhérent contient `id`, `nom`, `email`, `telephone`, `ville`, `role`, `statu
 
 ### Backend
 
-Dans `backend/app.js`, `express()` crée l'application ; les middlewares de `backend/middleware/` (CORS, `express.json()`, cookies, sécurité, session) s'appliquent à chaque requête, puis les fichiers de `backend/routes/` envoient chaque adresse vers son contrôleur. Pour les adhérents, `routes/adherents.routes.js` vérifie que l'utilisateur est l'administrateur, `controllers/adherents.controller.js` contrôle les champs (`validerAdherent()`) et appelle `models/adherent.model.js` (MongoDB), puis `synchroniserAdherent()` recopie l'adhérent dans Supabase. `middleware/erreurs.js` transforme les erreurs inattendues en réponse HTTP 500.
+Dans `backend/app.js`, `express()` crée l'application ; les middlewares de `backend/middleware/` (CORS, `express.json()`, cookies, sécurité, session) s'appliquent à chaque requête, puis les fichiers de `backend/routes/` envoient chaque adresse vers son contrôleur. Pour les adhérents, `routes/adherents.routes.js` vérifie que l'utilisateur est l'administrateur, `controllers/adherents.controller.js` contrôle les champs (`validerAdherent()`) et appelle `models/adherent.model.js`, qui lit ou écrit la table `adherents` de Supabase. `middleware/erreurs.js` transforme les erreurs inattendues en réponse HTTP 500.
 
 ### Frontend
 

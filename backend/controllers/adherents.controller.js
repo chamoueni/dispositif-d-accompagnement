@@ -1,21 +1,24 @@
 // Contrôleur des adhérents (espace admin › Adhérents).
-// Données dans MongoDB (models/adherent.model.js), copie dans Supabase
-// (services/adherentSync.service.js).
+// Données dans la table PostgreSQL « adherents » de Supabase
+// (models/adherent.model.js), lue avec le client de l'administrateur connecté.
 import {
   ajouterAdherent,
   modifierAdherent,
   obtenirAdherents,
   supprimerAdherent,
 } from '../models/adherent.model.js'
-import { synchroniserAdherent } from '../services/adherentSync.service.js'
-import { validerAdherent } from '../services/validation.service.js'
+import { isUuid, validerAdherent } from '../services/validation.service.js'
 
 const DOUBLON = { message: 'Un adhérent existe déjà avec cet email.' }
+const INTROUVABLE = { message: 'Adhérent introuvable.' }
+
+// 23505 = valeur en double dans PostgreSQL (index unique sur l'email).
+const estDoublon = (error) => error?.code === '23505'
 
 // GET /api/adherents
-export async function lister(_req, res, next) {
+export async function lister(req, res, next) {
   try {
-    res.json(await obtenirAdherents())
+    res.json(await obtenirAdherents(req.supabase))
   } catch (error) {
     next(error)
   }
@@ -26,18 +29,12 @@ export async function ajouter(req, res, next) {
   try {
     const erreur = validerAdherent(req.body)
     if (erreur) return res.status(400).json({ message: erreur })
-    // Pas deux adhérents avec le même email : évite aussi les doublons créés
-    // par un double-clic ou un envoi répété du formulaire.
-    const email = req.body.email.trim().toLowerCase()
-    if ((await obtenirAdherents()).some((a) => a.email === email)) {
-      return res.status(409).json(DOUBLON)
-    }
-    const adherent = await ajouterAdherent(req.body)
-    await synchroniserAdherent(adherent, 'ajouter')
+    // Pas deux adhérents avec le même email : l'index unique de la base le
+    // garantit, même pour un double-clic ou deux envois simultanés.
+    const adherent = await ajouterAdherent(req.supabase, req.body)
     return res.status(201).json(adherent)
   } catch (error) {
-    // 11000 = clé en double dans MongoDB (index unique sur l'email).
-    if (error?.code === 11000) return res.status(409).json(DOUBLON)
+    if (estDoublon(error)) return res.status(409).json(DOUBLON)
     next(error)
   }
 }
@@ -45,13 +42,16 @@ export async function ajouter(req, res, next) {
 // PUT /api/adherents/:id
 export async function modifier(req, res, next) {
   try {
+    // Un identifiant mal formé ferait échouer PostgreSQL (type uuid) : 404 direct.
+    if (!isUuid(req.params.id)) return res.status(404).json(INTROUVABLE)
     const erreur = validerAdherent(req.body)
     if (erreur) return res.status(400).json({ message: erreur })
-    const adherent = await modifierAdherent(req.params.id, req.body)
-    if (!adherent) return res.status(404).json({ message: 'Adhérent introuvable.' })
-    await synchroniserAdherent(adherent, 'modifier')
+    const adherent = await modifierAdherent(req.supabase, req.params.id, req.body)
+    if (!adherent) return res.status(404).json(INTROUVABLE)
     return res.json(adherent)
   } catch (error) {
+    // Nouvel email déjà utilisé par un autre adhérent.
+    if (estDoublon(error)) return res.status(409).json(DOUBLON)
     next(error)
   }
 }
@@ -59,12 +59,9 @@ export async function modifier(req, res, next) {
 // DELETE /api/adherents/:id
 export async function supprimer(req, res, next) {
   try {
-    const adherents = await obtenirAdherents()
-    const adherent = adherents.find((item) => item.id === req.params.id)
-    if (!adherent || !(await supprimerAdherent(req.params.id))) {
-      return res.status(404).json({ message: 'Adhérent introuvable.' })
+    if (!isUuid(req.params.id) || !(await supprimerAdherent(req.supabase, req.params.id))) {
+      return res.status(404).json(INTROUVABLE)
     }
-    await synchroniserAdherent(adherent, 'supprimer')
     return res.status(204).end()
   } catch (error) {
     next(error)

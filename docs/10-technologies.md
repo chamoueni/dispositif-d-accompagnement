@@ -96,7 +96,7 @@ Aucun outil de test (Vitest, Jest, Cypress…) : **non trouvé dans le code**.
 ## À retenir
 
 - Côté interface : Vue 3, Vue Router, Pinia, vue-i18n, Bootstrap 5, Leaflet.
-- Côté serveur : Express 5, avec le SDK Supabase et le pilote MongoDB.
+- Côté serveur : Express 5, avec le SDK Supabase.
 - Supabase fournit à la fois la base, les comptes et la fonction d'envoi d'e-mail.
 - Aucun outil de test n'est installé.
 - La version de Node n'est pas fixée dans le projet.

@@ -30,7 +30,7 @@ Règles recommandées JavaScript et Vue. Variables globales du navigateur partou
 
 ### `.env.example`
 
-Modèle sans valeurs : variables du serveur (Supabase, sessions, MongoDB) et du site (`VITE_SITE_URL`, `SITE_URL`). Voir [11-deploiement.md](11-deploiement.md).
+Modèle sans valeurs : variables du serveur (Supabase, sessions) et du site (`VITE_SITE_URL`, `SITE_URL`). Voir [11-deploiement.md](11-deploiement.md).
 
 ### `.github/workflows/mlezi-gardien.yml` (remplace `keep-supabase-alive.yml`)
 
@@ -169,22 +169,18 @@ Voir [05-backend.md](05-backend.md) pour les routes. Résumé par fichier :
 
 ### `backend/app.js`
 
-- **Utilise** : `express`, `cors`, `cookie-parser`, `models/adherent.model.js`, `services/adherentSync.service.js`, `controllers/auth.controller.js`, `controllers/data.controller.js`, `services/session.service.js`.
+- **Utilise** : `express`, `cors`, `cookie-parser`, `models/adherent.model.js`, `controllers/auth.controller.js`, `controllers/data.controller.js`, `services/session.service.js`.
 - **Fonctions** : `verifierAdmin` (middleware), `validerAdherent(body)` (renvoie un message d'erreur ou `null`), les 7 routes, le gestionnaire d'erreurs.
 - **Constantes** : `rolesAutorises`, `statutsAutorises`, `ADMIN_EMAIL`, `CONTEXTE_SITE`.
 - **Partie délicate** : dans `POST /api/admin/comptes`, si l'insertion du profil échoue après la création du compte Auth, le compte est supprimé pour éviter un compte sans profil.
 
 ### `backend/models/adherent.model.js`
 
-`lireAdherents` / `ecrireAdherents` (privées) lisent et réécrivent **tout le fichier** à chaque opération. Exporte `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent` (renvoie `null` si introuvable), `supprimerAdherent` (renvoie `false` si introuvable). Deux requêtes simultanées peuvent s'écraser, puisqu'il n'y a pas de verrou.
+Lit et écrit la table Supabase `adherents` avec le client de l'administrateur connecté (RLS appliquée). Exporte `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent` (renvoie `null` si introuvable), `supprimerAdherent` (renvoie `false` si introuvable). PostgreSQL gère les accès simultanés ; l'index unique sur l'e-mail empêche les doublons.
 
 ### `backend/config/supabase.js`
 
 Charge `.env` puis exporte `supabaseAdmin`, ou `null` si l'adresse ou la clé manque. Ce `null` permet au serveur de démarrer sans Supabase.
-
-### `backend/services/adherentSync.service.js`
-
-`synchroniserAdherent(adherent, operation)` : ne fait rien si `supabaseAdmin` est `null` ; sinon `upsert` ou `delete` dans la table `adherents`.
 
 ---
 
