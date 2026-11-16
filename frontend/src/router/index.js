@@ -225,7 +225,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  // BASE_URL = sous-dossier du site (ex. /aufildesages/, voir vite.config.js).
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior() {
     return { top: 0 }
@@ -302,7 +303,7 @@ router.afterEach((to) => {
     to.path.startsWith('/admin') || to.name === 'not-found'
   const title = seo?.title || (to.name === 'not-found' ? 'Page introuvable' : 'Espace privé')
   const description = seo?.description || ''
-  const baseUrl = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/+$/, '')
+  const baseUrl = (import.meta.env.VITE_SITE_URL || window.location.origin + import.meta.env.BASE_URL).replace(/\/+$/, '')
   const canonical = `${baseUrl}${to.path === '/' ? '/' : to.path}`
 
   document.title = title

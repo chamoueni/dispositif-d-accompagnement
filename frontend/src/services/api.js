@@ -2,18 +2,22 @@
 // l'API (fetch('/api/...')) passent par apiRequest().
 //
 // Le site et l'API sont servis par le même serveur Express (alwaysdata), donc
-// à la même adresse : une adresse relative « /api/... » suffit. En
-// développement, le serveur Vite redirige /api vers Express (vite.config.js).
+// à la même adresse. Le site peut être publié dans un sous-dossier
+// (ex. moustakim.alwaysdata.net/aufildesages) : PREFIXE ajoute ce sous-dossier
+// devant « /api/... ». En développement, PREFIXE est vide et le serveur Vite
+// redirige /api vers Express (vite.config.js).
 //
 // Le jeton de connexion (JWT) n'est PAS manipulé ici : il est rangé par le
 // serveur dans un cookie httpOnly, que le navigateur joint tout seul à chaque
 // appel (credentials: 'same-origin'). Le JavaScript du site ne peut ni le lire
 // ni le voler : c'est volontaire, pour protéger les données de santé (RGPD).
 
+const PREFIXE = import.meta.env.BASE_URL.replace(/\/+$/, '')
+
 export async function apiRequest(chemin, { method = 'GET', body } = {}) {
   let response
   try {
-    response = await fetch(chemin, {
+    response = await fetch(PREFIXE + chemin, {
       method,
       credentials: 'same-origin',
       headers: body === undefined ? {} : { 'Content-Type': 'application/json' },

@@ -18,7 +18,8 @@ const mlezi = ref(null) // { ok, quand } ou null si indisponible
 async function verifierServeur() {
   const debut = performance.now()
   try {
-    const reponse = await fetch('/api/sante', { cache: 'no-store' })
+    // BASE_URL : préfixe du sous-dossier où le site est publié (voir vite.config.js).
+    const reponse = await fetch(`${import.meta.env.BASE_URL}api/sante`, { cache: 'no-store' })
     const corps = await reponse.json().catch(() => ({}))
     serveur.value = { ok: corps.api === 'ok', ms: Math.round(performance.now() - debut) }
     base.value = corps.base === 'ok'

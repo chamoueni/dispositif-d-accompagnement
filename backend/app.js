@@ -43,21 +43,37 @@ const dossierSite = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 // et de connaître la vraie adresse IP du visiteur (limiteurs de tentatives).
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1)
 
+// Sous-dossier où le site est publié, déduit de son adresse (SITE_URL) :
+// https://moustakim.alwaysdata.net/aufildesages donne « /aufildesages ».
+// Vide si le site est à la racine (en local notamment).
+const sousDossier = (() => {
+  try {
+    return new URL(process.env.SITE_URL).pathname.replace(/\/+$/, '')
+  } catch {
+    return ''
+  }
+})()
+
 // 1. Middlewares appliqués à toutes les requêtes, dans cet ordre.
 app.use(corsMiddleware)
 app.use(express.json({ limit: '1mb' }))
 app.use(cookieParser())
 app.use(enTetesSecurite)
 app.use(verifierOrigine)
-app.use('/api', sessionMiddleware)
+
+// Tout le site (API + pages) est regroupé dans un « routeur », branché plus
+// bas sur le sous-dossier : /aufildesages/api/... et /aufildesages/mon-compte
+// arrivent ici comme /api/... et /mon-compte.
+const site = express.Router()
+site.use('/api', sessionMiddleware)
 
 // 2. Routes de l'API.
-app.use('/api/auth', authRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/data', dataRoutes)
-app.use('/api/adherents', adherentsRoutes)
-app.use('/api/sante', santeRoutes)
-app.use('/api', routeIntrouvable)
+site.use('/api/auth', authRoutes)
+site.use('/api/admin', adminRoutes)
+site.use('/api/data', dataRoutes)
+site.use('/api/adherents', adherentsRoutes)
+site.use('/api/sante', santeRoutes)
+site.use('/api', routeIntrouvable)
 
 // 3. Le site Vue. Les fichiers qui existent (JS, CSS, images…) sont envoyés
 //    tels quels ; les fichiers avec un nom « haché » (assets/) peuvent rester
@@ -65,11 +81,11 @@ app.use('/api', routeIntrouvable)
 if (existsSync(dossierSite)) {
   // fallthrough: false : un fichier d'assets/ introuvable répond 404 (au lieu
   // de recevoir la page d'accueil à la place d'un script, ce qui serait trompeur).
-  app.use('/assets', express.static(path.join(dossierSite, 'assets'), { immutable: true, maxAge: '1y', fallthrough: false }))
+  site.use('/assets', express.static(path.join(dossierSite, 'assets'), { immutable: true, maxAge: '1y', fallthrough: false }))
   // redirect: false : /services n'est pas redirigé vers /services/ (voir plus bas).
-  app.use(express.static(dossierSite, { redirect: false }))
+  site.use(express.static(dossierSite, { redirect: false }))
 
-  app.use((req, res, next) => {
+  site.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()
     // Pages publiques pré-générées pour les moteurs de recherche par
     // « npm run build » (frontend/scripts/generate-seo-pages.js) : /services
@@ -85,6 +101,12 @@ if (existsSync(dossierSite)) {
 } else {
   console.warn('Dossier dist/ introuvable : lancez « npm run build » pour que le serveur affiche aussi le site.')
 }
+
+// Branchement du site sur son sous-dossier. Il reste aussi joignable sans le
+// préfixe, au cas où l'hébergeur retire lui-même le sous-dossier de l'adresse
+// avant de transmettre la requête.
+if (sousDossier) app.use(sousDossier, site)
+app.use(site)
 
 // 4. Erreurs inattendues.
 app.use(gestionErreurs)

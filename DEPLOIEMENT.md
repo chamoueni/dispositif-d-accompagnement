@@ -65,66 +65,82 @@ Tout est dans [backend/sql/import-supabase.sql](backend/sql/import-supabase.sql)
    de Supabase, et la requête « Dans phpPgAdmin » dans phpPgAdmin. Les nombres doivent être
    identiques, avec exactement 1 administrateur.
 
-## Étape 4 : créer l'adresse email d'envoi
+## Étape 4 : l'adresse email d'envoi
 
-Le site envoie les liens « Mot de passe oublié » et les alertes SOS.
+Le site envoie les liens « Mot de passe oublié » et les alertes SOS. Sans nom de domaine,
+alwaysdata donne une seule adresse par compte : **`moustakim@alwaysdata.net`**
+(**Emails › Adresses**, la ligne « moustakim »).
 
-1. **Emails › Adresses › Ajouter** : par exemple `contact@moustakim.alwaysdata.net`, avec un
-   mot de passe.
-2. Réglages SMTP : hôte `smtp-moustakim.alwaysdata.net`, port `587`, identifiant = l'adresse
-   complète, mot de passe = celui de l'adresse.
+1. Roue dentée ⚙ de la ligne `moustakim` › **Mot de passe** › Valider.
+2. Réglages SMTP : hôte `smtp-moustakim.alwaysdata.net`, port `587`, identifiant
+   `moustakim@alwaysdata.net`, mot de passe = celui de l'adresse.
 
 ## Étape 5 : récupérer le code sur le serveur (SSH)
 
-1. **Accès distant › SSH** : active la connexion par mot de passe pour l'utilisateur `moustakim`.
+1. **Accès distant › SSH/SFTP** : active la connexion par mot de passe pour l'utilisateur `moustakim`.
 2. Depuis un terminal sur ton PC :
 
    ```bash
    ssh moustakim@ssh-moustakim.alwaysdata.net
    ```
 
-3. Sur le serveur :
+3. Sur le serveur (dépôt public, donc pas de clé nécessaire) :
 
    ```bash
-   git clone https://github.com/<ton-compte>/dispositif-d-accompagnement.git aufildesages
+   git clone -b migration-alwaysdata https://github.com/chamoueni/dispositif-d-accompagnement.git aufildesages
    cd aufildesages
-   git checkout main
-   npm install
-   VITE_SITE_URL=https://aufildesages.moustakim.alwaysdata.net npm run build
+   npm install --omit=dev --no-audit --no-fund
    ```
 
-   - Dépôt **privé** : crée une clé SSH sur le serveur (`ssh-keygen -t ed25519`), ajoute
-     `~/.ssh/id_ed25519.pub` dans GitHub › Settings › Deploy keys, puis clone avec
-     l'adresse `git@github.com:<ton-compte>/dispositif-d-accompagnement.git`.
-   - `npm run build` crée le dossier `dist/` (le site Vue), que le serveur Node.js affiche.
-   - Version de Node.js : 20 minimum (voir **Environnement › Node.js** dans l'admin).
+   - **`--omit=dev` est indispensable** : l'offre gratuite limite la mémoire, et un
+     `npm install` complet (avec Vite, ESLint, Sass…) est arrêté par le serveur (`Killed`).
+     Le serveur n'a besoin que des paquets d'exécution (Express, pg, bcryptjs…).
+   - Le message `npm warn install-scripts` n'est pas bloquant. Vérification :
+     `node -e "require('express');require('pg');require('bcryptjs');console.log('paquets OK')"`.
+   - Node.js du serveur : v24 (20 minimum).
 
-## Étape 6 : déclarer le site Node.js
+## Étape 6 : construire le site sur le PC et l'envoyer
+
+Le build (Vite) demande trop de mémoire pour le serveur : on le fait sur le PC, puis on envoie
+le dossier `dist/`.
+
+Le site est publié dans un **sous-dossier** : `https://moustakim.alwaysdata.net/aufildesages`
+(sans nom de domaine, alwaysdata refuse une adresse comme `aufildesages.moustakim.alwaysdata.net`,
+et `moustakim.alwaysdata.net` est déjà utilisée par un autre site). Le code déduit ce
+sous-dossier de l'adresse : `VITE_SITE_URL` au build, `SITE_URL` sur le serveur.
+
+Dans un terminal **sur le PC** (PowerShell), à la racine du projet :
+
+```powershell
+$env:VITE_SITE_URL = "https://moustakim.alwaysdata.net/aufildesages"; npm run build; Remove-Item Env:VITE_SITE_URL
+scp -r dist moustakim@ssh-moustakim.alwaysdata.net:aufildesages/
+```
+
+Vérifier dans `dist/index.html` que les fichiers commencent par `/aufildesages/assets/`.
+
+## Étape 7 : déclarer le site Node.js
 
 **Web › Sites › Ajouter un site** :
 
 | Champ | Valeur |
 | --- | --- |
-| Nom | Au Fil des Âges |
-| Adresses | `aufildesages.moustakim.alwaysdata.net` |
+| Adresses | `moustakim.alwaysdata.net/aufildesages` |
 | Type | **Node.js** |
-| Commande | `npm start` |
+| Commande | `node backend/app.js` |
 | Répertoire de travail | `aufildesages` |
-| Version de Node.js | 20 ou plus |
+| Version de Node.js | Version par défaut (v24) |
 
-Si alwaysdata refuse cette adresse, choisis-en une autre proposée par l'interface (ou un nom
-de domaine à toi), puis mets la **même** adresse dans `SITE_URL` et `VITE_SITE_URL`.
-
-**Variables d'environnement** (même page, champ « Environnement », une par ligne) :
+**Variables d'environnement** (même page, champ « Environnement », une par ligne, sans
+espace ni guillemets) :
 
 ```
 NODE_ENV=production
+SITE_URL=https://moustakim.alwaysdata.net/aufildesages
 DATABASE_URL=postgresql://moustakim_app:MOT_DE_PASSE@postgresql-moustakim.alwaysdata.net:5432/moustakim_aufildesages
 JWT_SECRET=une-longue-cle-aleatoire-differente-de-celle-du-pc
-SITE_URL=https://aufildesages.moustakim.alwaysdata.net
 SMTP_HOST=smtp-moustakim.alwaysdata.net
 SMTP_PORT=587
-SMTP_USER=contact@moustakim.alwaysdata.net
+SMTP_USER=moustakim@alwaysdata.net
 SMTP_PASS=mot-de-passe-de-l-adresse
 EMAIL_ADMIN=adresse-qui-recoit-les-alertes-sos
 ```
@@ -133,34 +149,38 @@ EMAIL_ADMIN=adresse-qui-recoit-les-alertes-sos
   `node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"`.
 - **Ne pas** définir `PORT` ni `IP` : alwaysdata les fournit lui-même, et le serveur les lit
   (`process.env.PORT`, `process.env.IP` dans [backend/app.js](backend/app.js)).
+- Pas de `EMAIL_EXPEDITEUR` avec des espaces : ce champ ne les accepte pas.
 - Ces secrets ne vont **jamais** dans GitHub : uniquement ici et dans le `.env` local (ignoré par git).
 
 Enregistre : alwaysdata démarre le site.
 
-## Étape 7 : tester
+## Étape 8 : tester
 
-1. `https://aufildesages.moustakim.alwaysdata.net/api/sante` doit afficher
+1. `https://moustakim.alwaysdata.net/aufildesages/api/sante` doit afficher
    `{"ok":true,"api":"ok","base":"ok",...}`.
-2. La page d'accueil s'affiche, et recharger une page comme `/mon-compte` fonctionne (pas d'erreur 404).
+2. La page d'accueil s'affiche, et recharger une page comme `/aufildesages/mon-compte`
+   fonctionne (pas d'erreur 404).
 3. Connexion avec un compte de démo : son ancien mot de passe marche.
 4. « Mot de passe oublié » : l'email arrive, le lien permet de changer le mot de passe.
-5. Connexion admin (`/admin/connexion`) : tableau de bord, messages, adhérents.
+5. Connexion admin (`/aufildesages/admin/connexion`) : tableau de bord, messages, adhérents.
 6. Avec deux comptes : une demande envoyée par un senior est visible par l'intervenant
    concerné, et **pas** par un troisième compte.
-7. En cas d'erreur : **Web › Sites › Journaux** (ou `~/admin/logs/` en SSH).
+7. Le site `moustakim.alwaysdata.net` (fitness) fonctionne toujours.
+8. En cas d'erreur : **Web › Sites › Journaux** (ou `~/admin/logs/` en SSH).
 
 ## Mettre à jour le site plus tard
 
+Sur le serveur (SSH) :
+
 ```bash
-ssh moustakim@ssh-moustakim.alwaysdata.net
 cd aufildesages
 git pull
-npm install
-VITE_SITE_URL=https://aufildesages.moustakim.alwaysdata.net npm run build
+npm install --omit=dev --no-audit --no-fund
 ```
 
-Puis **Web › Sites › (le site) › Redémarrer**. Si `backend/sql/schema.sql` change, rejoue
-les nouvelles instructions dans phpPgAdmin : la base ne se met pas à jour toute seule.
+Si le site (frontend) a changé : refaire l'étape 6 sur le PC (build + `scp`). Puis
+**Web › Sites › (le site) › Redémarrer**. Si `backend/sql/schema.sql` change, rejoue les
+nouvelles instructions dans phpPgAdmin : la base ne se met pas à jour toute seule.
 
 ## Étape finale : arrêter Supabase et Render
 

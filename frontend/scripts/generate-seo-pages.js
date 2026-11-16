@@ -10,13 +10,16 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const dist = path.join(root, 'dist')
 const configuredSiteUrl = (process.env.VITE_SITE_URL || '').trim()
 let siteUrl = ''
+// Sous-dossier où le site est publié (ex. « /aufildesages »), vide sinon.
+// Il est déduit de VITE_SITE_URL, comme dans frontend/vite.config.js.
+let sousDossier = ''
 if (configuredSiteUrl) {
   const parsedSiteUrl = new URL(configuredSiteUrl)
-  if (!['http:', 'https:'].includes(parsedSiteUrl.protocol) ||
-      parsedSiteUrl.pathname !== '/' || parsedSiteUrl.search || parsedSiteUrl.hash) {
-    throw new Error('VITE_SITE_URL doit être une URL de site sans chemin, paramètres ni fragment.')
+  if (!['http:', 'https:'].includes(parsedSiteUrl.protocol) || parsedSiteUrl.search || parsedSiteUrl.hash) {
+    throw new Error('VITE_SITE_URL doit être une URL de site sans paramètres ni fragment.')
   }
-  siteUrl = parsedSiteUrl.origin
+  sousDossier = parsedSiteUrl.pathname.replace(/\/+$/, '')
+  siteUrl = parsedSiteUrl.origin + sousDossier
 }
 const pages = [
   {
@@ -105,6 +108,10 @@ function replaceHead(html, page, url) {
     .replace('</head>', `    ${metadata}\n  </head>`)
 }
 
+// Les liens écrits « href="/services" » dans les pages ci-dessus pointent vers
+// la racine du domaine : on leur ajoute le sous-dossier du site.
+const avecSousDossier = (html) => html.replace(/href="\//g, `href="${sousDossier}/`)
+
 const template = (await readFile(path.join(dist, 'index.html'), 'utf8'))
   .replace(/<div id="app">[\s\S]*?<\/div>/i, '<div id="app"></div>')
 for (const page of pages) {
@@ -118,7 +125,7 @@ for (const page of pages) {
     ...(page.path === '/' ? { areaServed: 'Mayotte' } : {}),
   })
   const document = replaceHead(template, page, url)
-    .replace('<div id="app"></div>', `<div id="app">${page.body}</div><script type="application/ld+json">${schema}</script>`)
+    .replace('<div id="app"></div>', `<div id="app">${avecSousDossier(page.body)}</div><script type="application/ld+json">${schema}</script>`)
   const target = page.path === '/' ? path.join(dist, 'index.html') : path.join(dist, page.path.slice(1), 'index.html')
   await mkdir(path.dirname(target), { recursive: true })
   await writeFile(target, document)
@@ -164,7 +171,7 @@ const notFound = replaceHead(template, {
   description: 'La page demandée est introuvable.',
 }, siteUrl ? `${siteUrl}/404` : '/404')
   .replace('<meta name="robots" content="index, follow">', '<meta name="robots" content="noindex, nofollow">')
-  .replace('<div id="app"></div>', '<div id="app"><main id="contenu"><h1>Page introuvable (404)</h1><p>L’adresse a peut-être changé ou la page n’existe plus.</p><a href="/">Retour à l’accueil</a></main></div>')
+  .replace('<div id="app"></div>', `<div id="app"><main id="contenu"><h1>Page introuvable (404)</h1><p>L’adresse a peut-être changé ou la page n’existe plus.</p><a href="${sousDossier}/">Retour à l’accueil</a></main></div>`)
 await writeFile(path.join(dist, '404.html'), notFound)
 
 console.log(`Pages SEO générées : ${pages.length}${siteUrl ? ` (${siteUrl})` : ' (VITE_SITE_URL à renseigner pour le sitemap de production)'}`)

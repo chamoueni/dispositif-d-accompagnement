@@ -64,7 +64,8 @@ export function useSpeech() {
       return
     }
 
-    const url = `/audio/${locale.value}/${cle}.mp3`
+    // BASE_URL : le site peut être publié dans un sous-dossier (voir vite.config.js).
+    const url = `${import.meta.env.BASE_URL}audio/${locale.value}/${cle}.mp3`
     if (await audioExiste(url)) {
       window.speechSynthesis?.cancel()
       lecteur = new Audio(url)
