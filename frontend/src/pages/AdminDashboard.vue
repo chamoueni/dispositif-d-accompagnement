@@ -2,8 +2,8 @@
 // Vue "Tableau de bord" de l'espace admin (/admin) : cartes de chiffres-clés,
 // messages à traiter, demandes récentes, activité et répartition des comptes.
 // Pure lecture/mise en forme des données du store partagé (useAdminDashboard,
-// chargé une fois par la coquille, voir pages/Admin.vue) : aucune logique
-// Supabase propre à cette vue.
+// chargé une fois par la coquille, voir pages/Admin.vue) : aucun appel
+// à l'API propre à cette vue.
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'

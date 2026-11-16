@@ -1,6 +1,6 @@
-// Couche de données via l’API Express, qui applique l’authentification BFF et
-// conserve les règles RLS Supabase. Toutes ces fonctions sont asynchrones.
-import { apiRequest } from '../lib/api'
+// Couche de données via l’API Express (services/api.js). C’est le serveur qui
+// vérifie qui a le droit de voir ou modifier quoi. Toutes ces fonctions sont asynchrones.
+import { apiRequest } from '../services/api'
 import { messageErreurProfil } from '../stores/auth'
 
 async function appelerDonnees(action, payload = {}) {
@@ -13,7 +13,7 @@ async function appelerDonnees(action, payload = {}) {
 // Les 17 communes de Mayotte, regroupées par zone géographique approximative.
 // Sert à trier par "proximité" sans vraie géolocalisation (cf. spécificité Mayotte :
 // recherche par village/commune plutôt que géoloc précise). Donnée statique, pas
-// besoin de table Supabase pour ça.
+// besoin de table en base pour ça.
 //
 // lat/lng = coordonnées du chef-lieu de la commune. Elles servent à poser les
 // marqueurs de la carte d'accueil (voir components/CarteMayotte.vue). Volontairement
@@ -161,11 +161,9 @@ export async function updateCompteAdmin(id, patch) {
   }
 }
 
-// Supprime un compte entièrement (compte Supabase Auth + profil) via l'API
-// backend, seule à détenir la clé service role nécessaire pour supprimer un
-// utilisateur Auth (voir backend/app.js). Une suppression RLS de la seule
-// ligne "profiles" laisserait le compte Auth en place, bloquant toute
-// réinscription avec le même email par la suite.
+// Supprime un compte entièrement (ligne « utilisateurs » + profil, par cascade)
+// via la route admin du backend (voir backend/controllers/admin.controller.js). Supprimer
+// le compte (et pas seulement le profil) libère l'email pour une réinscription.
 export async function deleteCompteAdmin(id) {
   await apiRequest(`/api/admin/comptes/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
@@ -185,7 +183,7 @@ export async function createCompteAdmin(payload) {
 // L'acceptation d'une demande crée automatiquement une MISE_EN_RELATION
 // (voir addMiseEnRelation ci-dessous), qui représente la mission en cours.
 //
-// La table Supabase utilise des colonnes snake_case (demandeur_id, ...) ; ces
+// La table PostgreSQL utilise des colonnes snake_case (demandeur_id, ...) ; ces
 // fonctions font la conversion vers/depuis le camelCase utilisé côté app.
 // ---------------------------------------------------------------------------
 
@@ -312,7 +310,7 @@ export async function updateMiseEnRelationStatut(id, statutMission) {
 // ---------------------------------------------------------------------------
 // MESSAGES_CONTACT : "Un problème avec le site" dans le menu SOS. N'importe
 // qui peut en envoyer un (même sans compte) ; seul l'admin peut les lire
-// (voir les policies RLS dans supabase/schema.sql).
+// (contrôle fait par le serveur, voir backend/controllers/data.controller.js).
 // ---------------------------------------------------------------------------
 
 function mapMessageContact(row) {
@@ -349,12 +347,10 @@ export async function marquerMessageContactLu(id) {
   await appelerDonnees('messages.markRead', { id })
 }
 
-// Réservé à l'admin (la policy RLS "messages_contact_delete_admin" refuse tout
-// le reste). Supprime définitivement le message ; pas de corbeille/annulation.
-// .select() force Supabase à renvoyer les lignes effectivement supprimées :
-// sans ça, un delete() bloqué par la RLS "réussit" quand même côté client
-// (0 ligne affectée, mais pas d'erreur) et le message semblait supprimé
-// jusqu'au prochain rechargement.
+// Réservé à l'admin (le serveur refuse tout le reste avec une erreur 403).
+// Supprime définitivement le message ; pas de corbeille/annulation. Si le
+// message n'existe plus, le serveur répond 404 : l'erreur est alors affichée
+// au lieu de faire croire à une suppression réussie.
 export async function deleteMessageContact(id) {
   await appelerDonnees('messages.delete', { id })
 }

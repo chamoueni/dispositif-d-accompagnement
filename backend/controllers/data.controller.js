@@ -1,10 +1,30 @@
 // Contrôleur des données métier : POST /api/data { action, payload }.
 // Une seule adresse, une « action » par opération (profils, demandes,
-// missions, messages, avis). Chaque action contrôle ses données, puis
-// interroge PostgreSQL avec le client de l'utilisateur connecté (req.supabase) :
-// la base applique alors ses règles RLS à cet utilisateur.
+// missions, messages, avis).
+//
+// SÉCURITÉ (remplace les règles RLS de Supabase) : chaque action vérifie
+// elle-même qui a le droit de faire quoi AVANT de toucher à la base :
+// - une demande ou une mission n'est visible et modifiable que par ses deux
+//   participants (demandeur et intervenant) ; l'administrateur voit tout ;
+// - on ne modifie que son propre profil (sauf l'administrateur) ;
+// - un avis s'écrit à son nom, et ne se supprime que par son auteur ou l'admin ;
+// - les messages SOS ne sont lisibles que par l'administrateur ;
+// - téléphone et adresse sont masqués tant qu'il n'y a pas de mise en relation
+//   (services/confidentialite.service.js).
+// L'identité vient TOUJOURS de req.utilisateur (jeton vérifié par le serveur),
+// jamais d'un identifiant envoyé par le navigateur.
 import { STATUTS_DEMANDE, STATUTS_MISSION } from '../config/constantes.js'
-import { clientAnonyme } from '../config/supabase.js'
+import { transactionAdmin } from '../db.js'
+import { creerAvis, listerAvis, supprimerAvis, trouverAvis } from '../models/avis.model.js'
+import { creerDemande, listerDemandes, trouverDemande } from '../models/demande.model.js'
+import { creerMessage, listerMessages, marquerLu, supprimerMessage } from '../models/message.model.js'
+import {
+  creerMission,
+  listerMissions,
+  modifierStatutMission,
+  trouverMission,
+} from '../models/mission.model.js'
+import { listerProfils, modifierProfil, trouverProfil } from '../models/profil.model.js'
 import {
   contactsAutorises,
   isAdmin,
@@ -12,10 +32,16 @@ import {
   visibleDansLaListe,
 } from '../services/confidentialite.service.js'
 import { changerStatutDemande } from '../services/demande.service.js'
+import { alerterNouveauMessage } from '../services/email.service.js'
 import { isUuid, jsonObject, patchProfil } from '../services/validation.service.js'
 
 const ADMIN_SEULEMENT = { message: 'Accès réservé à l’administrateur.' }
 const ID_INVALIDE = { message: 'Identifiant invalide.' }
+const DEMANDE_INTROUVABLE = { message: 'Demande introuvable.' }
+const MISSION_INTROUVABLE = { message: 'Mission introuvable.' }
+
+// La personne connectée participe-t-elle à cette demande / mission ?
+const participe = (ligne, moi) => ligne.demandeur_id === moi || ligne.aidant_id === moi
 
 export async function traiterAction(req, res, next) {
   try {
@@ -24,9 +50,7 @@ export async function traiterAction(req, res, next) {
 
     // --- Actions publiques (sans connexion) -----------------------------------
     if (action === 'avis.list') {
-      const { data, error } = await clientAnonyme().from('avis').select('*').order('created_at', { ascending: false })
-      if (error) throw error
-      return res.json(data)
+      return res.json(await listerAvis())
     }
 
     if (action === 'contact.create') {
@@ -34,69 +58,83 @@ export async function traiterAction(req, res, next) {
           typeof payload.message !== 'string' || !payload.message.trim() || payload.message.length > 3000) {
         return res.status(400).json({ message: 'Le nom ou le message est invalide.' })
       }
-      const client = req.supabase || clientAnonyme()
-      const { error } = await client.from('messages_contact').insert({
-        user_id: req.authSession?.user.id || null,
+      const message = {
+        userId: req.utilisateur?.id || null,
         nom: payload.nom.trim(),
         message: payload.message.trim(),
+      }
+      await creerMessage(message)
+      // Alerte email à l'administrateur : un échec d'envoi ne doit pas faire
+      // échouer l'enregistrement du message (déjà en base).
+      alerterNouveauMessage(message).catch((error) => {
+        console.error('Alerte email du message SOS impossible :', error.message)
       })
-      if (error) throw error
       return res.status(201).json({ ok: true })
     }
 
     // --- Toutes les autres actions demandent d'être connecté ------------------
-    if (!req.authSession || !req.supabase) {
+    if (!req.utilisateur) {
       return res.status(401).json({ message: 'Authentification requise.' })
     }
-    const client = req.supabase
+    const moi = req.utilisateur.id
+    const admin = isAdmin(req)
 
     switch (action) {
       // Profils
       case 'profiles.list': {
-        const { data, error } = await client.from('profiles').select('*')
-        if (error) throw error
-        const contacts = await contactsAutorises(client, req)
-        const moi = data.find((p) => p.id === req.authSession.user.id)
+        const profils = await listerProfils()
+        const contacts = await contactsAutorises(req)
+        const monProfil = profils.find((p) => p.id === moi)
         return res.json(
-          data
-            .filter((p) => visibleDansLaListe(p, moi, req))
+          profils
+            .filter((p) => visibleDansLaListe(p, monProfil, req))
             .map((p) => masquerCoordonnees(p, req, contacts)),
         )
       }
       case 'profiles.find': {
         if (!isUuid(payload.id)) return res.status(400).json(ID_INVALIDE)
-        const { data, error } = await client.from('profiles').select('*').eq('id', payload.id).maybeSingle()
-        if (error) throw error
-        if (!data) return res.status(404).json({ message: 'Profil introuvable.' })
-        return res.json(masquerCoordonnees(data, req, await contactsAutorises(client, req)))
+        const profil = await trouverProfil(payload.id)
+        if (!profil) return res.status(404).json({ message: 'Profil introuvable.' })
+        return res.json(masquerCoordonnees(profil, req, await contactsAutorises(req)))
       }
       case 'profiles.updateOwn':
       case 'profiles.updateAdmin': {
-        if (action === 'profiles.updateAdmin' && !isAdmin(req)) return res.status(403).json(ADMIN_SEULEMENT)
-        const id = action === 'profiles.updateOwn' ? req.authSession.user.id : payload.id
-        const patch = patchProfil(payload.patch, { admin: action === 'profiles.updateAdmin' })
+        const parAdmin = action === 'profiles.updateAdmin'
+        if (parAdmin && !admin) return res.status(403).json(ADMIN_SEULEMENT)
+        // updateOwn : l'id est celui du jeton, jamais celui envoyé par le navigateur.
+        const id = parAdmin ? payload.id : moi
+        const patch = patchProfil(payload.patch, { admin: parAdmin })
         if (!isUuid(id) || !patch || Object.keys(patch).length === 0) {
           return res.status(400).json({ message: 'Profil ou champs de modification invalides.' })
         }
-        const { data, error } = await client.from('profiles').update(patch).eq('id', id).select('id')
-        if (error) throw error
-        if (!data?.length) return res.status(403).json({ message: 'Modification refusée.' })
-        return res.json(data[0])
+        try {
+          // Pour l'admin, transaction « admin » : le déclencheur de la base
+          // accepte alors la modification du champ « verifie ».
+          const profil = parAdmin
+            ? await transactionAdmin((client) => modifierProfil(id, patch, client))
+            : await modifierProfil(id, patch)
+          if (!profil) return res.status(404).json({ message: 'Profil introuvable.' })
+          return res.json({ id: profil.id })
+        } catch (error) {
+          if (error?.code === '23505' && error.constraint === 'profiles_telephone_unique') {
+            return res.status(409).json({ message: 'Ce numéro de téléphone est déjà utilisé par un autre compte.' })
+          }
+          throw error
+        }
       }
 
       // Demandes d'aide
       case 'demandes.list': {
-        const { data, error } = await client.from('demandes').select('*')
-        if (error) throw error
-        return res.json(data)
+        // L'administrateur voit tout ; les autres, seulement leurs demandes.
+        return res.json(await listerDemandes(admin ? {} : { participant: moi }))
       }
       case 'demandes.byDemandeur':
       case 'demandes.byAidant': {
-        const column = action === 'demandes.byDemandeur' ? 'demandeur_id' : 'aidant_id'
         if (!isUuid(payload.id)) return res.status(400).json(ID_INVALIDE)
-        const { data, error } = await client.from('demandes').select('*').eq(column, payload.id)
-        if (error) throw error
-        return res.json(data)
+        const filtre = action === 'demandes.byDemandeur' ? { demandeur: payload.id } : { aidant: payload.id }
+        // Même avec l'id de quelqu'un d'autre, on ne reçoit que les demandes
+        // auxquelles on participe soi-même.
+        return res.json(await listerDemandes(admin ? filtre : { ...filtre, participant: moi }))
       }
       case 'demandes.create': {
         const body = payload.demande
@@ -108,89 +146,80 @@ export async function traiterAction(req, res, next) {
         }
         // Une demande s'adresse à un intervenant qui existe (personnel de santé
         // ou particulier), jamais à soi-même ni à une autre personne âgée.
-        const { data: aidant, error: aidantError } = await client
-          .from('profiles').select('id, role').eq('id', body.aidantId).maybeSingle()
-        if (aidantError) throw aidantError
-        if (!aidant || !['sante', 'particulier'].includes(aidant.role) || aidant.id === req.authSession.user.id) {
+        const aidant = await trouverProfil(body.aidantId)
+        if (!aidant || !['sante', 'particulier'].includes(aidant.role) || aidant.id === moi) {
           return res.status(404).json({ message: 'Intervenant introuvable.' })
         }
-        const { data, error } = await client.from('demandes').insert({
-          demandeur_id: req.authSession.user.id,
-          aidant_id: body.aidantId,
-          type_service: body.typeService.trim(),
+        const demande = await creerDemande({
+          demandeurId: moi, // toujours la personne connectée
+          aidantId: body.aidantId,
+          typeService: body.typeService.trim(),
           urgence: body.urgence || 'normale',
           message: body.message,
-          creneau_souhaite: body.creneauSouhaite ?? null,
-        }).select().single()
-        if (error) throw error
-        return res.status(201).json(data)
+          creneauSouhaite: body.creneauSouhaite ?? null,
+        })
+        return res.status(201).json(demande)
       }
       case 'demandes.updateStatut': {
         const { id, statut } = payload
         if (!isUuid(id) || !STATUTS_DEMANDE.includes(statut)) {
           return res.status(400).json({ message: 'Identifiant ou statut invalide.' })
         }
-        return res.json(await changerStatutDemande(client, id, statut))
+        const demande = await changerStatutDemande(moi, id, statut)
+        if (!demande) return res.status(404).json(DEMANDE_INTROUVABLE)
+        return res.json(demande)
       }
 
       // Missions (mises en relation)
       case 'missions.list': {
-        const { data, error } = await client.from('mises_en_relation').select('*')
-        if (error) throw error
-        return res.json(data)
+        return res.json(await listerMissions(admin ? {} : { participant: moi }))
       }
       case 'missions.byDemande': {
         if (!isUuid(payload.demandeId)) return res.status(400).json(ID_INVALIDE)
-        const { data, error } = await client
-          .from('mises_en_relation').select('*').eq('demande_id', payload.demandeId).maybeSingle()
-        if (error) throw error
-        return res.json(data)
+        const missions = await listerMissions(
+          admin ? { demande: payload.demandeId } : { demande: payload.demandeId, participant: moi },
+        )
+        return res.json(missions[0] ?? null)
       }
       case 'missions.create': {
         const { demandeId, demandeurId, aidantId } = payload.mission || {}
         if (![demandeId, demandeurId, aidantId].every(isUuid)) {
           return res.status(400).json({ message: 'Informations de mise en relation invalides.' })
         }
-        const { data, error } = await client.from('mises_en_relation').insert({
-          demande_id: demandeId, demandeur_id: demandeurId, aidant_id: aidantId,
-        }).select().single()
-        if (error) throw error
-        return res.status(201).json(data)
+        // La mission doit correspondre à une vraie demande, avec les mêmes
+        // participants, et la personne connectée doit en faire partie.
+        const demande = await trouverDemande(demandeId)
+        if (!demande || !participe(demande, moi) ||
+            demande.demandeur_id !== demandeurId || demande.aidant_id !== aidantId) {
+          return res.status(404).json(DEMANDE_INTROUVABLE)
+        }
+        return res.status(201).json(await creerMission({ demandeId, demandeurId, aidantId }))
       }
       case 'missions.updateStatut': {
         if (!isUuid(payload.id) || !STATUTS_MISSION.includes(payload.statutMission)) {
           return res.status(400).json({ message: 'Identifiant ou statut invalide.' })
         }
-        const { data, error } = await client.from('mises_en_relation')
-          .update({
-            statut_mission: payload.statutMission,
-            date_fin: payload.statutMission === 'en_cours' ? null : new Date().toISOString(),
-          })
-          .eq('id', payload.id).select().single()
-        if (error) throw error
-        return res.json(data)
+        // Seuls les deux participants peuvent faire avancer la mission.
+        const mission = await trouverMission(payload.id)
+        if (!mission || !participe(mission, moi)) return res.status(404).json(MISSION_INTROUVABLE)
+        return res.json(await modifierStatutMission(payload.id, payload.statutMission))
       }
 
       // Messages envoyés depuis le bouton SOS (administrateur seulement)
       case 'messages.list': {
-        if (!isAdmin(req)) return res.status(403).json(ADMIN_SEULEMENT)
-        const { data, error } = await client.from('messages_contact').select('*').order('created_at', { ascending: false })
-        if (error) throw error
-        return res.json(data)
+        if (!admin) return res.status(403).json(ADMIN_SEULEMENT)
+        return res.json(await listerMessages())
       }
       case 'messages.markRead': {
-        if (!isAdmin(req)) return res.status(403).json(ADMIN_SEULEMENT)
+        if (!admin) return res.status(403).json(ADMIN_SEULEMENT)
         if (!isUuid(payload.id)) return res.status(400).json(ID_INVALIDE)
-        const { error } = await client.from('messages_contact').update({ lu: true }).eq('id', payload.id)
-        if (error) throw error
+        await marquerLu(payload.id)
         return res.json({ ok: true })
       }
       case 'messages.delete': {
-        if (!isAdmin(req)) return res.status(403).json(ADMIN_SEULEMENT)
+        if (!admin) return res.status(403).json(ADMIN_SEULEMENT)
         if (!isUuid(payload.id)) return res.status(400).json(ID_INVALIDE)
-        const { data, error } = await client.from('messages_contact').delete().eq('id', payload.id).select('id')
-        if (error) throw error
-        if (!data?.length) return res.status(403).json({ message: 'Suppression refusée.' })
+        if (!(await supprimerMessage(payload.id))) return res.status(404).json({ message: 'Message introuvable.' })
         return res.json({ ok: true })
       }
 
@@ -199,22 +228,20 @@ export async function traiterAction(req, res, next) {
         if (typeof payload.texte !== 'string' || !payload.texte.trim() || payload.texte.length > 2000) {
           return res.status(400).json({ message: 'Le texte de l’avis est invalide.' })
         }
-        const { data: profile, error: profileError } = await client
-          .from('profiles').select('nom').eq('id', req.authSession.user.id).maybeSingle()
-        if (profileError) throw profileError
-        const { error } = await client.from('avis').insert({
-          user_id: req.authSession.user.id,
-          nom: profile?.nom || '',
-          texte: payload.texte.trim(),
-        })
-        if (error) throw error
+        // Il faut un profil pour signer un avis (la table avis pointe vers profiles).
+        const profil = await trouverProfil(moi)
+        if (!profil) return res.status(403).json({ message: 'Un profil est nécessaire pour publier un avis.' })
+        await creerAvis({ userId: moi, nom: profil.nom || '', texte: payload.texte.trim() })
         return res.status(201).json({ ok: true })
       }
       case 'avis.delete': {
         if (!isUuid(payload.id)) return res.status(400).json(ID_INVALIDE)
-        const { data, error } = await client.from('avis').delete().eq('id', payload.id).select('id')
-        if (error) throw error
-        if (!data?.length) return res.status(403).json({ message: 'Suppression refusée.' })
+        const avis = await trouverAvis(payload.id)
+        // Seul l'auteur ou l'administrateur peut supprimer un avis.
+        if (!avis || (avis.user_id !== moi && !admin)) {
+          return res.status(403).json({ message: 'Suppression refusée.' })
+        }
+        await supprimerAvis(payload.id)
         return res.json({ ok: true })
       }
 

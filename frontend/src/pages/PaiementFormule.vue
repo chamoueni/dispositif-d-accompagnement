@@ -49,7 +49,7 @@ function carteValide() {
 }
 
 // Passe par updateProfile() (même chemin que le reste du profil) plutôt qu'un
-// appel Supabase dédié : ça écrit en base ET met à jour l'état réactif local
+// appel à l'API dédié : ça écrit en base ET met à jour l'état réactif local
 // en une seule fois, cohérent avec le reste de la page Profil.
 async function handleConfirmer() {
   error.value = ''

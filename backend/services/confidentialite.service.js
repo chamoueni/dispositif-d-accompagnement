@@ -1,35 +1,33 @@
-// Règles de confidentialité appliquées aux profils renvoyés par l'API.
-import { ADMIN_EMAIL } from '../config/constantes.js'
+// Règles de confidentialité appliquées aux profils renvoyés par l'API (RGPD).
+// Avant, une partie de ces règles était dans la base (RLS Supabase) ; elles
+// sont maintenant toutes ici, dans le serveur, seul à parler à la base.
+import { demandesEnRelation } from '../models/demande.model.js'
 
+// L'administrateur est reconnu par la colonne utilisateurs.est_admin
+// (chargée par middleware/session.js), plus par un email écrit en dur.
 export function isAdmin(req) {
-  return req.authSession?.user?.email === ADMIN_EMAIL
+  return req.utilisateur?.estAdmin === true
 }
 
 // --- Vie privée des profils (téléphone, adresse) ----------------------------
-// La base laisse tout utilisateur connecté lire tous les profils (nécessaire à
-// la recherche). Le téléphone et l'adresse d'une personne ne sont pourtant pas
+// Tout utilisateur connecté peut lister les profils (nécessaire à la
+// recherche). Le téléphone et l'adresse d'une personne ne sont pourtant pas
 // à donner à n'importe qui : le serveur ne les renvoie qu'à elle-même, à
 // l'administrateur, et aux personnes avec qui elle a une demande ACCEPTÉE ou
-// TERMINÉE (une vraie mise en relation). Le navigateur n'ayant pas de jeton
-// Supabase (voir services/session.service.js), il ne peut pas contourner ce filtre.
-const STATUTS_EN_RELATION = ['acceptee', 'terminee']
+// TERMINÉE (une vraie mise en relation).
 
 // Identifiants des personnes en relation avec l'utilisateur connecté.
-export async function contactsAutorises(client, req) {
-  const moi = req.authSession.user.id
-  const { data, error } = await client
-    .from('demandes')
-    .select('demandeur_id, aidant_id, statut')
-    .or(`demandeur_id.eq.${moi},aidant_id.eq.${moi}`)
-    .in('statut', STATUTS_EN_RELATION)
-  if (error) throw error
+export async function contactsAutorises(req) {
+  const moi = req.utilisateur.id
   const contacts = new Set()
-  for (const d of data || []) contacts.add(d.demandeur_id === moi ? d.aidant_id : d.demandeur_id)
+  for (const d of await demandesEnRelation(moi)) {
+    contacts.add(d.demandeur_id === moi ? d.aidant_id : d.demandeur_id)
+  }
   return contacts
 }
 
 export function masquerCoordonnees(profil, req, contacts) {
-  const autorise = isAdmin(req) || profil.id === req.authSession.user.id || contacts.has(profil.id)
+  const autorise = isAdmin(req) || profil.id === req.utilisateur.id || contacts.has(profil.id)
   if (autorise) return profil
   // contact_masque : le front affiche « Numéro après acceptation » (ProviderCard.vue).
   return { ...profil, telephone: '', adresse: '', contact_masque: true }
@@ -45,10 +43,7 @@ const estDemo = (profil) => /\(démo\)/i.test(profil?.nom || '')
 
 // --- Validation des profils par l'administrateur (F08 / BF16) ---------------
 // Un personnel de santé ou un particulier n'apparaît dans la recherche et sur
-// la carte qu'une fois son profil vérifié par l'administrateur (colonne
-// verifie, voir supabase/migrations/20261110_validation_profils.sql).
-// « === false » et non « !verifie » : tant que la colonne n'existe pas encore
-// dans la base, la valeur est absente et tout le monde reste visible.
+// la carte qu'une fois son profil vérifié par l'administrateur (colonne verifie).
 const ROLES_INTERVENANT = ['sante', 'particulier']
 
 export function enAttenteDeValidation(profil) {
@@ -57,7 +52,7 @@ export function enAttenteDeValidation(profil) {
 
 export function visibleDansLaListe(profil, moi, req) {
   // Soi-même et l'administrateur voient toujours le profil.
-  if (isAdmin(req) || profil.id === req.authSession.user.id) return true
+  if (isAdmin(req) || profil.id === req.utilisateur.id) return true
   if (enAttenteDeValidation(profil)) return false
   if (!estDemo(profil)) return true
   return estDemo(moi)

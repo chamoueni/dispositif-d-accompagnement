@@ -34,7 +34,7 @@ const filters = reactive({
   ville: '',
 })
 
-// getUsers() est maintenant asynchrone (Supabase) : on charge la liste une fois
+// getUsers() est maintenant asynchrone (API) : on charge la liste une fois
 // au montage plutôt qu'à chaque calcul du computed ci-dessous.
 const users = ref([])
 const chargement = ref(true)

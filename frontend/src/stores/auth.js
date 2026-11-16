@@ -1,10 +1,12 @@
-// Authentification via l’API Express : les jetons Supabase restent côté serveur.
+// Authentification via l’API Express. Le jeton de connexion (JWT) est dans un
+// cookie httpOnly posé par le serveur : ce fichier ne le voit jamais.
 import { computed, reactive, toRefs } from 'vue'
-import { apiRequest } from '../lib/api'
+import { apiRequest } from '../services/api'
 
-const ADMIN_EMAIL = 'moustakimsinina05@gmail.com'
 const state = reactive({ user: null, initialized: false })
-const isAdmin = computed(() => state.user?.email === ADMIN_EMAIL)
+// L'administrateur est signalé par le serveur (colonne utilisateurs.est_admin).
+// Ce n'est qu'un affichage : chaque route admin est AUSSI vérifiée par le serveur.
+const isAdmin = computed(() => state.user?.est_admin === true)
 
 export function messageErreurProfil(error) {
   const brut = error?.message || ''
@@ -40,7 +42,6 @@ if (typeof window !== 'undefined') {
 
 async function signup(payload) {
   const data = await apiRequest('/api/auth/register', { method: 'POST', body: payload })
-  if (data.confirmationRequired) throw new Error(data.message)
   state.user = data.user
   return state.user
 }

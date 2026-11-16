@@ -1,18 +1,26 @@
 // Contrôleur des comptes gérés par l'administrateur (espace admin › Comptes).
-// Utilise la clé "service role" : les routes sont protégées par verifierAdmin.
+// Les routes sont protégées par verifierAdmin (voir routes/admin.routes.js).
 import { randomBytes } from 'node:crypto'
 import { ROLES_AUTORISES } from '../config/constantes.js'
-import { supabaseAdmin } from '../config/supabase.js'
-import { emailValide } from '../services/validation.service.js'
+import { transactionAdmin } from '../db.js'
+import { creerProfil } from '../models/profil.model.js'
+import { creerUtilisateur, supprimerUtilisateur } from '../models/utilisateur.model.js'
+import { hacherMotDePasse } from '../services/motDePasse.service.js'
+import { emailValide, isUuid } from '../services/validation.service.js'
 
-const NON_CONFIGURE = { message: 'Service d’administration non configuré.' }
-
-// DELETE /api/admin/comptes/:id : supprime le compte (et son profil, par cascade).
+// DELETE /api/admin/comptes/:id : supprime le compte. Son profil, ses
+// demandes, missions et avis partent avec (on delete cascade dans la base) :
+// c'est aussi le « droit à l'effacement » du RGPD.
 export async function supprimerCompte(req, res, next) {
   try {
-    if (!supabaseAdmin) return res.status(503).json(NON_CONFIGURE)
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(req.params.id)
-    if (error) return res.status(400).json({ message: 'Impossible de supprimer ce compte.' })
+    if (!isUuid(req.params.id)) return res.status(404).json({ message: 'Compte introuvable.' })
+    // L'administrateur ne peut pas supprimer son propre compte par erreur.
+    if (req.params.id === req.utilisateur.id) {
+      return res.status(400).json({ message: 'Vous ne pouvez pas supprimer votre propre compte administrateur.' })
+    }
+    if (!(await supprimerUtilisateur(req.params.id))) {
+      return res.status(404).json({ message: 'Compte introuvable.' })
+    }
     return res.status(204).end()
   } catch (error) {
     next(error)
@@ -30,50 +38,36 @@ export async function creerCompte(req, res, next) {
       return res.status(400).json({ message: 'Un email valide est obligatoire pour créer un compte.' })
     }
     if (!ROLES_AUTORISES.includes(role)) return res.status(400).json({ message: 'Le rôle est invalide.' })
-    if (!supabaseAdmin) return res.status(503).json(NON_CONFIGURE)
 
-    const metadata = {
+    // Mot de passe aléatoire, que personne ne connaît : la personne choisira
+    // le sien avec « Mot de passe oublié ».
+    const hash = await hacherMotDePasse(randomBytes(32).toString('base64url'))
+    const champs = {
       nom: nom.trim(),
       telephone: typeof telephone === 'string' ? telephone.slice(0, 40) : '',
       ville: typeof ville === 'string' ? ville.slice(0, 100) : '',
       role,
-    }
-    // Mot de passe aléatoire : la personne choisira le sien avec « Mot de passe oublié ».
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
-      password: randomBytes(32).toString('base64url'),
-      email_confirm: true,
-      user_metadata: metadata,
-    })
-    if (error) {
-      const message = /already.*registered|already.*exists/i.test(error.message)
-        ? 'Un compte existe déjà avec cet email.'
-        : 'Impossible de créer ce compte.'
-      return res.status(400).json({ message })
+      actif: req.body?.actif !== false,
+      // Compte créé par l'administrateur lui-même : profil vérifié, sauf s'il
+      // décoche « Profil vérifié » dans le formulaire (verifie: false).
+      verifie: req.body?.verifie !== false,
     }
 
-    // Compte créé par l'administrateur lui-même : profil vérifié, sauf s'il
-    // décoche « Profil vérifié » dans le formulaire (verifie: false).
-    const ligne = { id: data.user.id, ...metadata, actif: req.body?.actif !== false, verifie: req.body?.verifie !== false }
-    let { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles').insert(ligne).select().single()
-    // Base pas encore migrée (colonne verifie absente) : on crée le profil sans.
-    if (profileError && /verifie/i.test(profileError.message)) {
-      delete ligne.verifie
-      ;({ data: profile, error: profileError } = await supabaseAdmin
-        .from('profiles').insert(ligne).select().single())
-    }
-    if (profileError) {
-      // Pas de compte sans profil : on annule la création.
-      const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(data.user.id)
-      if (cleanupError) console.error('Échec du nettoyage du compte admin créé sans profil.')
-      const message = /profiles_telephone_unique/i.test(profileError.message)
+    // Transaction « admin » : le déclencheur de la base accepte alors la
+    // valeur de « verifie ». Compte et profil sont créés ensemble ou pas du tout.
+    const { utilisateur, profil } = await transactionAdmin(async (client) => {
+      const utilisateur = await creerUtilisateur(email.trim().toLowerCase(), hash, client)
+      const profil = await creerProfil(utilisateur.id, champs, client)
+      return { utilisateur, profil }
+    })
+    return res.status(201).json({ ...profil, email: utilisateur.email })
+  } catch (error) {
+    if (error?.code === '23505') {
+      const message = error.constraint === 'profiles_telephone_unique'
         ? 'Ce numéro de téléphone est déjà utilisé par un autre compte.'
-        : 'Impossible de créer le profil du compte, merci de réessayer.'
+        : 'Un compte existe déjà avec cet email.'
       return res.status(400).json({ message })
     }
-    return res.status(201).json({ ...profile, email: data.user.email })
-  } catch (error) {
     next(error)
   }
 }

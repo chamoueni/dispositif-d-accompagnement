@@ -3,33 +3,39 @@
 // À l'acceptation, deux traitements automatiques :
 // - un code d'arrivée à 4 chiffres, que l'intervenant annonce chez la personne âgée ;
 // - une mise en relation (mission) entre le demandeur et l'intervenant.
+//
+// Tout se fait dans UNE transaction : soit la demande change de statut ET sa
+// mission est créée, soit rien ne change (jamais une demande acceptée sans mission).
 import crypto from 'node:crypto'
+import { transaction } from '../db.js'
+import { modifierStatut, trouverDemande } from '../models/demande.model.js'
+import { creerMission, trouverMissionDeDemande } from '../models/mission.model.js'
 
-export async function changerStatutDemande(client, id, statut) {
-  const patch = { statut, date_mise_a_jour: new Date().toISOString() }
-  if (statut === 'acceptee') {
-    const { data: current, error: readError } = await client
-      .from('demandes').select('code_arrivee').eq('id', id).single()
-    // Base sans colonne code_arrivee (ancien schéma) : on accepte sans code.
-    if (readError && !/code_arrivee/i.test(readError.message)) throw readError
-    if (!readError && !current.code_arrivee) {
-      patch.code_arrivee = String(crypto.randomInt(10000)).padStart(4, '0')
+// Renvoie la demande modifiée, ou null si elle n'existe pas ou si
+// l'utilisateur n'y participe pas (=> 404 dans le contrôleur, sans révéler
+// qu'une demande existe chez quelqu'un d'autre).
+export function changerStatutDemande(utilisateurId, id, statut) {
+  return transaction(async (client) => {
+    // Remplace la règle RLS « seuls le demandeur et l'intervenant modifient la demande ».
+    const demande = await trouverDemande(id, client, { verrouiller: true })
+    if (!demande || (demande.demandeur_id !== utilisateurId && demande.aidant_id !== utilisateurId)) {
+      return null
     }
-  }
-  const { data, error } = await client.from('demandes').update(patch).eq('id', id).select().single()
-  if (error) throw error
-  if (statut === 'acceptee') {
-    const { data: existing, error: existingError } = await client
-      .from('mises_en_relation').select('id').eq('demande_id', id).maybeSingle()
-    if (existingError) throw existingError
-    if (!existing) {
-      const { error: insertError } = await client.from('mises_en_relation').insert({
-        demande_id: id,
-        demandeur_id: data.demandeur_id,
-        aidant_id: data.aidant_id,
-      })
-      if (insertError) throw insertError
+
+    // Code d'arrivée créé une seule fois, à la première acceptation.
+    // crypto.randomInt : vrai hasard cryptographique, impossible à prévoir.
+    const code = statut === 'acceptee' && !demande.code_arrivee
+      ? String(crypto.randomInt(10000)).padStart(4, '0')
+      : null
+    const modifiee = await modifierStatut(id, statut, code, client)
+
+    if (statut === 'acceptee' && !(await trouverMissionDeDemande(id, client))) {
+      await creerMission({
+        demandeId: id,
+        demandeurId: modifiee.demandeur_id,
+        aidantId: modifiee.aidant_id,
+      }, client)
     }
-  }
-  return data
+    return modifiee
+  })
 }

@@ -1,25 +1,46 @@
 // Contrôleur des comptes : inscription, connexion, session, déconnexion,
 // mot de passe oublié et changement de mot de passe.
-// Les mots de passe ne passent jamais en clair dans la base : c'est
-// Supabase Auth qui les hache (bcrypt).
-import { MOT_DE_PASSE_MIN, ROLES_AUTORISES } from '../config/constantes.js'
-import { clientAnonyme, supabaseAdmin } from '../config/supabase.js'
-import { chargerProfil, profilDepuisUtilisateur } from '../services/profil.service.js'
+//
+// Remplace Supabase Auth. Les mots de passe ne passent jamais en clair dans la
+// base : ils sont hachés avec bcrypt (services/motDePasse.service.js). La
+// connexion repose sur un jeton JWT rangé dans un cookie httpOnly
+// (services/jeton.service.js).
+import crypto from 'node:crypto'
+import { ROLES_AUTORISES } from '../config/constantes.js'
+import { transaction } from '../db.js'
+import { creerProfil } from '../models/profil.model.js'
 import {
-  clearSessionCookie,
-  createSession,
-  persistSessionTokens,
-  revokeSession,
-} from '../services/session.service.js'
+  changerMotDePasse as enregistrerMotDePasse,
+  creerJetonReinitialisation,
+  creerUtilisateur,
+  invaliderJetons,
+  supprimerJetonsExpires,
+  trouverJetonValide,
+  trouverParEmail,
+  trouverPourConnexion,
+} from '../models/utilisateur.model.js'
+import { envoyerLienReinitialisation } from '../services/email.service.js'
+import { effacerCookie, poserCookie } from '../services/jeton.service.js'
+import {
+  MESSAGE_MOT_DE_PASSE,
+  hacherMotDePasse,
+  motDePasseValide,
+  verifierMotDePasse,
+} from '../services/motDePasse.service.js'
+import { chargerProfil } from '../services/profil.service.js'
 import { emailValide } from '../services/validation.service.js'
 
-const MESSAGE_TROP_DE_TENTATIVES = 'Trop de tentatives, merci de réessayer dans quelques minutes.'
-const MESSAGE_MOT_DE_PASSE = `Le mot de passe doit contenir au moins ${MOT_DE_PASSE_MIN} caractères.`
+const MESSAGE_IDENTIFIANTS = 'Email ou mot de passe incorrect.'
 const MESSAGE_LIEN_INVALIDE = 'Le lien de réinitialisation est invalide ou expiré.'
+// Un lien « Mot de passe oublié » est valable 1 heure.
+const DUREE_LIEN_MS = 60 * 60 * 1000
 
-function motDePasseValide(password) {
-  return typeof password === 'string' && password.length >= MOT_DE_PASSE_MIN && password.length <= 1024
-}
+// Empreinte SHA-256 d'un jeton de réinitialisation : c'est elle qui est
+// stockée en base, jamais le jeton lui-même.
+const empreinte = (jeton) => crypto.createHash('sha256').update(jeton).digest('hex')
+
+// 23505 = valeur en double dans PostgreSQL ; error.constraint dit laquelle.
+const doublon = (error, contrainte) => error?.code === '23505' && error.constraint === contrainte
 
 // POST /api/auth/register
 export async function inscrire(req, res, next) {
@@ -33,53 +54,40 @@ export async function inscrire(req, res, next) {
     }
 
     // Seuls ces champs, nettoyés et de taille limitée, sont enregistrés.
-    const metadata = {
+    // « verifie » n'en fait pas partie : un intervenant attend la validation
+    // de l'administrateur (le déclencheur de la base le force aussi à false).
+    const champs = {
       nom: body.nom.trim(),
       telephone: typeof body.telephone === 'string' ? body.telephone.slice(0, 40) : '',
       ville: typeof body.ville === 'string' ? body.ville.slice(0, 100) : '',
       adresse: typeof body.adresse === 'string' ? body.adresse.slice(0, 300) : '',
       role: body.role,
       specialite: typeof body.specialite === 'string' ? body.specialite.slice(0, 100) : '',
-      services: Array.isArray(body.services) ? body.services.slice(0, 30) : [],
+      services: Array.isArray(body.services)
+        ? body.services.filter((s) => typeof s === 'string').slice(0, 30).map((s) => s.slice(0, 100))
+        : [],
       bio: typeof body.bio === 'string' ? body.bio.slice(0, 2000) : '',
       disponibilites: Array.isArray(body.disponibilites) ? body.disponibilites.slice(0, 100) : [],
     }
-    const client = clientAnonyme()
-    const { data, error } = await client.auth.signUp({
-      email: body.email.trim().toLowerCase(),
-      password: body.password,
-      options: { data: metadata },
+    const hash = await hacherMotDePasse(body.password)
+
+    // Compte + profil dans une même transaction : si le profil échoue (numéro
+    // déjà pris…), le compte n'est pas gardé non plus.
+    const { utilisateur, profil } = await transaction(async (client) => {
+      const utilisateur = await creerUtilisateur(body.email.trim().toLowerCase(), hash, client)
+      const profil = await creerProfil(utilisateur.id, champs, client)
+      return { utilisateur, profil }
     })
-    if (error) {
-      if (/rate limit/i.test(error.message)) return res.status(429).json({ message: MESSAGE_TROP_DE_TENTATIVES })
-      if (/password.*at least|password.*characters/i.test(error.message)) {
-        return res.status(400).json({ message: MESSAGE_MOT_DE_PASSE })
-      }
-      if (/already registered|already been registered/i.test(error.message)) {
-        return res.status(409).json({ message: 'Un compte existe déjà avec cet email.' })
-      }
-      throw error
-    }
 
-    // Confirmation par e-mail activée : pas encore de session.
-    if (!data.session) {
-      return res.status(201).json({
-        confirmationRequired: true,
-        message: 'Un email de confirmation a été envoyé. Cliquez sur le lien reçu, puis connectez-vous.',
-      })
-    }
-
-    const { error: sessionError } = await client.auth.setSession(data.session)
-    if (sessionError) throw sessionError
-    // .select() : on renvoie le profil tel qu'enregistré (avec verifie, pour
-    // que « Mon compte » affiche tout de suite « profil en attente de validation »).
-    const { data: profil, error: profileError } = await client
-      .from('profiles').insert({ id: data.user.id, ...metadata }).select().single()
-    if (profileError) throw profileError
-    const { data: sessionData } = await client.auth.getSession()
-    await createSession(data.user.id, sessionData.session || data.session, false, res)
-    return res.status(201).json({ user: { ...metadata, ...profil, id: data.user.id, email: data.user.email } })
+    poserCookie(res, utilisateur, false)
+    return res.status(201).json({ user: { ...profil, email: utilisateur.email, est_admin: false } })
   } catch (error) {
+    if (doublon(error, 'utilisateurs_email_key')) {
+      return res.status(409).json({ message: 'Un compte existe déjà avec cet email.' })
+    }
+    if (doublon(error, 'profiles_telephone_unique')) {
+      return res.status(409).json({ message: 'Ce numéro de téléphone est déjà utilisé par un autre compte.' })
+    }
     next(error)
   }
 }
@@ -89,29 +97,16 @@ export async function connecter(req, res, next) {
   try {
     const { email, password, remember } = req.body || {}
     if (!emailValide(email) || typeof password !== 'string' || !password || password.length > 1024) {
-      return res.status(400).json({ message: 'Email ou mot de passe incorrect.' })
+      return res.status(400).json({ message: MESSAGE_IDENTIFIANTS })
     }
-    const { data, error } = await clientAnonyme().auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    })
-    if (error) {
-      if (/rate limit/i.test(error.message)) return res.status(429).json({ message: MESSAGE_TROP_DE_TENTATIVES })
-      if (/email not confirmed/i.test(error.message)) {
-        return res.status(403).json({
-          message: 'Merci de confirmer votre adresse email avant de vous connecter : vérifiez votre boîte mail et vos courriers indésirables.',
-        })
-      }
-      // Même message que l'email existe ou non : on ne révèle pas quels comptes existent.
-      return res.status(401).json({ message: 'Email ou mot de passe incorrect.' })
+    const compte = await trouverPourConnexion(email.trim().toLowerCase())
+    // Même message (et même durée de calcul) que l'email existe ou non :
+    // on ne révèle pas quels comptes existent.
+    if (!(await verifierMotDePasse(password, compte?.mot_de_passe_hash))) {
+      return res.status(401).json({ message: MESSAGE_IDENTIFIANTS })
     }
-    const client = clientAnonyme()
-    const { error: sessionError } = await client.auth.setSession(data.session)
-    if (sessionError) throw sessionError
-    const user = await chargerProfil(client, data.user)
-    const { data: sessionData } = await client.auth.getSession()
-    await createSession(data.user.id, sessionData.session || data.session, remember === true, res)
-    return res.json({ user: user || profilDepuisUtilisateur(data.user) })
+    poserCookie(res, compte, remember === true)
+    return res.json({ user: await chargerProfil(compte) })
   } catch (error) {
     next(error)
   }
@@ -120,37 +115,39 @@ export async function connecter(req, res, next) {
 // GET /api/auth/session : qui est connecté ?
 export async function sessionCourante(req, res, next) {
   try {
-    const user = await chargerProfil(req.supabase, req.authSession.user)
-    return res.json({ user: user || profilDepuisUtilisateur(req.authSession.user) })
+    const { id, email, estAdmin } = req.utilisateur
+    return res.json({ user: await chargerProfil({ id, email, est_admin: estAdmin }) })
   } catch (error) {
     next(error)
   }
 }
 
-// POST /api/auth/logout
-export async function deconnecter(req, res, next) {
-  try {
-    await revokeSession(req)
-    clearSessionCookie(res)
-    if (req.authSession && req.supabase) {
-      const { error } = await req.supabase.auth.signOut({ scope: 'local' })
-      if (error) throw error
-    }
-    return res.status(204).end()
-  } catch (error) {
-    next(error)
-  }
+// POST /api/auth/logout : le cookie est effacé, le navigateur n'a plus de jeton.
+export function deconnecter(_req, res) {
+  effacerCookie(res)
+  return res.status(204).end()
 }
 
-// POST /api/auth/forgot-password : envoie un lien de réinitialisation par e-mail.
+// POST /api/auth/forgot-password : envoie un lien de réinitialisation par email.
 export async function motDePasseOublie(req, res, next) {
   try {
     const email = req.body?.email
     if (!emailValide(email)) return res.status(400).json({ message: 'Adresse email invalide.' })
-    const { error } = await clientAnonyme().auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `${process.env.SITE_URL || 'http://localhost:5173'}/reinitialiser-mot-de-passe`,
-    })
-    if (error) throw error
+
+    const utilisateur = await trouverParEmail(email.trim().toLowerCase())
+    if (utilisateur) {
+      // 32 octets aléatoires : impossible à deviner.
+      const jeton = crypto.randomBytes(32).toString('base64url')
+      await creerJetonReinitialisation(utilisateur.id, empreinte(jeton), new Date(Date.now() + DUREE_LIEN_MS))
+      try {
+        await envoyerLienReinitialisation(utilisateur.email, jeton)
+      } catch (error) {
+        // On ne dit pas au visiteur que l'envoi a échoué (ça révélerait que le
+        // compte existe) ; l'erreur est notée dans le journal du serveur.
+        console.error('Envoi de l’email de réinitialisation impossible :', error.message)
+      }
+      await supprimerJetonsExpires()
+    }
     // Même réponse que le compte existe ou non.
     return res.json({ message: 'Si cette adresse est associée à un compte, un email de réinitialisation a été envoyé.' })
   } catch (error) {
@@ -158,42 +155,41 @@ export async function motDePasseOublie(req, res, next) {
   }
 }
 
-// POST /api/auth/recovery/verify : le lien reçu par e-mail est-il encore valable ?
+// Le jeton reçu du lien a-t-il une forme acceptable ?
+const jetonRecuValide = (jeton) => typeof jeton === 'string' && jeton.length > 0 && jeton.length <= 200
+
+// POST /api/auth/recovery/verify : le lien reçu par email est-il encore valable ?
 export async function verifierLienReinitialisation(req, res, next) {
   try {
-    const accessToken = req.body?.accessToken
-    if (typeof accessToken !== 'string' || accessToken.length > 8192 || !supabaseAdmin) {
+    const jeton = req.body?.accessToken
+    if (!jetonRecuValide(jeton) || !(await trouverJetonValide(empreinte(jeton)))) {
       return res.status(400).json({ message: MESSAGE_LIEN_INVALIDE })
     }
-    const { data, error } = await supabaseAdmin.auth.getUser(accessToken)
-    if (error || !data.user) return res.status(400).json({ message: MESSAGE_LIEN_INVALIDE })
     return res.json({ valid: true })
   } catch (error) {
     next(error)
   }
 }
 
-// POST /api/auth/recovery : nouveau mot de passe depuis le lien reçu par e-mail.
+// POST /api/auth/recovery : nouveau mot de passe depuis le lien reçu par email.
 export async function reinitialiserMotDePasse(req, res, next) {
   try {
     const { accessToken, password } = req.body || {}
-    if (typeof accessToken !== 'string' || accessToken.length > 8192) {
-      return res.status(400).json({ message: MESSAGE_LIEN_INVALIDE })
-    }
+    if (!jetonRecuValide(accessToken)) return res.status(400).json({ message: MESSAGE_LIEN_INVALIDE })
     if (!motDePasseValide(password)) return res.status(400).json({ message: MESSAGE_MOT_DE_PASSE })
-    if (!supabaseAdmin) return res.status(503).json({ message: 'La réinitialisation n’est pas configurée.' })
-    const { data, error } = await supabaseAdmin.auth.getUser(accessToken)
-    if (error || !data.user) return res.status(400).json({ message: MESSAGE_LIEN_INVALIDE })
+    const hash = await hacherMotDePasse(password)
 
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(data.user.id, { password })
-    if (updateError) throw updateError
-    // Par sécurité, toutes les sessions ouvertes de ce compte sont fermées.
-    const { error: revokeError } = await supabaseAdmin
-      .from('auth_sessions')
-      .update({ revoked_at: new Date().toISOString() })
-      .eq('user_id', data.user.id)
-      .is('revoked_at', null)
-    if (revokeError) throw revokeError
+    const ok = await transaction(async (client) => {
+      const lien = await trouverJetonValide(empreinte(accessToken), client, { verrouiller: true })
+      if (!lien) return false
+      // Le nouveau mot de passe augmente version_jeton : toutes les
+      // connexions ouvertes sur ce compte sont fermées, par sécurité.
+      await enregistrerMotDePasse(lien.utilisateur_id, hash, client)
+      // Le lien (et tout autre lien encore valable) ne peut plus resservir.
+      await invaliderJetons(lien.utilisateur_id, client)
+      return true
+    })
+    if (!ok) return res.status(400).json({ message: MESSAGE_LIEN_INVALIDE })
     return res.json({ message: 'Mot de passe modifié. Vous pouvez maintenant vous connecter.' })
   } catch (error) {
     next(error)
@@ -205,9 +201,10 @@ export async function changerMotDePasse(req, res, next) {
   try {
     const password = req.body?.password
     if (!motDePasseValide(password)) return res.status(400).json({ message: MESSAGE_MOT_DE_PASSE })
-    const { error } = await req.supabase.auth.updateUser({ password })
-    if (error) throw error
-    await persistSessionTokens(req)
+    const compte = await enregistrerMotDePasse(req.utilisateur.id, await hacherMotDePasse(password))
+    // Les autres appareils sont déconnectés (version_jeton a augmenté) ; on
+    // donne un nouveau jeton à celui-ci pour qu'il reste connecté.
+    poserCookie(res, compte, req.utilisateur.souvenir)
     return res.status(204).end()
   } catch (error) {
     next(error)

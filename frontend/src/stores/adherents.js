@@ -1,30 +1,19 @@
 // Store Pinia des adhérents : l'interface ne connaît que cette API métier.
+// Les appels passent par services/api.js, comme tout le reste du site.
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { API_BASE_URL } from '../lib/apiBase'
+import { apiRequest } from '../services/api'
 
 export const useAdherentsStore = defineStore('adherents', () => {
   const adherents = ref([])
   const chargement = ref(false)
   const erreur = ref('')
 
-  // Centralise les appels fetch vers le backend Express.
-  async function appelerApi(url, options = {}) {
-    const reponse = await fetch(`${API_BASE_URL}${url}`, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      ...options,
-    })
-    const donnees = reponse.status === 204 ? null : await reponse.json()
-    if (!reponse.ok) throw new Error(donnees?.message || 'La requête a échoué.')
-    return donnees
-  }
-
   async function chargerAdherents() {
     chargement.value = true
     erreur.value = ''
     try {
-      adherents.value = await appelerApi('/api/adherents')
+      adherents.value = await apiRequest('/api/adherents')
     } catch (err) {
       erreur.value = err.message
       throw err
@@ -34,26 +23,20 @@ export const useAdherentsStore = defineStore('adherents', () => {
   }
 
   async function creerAdherent(formulaire) {
-    const adherent = await appelerApi('/api/adherents', {
-      method: 'POST',
-      body: JSON.stringify(formulaire),
-    })
+    const adherent = await apiRequest('/api/adherents', { method: 'POST', body: formulaire })
     adherents.value.push(adherent)
     return adherent
   }
 
   async function modifierAdherent(id, formulaire) {
-    const adherent = await appelerApi(`/api/adherents/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(formulaire),
-    })
+    const adherent = await apiRequest(`/api/adherents/${id}`, { method: 'PUT', body: formulaire })
     const index = adherents.value.findIndex((item) => item.id === id)
     if (index !== -1) adherents.value[index] = adherent
     return adherent
   }
 
   async function supprimerAdherent(id) {
-    await appelerApi(`/api/adherents/${id}`, { method: 'DELETE' })
+    await apiRequest(`/api/adherents/${id}`, { method: 'DELETE' })
     adherents.value = adherents.value.filter((item) => item.id !== id)
   }
 

@@ -55,23 +55,18 @@ import '../styles/PagesLegales.css'
         class="legal-bloc"
       >
         <h2>2. Hébergement</h2>
-        <p>Le site s’appuie sur les prestataires suivants :</p>
+        <p>
+          Le site, son serveur et sa base de données (comptes, profils, demandes, avis,
+          messages) sont hébergés par :
+        </p>
         <ul>
           <li>
-            <strong>Render Services, Inc.</strong> (San Francisco, États-Unis) — hébergement du site
-            et de son serveur — <a
-              href="https://render.com"
+            <strong>alwaysdata SARL</strong> — 91 rue du Faubourg Saint-Honoré, 75008 Paris, France —
+            données stockées en France — <a
+              href="https://www.alwaysdata.com"
               target="_blank"
               rel="noopener"
-            >render.com</a>
-          </li>
-          <li>
-            <strong>Supabase, Inc.</strong> — base de données et comptes utilisateurs, stockés
-            dans l’Union européenne (Francfort, Allemagne) — <a
-              href="https://supabase.com"
-              target="_blank"
-              rel="noopener"
-            >supabase.com</a>
+            >alwaysdata.com</a>
           </li>
         </ul>
       </article>

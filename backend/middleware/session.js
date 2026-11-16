@@ -1,112 +1,61 @@
-// Middlewares de session :
-// - sessionMiddleware retrouve l'utilisateur connecté grâce au cookie et place
-//   dans la requête req.authSession (qui est connecté) et req.supabase (un
-//   client Supabase qui agit au nom de cet utilisateur, donc soumis à la RLS) ;
-// - requireAuth refuse la requête (401) si personne n'est connecté.
-import crypto from 'node:crypto'
-import { clientAnonyme, supabaseAdmin } from '../config/supabase.js'
-import {
-  SESSION_COOKIE,
-  clearSessionCookie,
-  decrypt,
-  encrypt,
-  hashToken,
-  sessionsConfigurees,
-  setSessionCookie,
-} from '../services/session.service.js'
+// Middlewares de connexion et de rôle.
+//
+// - sessionMiddleware : lit le jeton JWT (cookie, ou en-tête Authorization pour
+//   Postman), vérifie sa signature, puis relit le compte dans la base. Si tout
+//   est bon, il place dans la requête :
+//     req.utilisateur = { id, email, estAdmin, role }
+//   role vaut 'senior', 'sante', 'particulier', ou 'admin' pour l'administrateur.
+//   Sinon, la requête continue « en visiteur » (req.utilisateur absent).
+// - requireAuth : refuse (401) si personne n'est connecté.
+// - exigerRole('sante', 'particulier'…) : refuse (403) si le rôle ne convient pas.
+import { requeteUne } from '../db.js'
+import { NOM_COOKIE, effacerCookie, lireJeton } from '../services/jeton.service.js'
 
-const COLONNES = 'id,user_id,token_hash,tokens_encrypted,remember_me,expires_at,revoked_at'
+// Jeton envoyé par le navigateur (cookie) ou par un outil comme Postman (en-tête).
+function jetonRecu(req) {
+  const enTete = req.get('authorization') || ''
+  if (enTete.startsWith('Bearer ')) return enTete.slice(7).trim()
+  return req.cookies?.[NOM_COOKIE] || null
+}
 
 export async function sessionMiddleware(req, res, next) {
-  const token = req.cookies?.[SESSION_COOKIE]
-  if (!token) return next()
-  if (!sessionsConfigurees()) {
-    clearSessionCookie(res)
-    return res.status(503).json({ message: 'Authentification serveur non configurée.' })
+  const jeton = jetonRecu(req)
+  if (!jeton) return next()
+
+  // 1. Signature et date d'expiration.
+  const contenu = lireJeton(jeton)
+  if (!contenu) {
+    effacerCookie(res)
+    return next()
   }
 
   try {
-    // 1. Retrouver la session à partir de l'empreinte du jeton du cookie.
-    //    Le jeton précédent reste accepté 2 minutes après un renouvellement,
-    //    le temps que les requêtes déjà parties arrivent.
-    const tokenHash = hashToken(token)
-    let { data: row, error } = await supabaseAdmin
-      .from('auth_sessions').select(COLONNES).eq('token_hash', tokenHash).maybeSingle()
-    if (error) throw error
-    if (!row) {
-      const previous = await supabaseAdmin
-        .from('auth_sessions').select(COLONNES)
-        .eq('previous_token_hash', tokenHash)
-        .gt('previous_valid_until', new Date().toISOString())
-        .maybeSingle()
-      if (previous.error) throw previous.error
-      row = previous.data
-    }
-    if (!row || row.revoked_at || Date.parse(row.expires_at) <= Date.now()) {
-      clearSessionCookie(res)
+    // 2. Le compte existe-t-il toujours, et le jeton est-il de la bonne
+    //    « version » ? (Un changement de mot de passe augmente version_jeton :
+    //    les jetons émis avant sont alors refusés.) Le rôle est relu dans la
+    //    base à chaque requête, il n'est pas stocké dans le jeton : un rôle
+    //    modifié par l'administrateur s'applique tout de suite.
+    const compte = await requeteUne(
+      `select u.id, u.email, u.est_admin, u.version_jeton, p.role
+       from utilisateurs u
+       left join profiles p on p.id = u.id
+       where u.id = $1`,
+      [contenu.sub],
+    )
+    if (!compte || compte.version_jeton !== contenu.v) {
+      effacerCookie(res)
       return next()
     }
 
-    // 2. Rouvrir la session Supabase avec les jetons déchiffrés.
-    const savedTokens = JSON.parse(decrypt(row.tokens_encrypted))
-    const authClient = clientAnonyme()
-    const { data, error: sessionError } = await authClient.auth.setSession(savedTokens)
-    if (sessionError && (!sessionError.status || sessionError.status >= 500)) {
-      return res.status(503).json({ message: 'Le service d’authentification est temporairement indisponible.' })
+    req.utilisateur = {
+      id: compte.id,
+      email: compte.email,
+      estAdmin: compte.est_admin,
+      role: compte.est_admin ? 'admin' : compte.role,
+      // Gardé pour reposer un cookie de même durée (changement de mot de passe).
+      souvenir: contenu.souvenir === true,
+      versionJeton: compte.version_jeton,
     }
-    if (sessionError || !data.session) {
-      await supabaseAdmin.from('auth_sessions')
-        .update({ revoked_at: new Date().toISOString() })
-        .eq('id', row.id)
-      clearSessionCookie(res)
-      return next()
-    }
-
-    // 3. Vérifier que le compte existe toujours et correspond à la session.
-    const { data: authData, error: userError } = await authClient.auth.getUser()
-    if (userError && (!userError.status || userError.status >= 500)) {
-      return res.status(503).json({ message: 'Le service d’authentification est temporairement indisponible.' })
-    }
-    if (userError || !authData.user || authData.user.id !== row.user_id) {
-      await supabaseAdmin.from('auth_sessions')
-        .update({ revoked_at: new Date().toISOString() })
-        .eq('id', row.id)
-      clearSessionCookie(res)
-      return next()
-    }
-
-    // 4. Si Supabase a renouvelé les jetons, on les enregistre et on change
-    //    aussi le jeton du cookie (rotation).
-    const updatedTokens = {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    }
-    if (
-      updatedTokens.access_token !== savedTokens.access_token ||
-      updatedTokens.refresh_token !== savedTokens.refresh_token
-    ) {
-      const rotatedToken = crypto.randomBytes(32).toString('base64url')
-      const { data: updated, error: updateError } = await supabaseAdmin
-        .from('auth_sessions')
-        .update({
-          token_hash: hashToken(rotatedToken),
-          previous_token_hash: row.token_hash,
-          previous_valid_until: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-          tokens_encrypted: encrypt(JSON.stringify(updatedTokens)),
-          last_rotated_at: new Date().toISOString(),
-        })
-        .eq('id', row.id)
-        .eq('token_hash', row.token_hash)
-        .is('revoked_at', null)
-        .select('id')
-      if (updateError) throw updateError
-      if (updated?.length) {
-        setSessionCookie(res, rotatedToken, row.remember_me, row.expires_at)
-      }
-    }
-
-    req.authSession = { id: row.id, user: authData.user, remember: row.remember_me }
-    req.supabase = authClient
     next()
   } catch (error) {
     next(error)
@@ -114,8 +63,18 @@ export async function sessionMiddleware(req, res, next) {
 }
 
 export function requireAuth(req, res, next) {
-  if (!req.authSession || !req.supabase) {
-    return res.status(401).json({ message: 'Authentification requise.' })
-  }
+  if (!req.utilisateur) return res.status(401).json({ message: 'Authentification requise.' })
   next()
+}
+
+// Usage dans une route : router.post('/...', exigerRole('senior'), controleur)
+// L'administrateur a toujours accès.
+export function exigerRole(...roles) {
+  return (req, res, next) => {
+    if (!req.utilisateur) return res.status(401).json({ message: 'Authentification requise.' })
+    if (req.utilisateur.role !== 'admin' && !roles.includes(req.utilisateur.role)) {
+      return res.status(403).json({ message: 'Votre profil ne permet pas cette action.' })
+    }
+    next()
+  }
 }

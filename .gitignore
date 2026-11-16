@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Clés Supabase (voir .env.example pour les variables attendues)
+# Secrets (mot de passe de la base, JWT_SECRET, SMTP…) : voir .env.example
 .env
 .env.local
 

@@ -232,7 +232,7 @@ const router = createRouter({
   },
 })
 
-// Supabase restaure la session de façon asynchrone au démarrage : tant que ce
+// La session est restaurée de façon asynchrone au démarrage (GET /api/auth/session) : tant que ce
 // n'est pas fait, on ne sait pas encore si quelqu'un est connecté. Sans cette
 // attente, un utilisateur déjà connecté se ferait rediriger vers /connexion à
 // chaque rechargement de page, le temps que la session soit restaurée.

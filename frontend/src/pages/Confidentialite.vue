@@ -151,11 +151,11 @@ const DONNEES = [
         <ul>
           <li>
             <strong>Comptes, profils, demandes, avis, messages et liste des adhérents</strong> : base
-            de données Supabase, dans l’Union européenne (Francfort, Allemagne).
+            de données PostgreSQL hébergée par alwaysdata, en France. Les mots de passe y sont
+            enregistrés sous forme chiffrée irréversible (empreinte bcrypt), jamais en clair.
           </li>
           <li>
-            <strong>Site et serveur</strong> : hébergés par Render (société américaine). Les données
-            y transitent pour être affichées, sans y être conservées.
+            <strong>Site et serveur</strong> : hébergés eux aussi par alwaysdata, en France.
           </li>
           <li>
             <strong>Messages SOS</strong> : une copie est envoyée par e-mail à l’administration
@@ -167,8 +167,10 @@ const DONNEES = [
           </li>
         </ul>
         <p>
-          Certains de ces prestataires sont situés hors de l’Union européenne. Une mise en service
-          réelle nécessiterait de vérifier les garanties prévues par le RGPD pour ces transferts.
+          Vos données sont conservées dans l’Union européenne. Seuls les services de messagerie et
+          Google Fonts peuvent faire transiter des informations hors de l’Union européenne ; une mise
+          en service réelle nécessiterait de vérifier les garanties prévues par le RGPD pour ces
+          transferts.
         </p>
       </article>
 

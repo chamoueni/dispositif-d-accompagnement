@@ -112,7 +112,7 @@ onMounted(async () => {
   <header class="admin-topbar">
     <div>
       <h1>Adhérents</h1>
-      <p>{{ store.adherents.length }} adhérents · synchronisé avec Supabase</p>
+      <p>{{ store.adherents.length }} adhérents · enregistrés dans la base de données</p>
     </div>
     <div class="admin-topbar-actions">
       <button

@@ -1,6 +1,6 @@
 <script setup>
 // Demande de réinitialisation de mot de passe (utilisateur déconnecté).
-// Envoie un email Supabase avec un lien vers /reinitialiser-mot-de-passe.
+// Le serveur envoie un email (SMTP alwaysdata) avec un lien vers /reinitialiser-mot-de-passe.
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../stores/auth'
@@ -14,7 +14,7 @@ const envoi = ref(false)
 const envoye = ref(false)
 const erreur = ref('')
 
-// Message générique dans tous les cas (Supabase ne révèle jamais si l'email
+// Message générique dans tous les cas (le serveur ne révèle jamais si l'email
 // existe ou non) : on évite de laisser deviner quels emails ont un compte.
 async function handleSubmit() {
   erreur.value = ''

@@ -4,7 +4,7 @@
 // chaque changement de vue, et la sidebar (compteurs) reste synchronisée avec
 // ce qui se passe dans une vue (ex. supprimer un message met à jour le badge
 // "Messages" sans recharger quoi que ce soit).
-// Toutes les fonctions Supabase utilisées ici existaient déjà dans
+// Toutes les fonctions d'accès aux données utilisées ici existaient déjà dans
 // data/store.js (voir Admin.vue avant cette refonte) : ce store ne fait que
 // centraliser leurs appels et l'état qui en résulte.
 import { defineStore } from 'pinia'

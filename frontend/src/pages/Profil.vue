@@ -82,7 +82,7 @@ function estActif(jour, creneau) {
 
 // Une case du calendrier = un créneau standard (jour + Matin/Après-midi/Soir).
 // Clic : on l'ajoute s'il n'y est pas, on le retire sinon. updateProfile()
-// (Supabase) est async : la case ne change d'état qu'une fois l'écriture confirmée.
+// (appel à l'API) est async : la case ne change d'état qu'une fois l'écriture confirmée.
 async function toggleCreneau(jour, creneau) {
   slotError.value = ''
   const dejaActif = estActif(jour, creneau)

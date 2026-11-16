@@ -2,7 +2,7 @@
 // composables/useTheme.js : un seul état hors composant). navigator.onLine
 // reflète la connectivité réseau du système, mis à jour par les événements
 // natifs 'online'/'offline' — sert à afficher un message clair (voir
-// ConnexionBanner.vue) au lieu de laisser les appels Supabase échouer en
+// ConnexionBanner.vue) au lieu de laisser les appels à l'API échouer en
 // silence quand la connexion coupe pendant l'utilisation du site.
 import { ref } from 'vue'
 

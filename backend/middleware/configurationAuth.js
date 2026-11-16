@@ -1,15 +1,17 @@
 // Refuse les routes /api/auth/* (503) tant que le serveur n'a pas tout ce qu'il
-// faut pour gérer les comptes : message clair plutôt qu'une erreur incompréhensible.
-import { cleAnonyme, supabaseAdmin } from '../config/supabase.js'
+// faut pour gérer les comptes (base de données + JWT_SECRET) : message clair
+// plutôt qu'une erreur incompréhensible.
+import { baseConfiguree } from '../db.js'
+import { secretConfigure } from '../services/jeton.service.js'
 
 export function verifierConfigurationAuth(_req, res, next) {
-  const configured = !!supabaseAdmin &&
-    !!cleAnonyme() &&
-    typeof process.env.AUTH_SESSION_SECRET === 'string' &&
-    Buffer.byteLength(process.env.AUTH_SESSION_SECRET) >= 32 &&
+  const configure = baseConfiguree() &&
+    secretConfigure() &&
     (process.env.NODE_ENV !== 'production' || !!process.env.SITE_URL)
-  if (!configured) {
-    return res.status(503).json({ message: 'Authentification serveur non configurée. Vérifiez les variables d’environnement et la migration Supabase.' })
+  if (!configure) {
+    return res.status(503).json({
+      message: 'Authentification serveur non configurée. Vérifiez DATABASE_URL, JWT_SECRET et SITE_URL.',
+    })
   }
   next()
 }

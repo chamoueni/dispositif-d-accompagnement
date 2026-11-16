@@ -1,11 +1,11 @@
 // Valeurs fixes partagées par tout le serveur (avant : recopiées dans
 // index.js, authRoutes.js et dataRoutes.js).
 
-// Même email en dur que côté client (voir ADMIN_EMAIL dans stores/auth.js) et
-// que les policies RLS Supabase : pas de rôle "admin" séparé pour ce projet.
-export const ADMIN_EMAIL = 'moustakimsinina05@gmail.com'
+// L'administrateur n'est plus reconnu par un email écrit ici : c'est la
+// colonne utilisateurs.est_admin de la base (voir backend/sql/schema.sql).
 
-// Profils possibles d'un compte.
+// Profils possibles d'un compte : senior = personne âgée, sante = personnel
+// de santé, particulier. (« admin » n'est pas un profil, c'est est_admin.)
 export const ROLES_AUTORISES = ['senior', 'sante', 'particulier']
 
 // Statut d'un adhérent (espace admin).

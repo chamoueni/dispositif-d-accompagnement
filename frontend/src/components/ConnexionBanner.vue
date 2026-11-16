@@ -1,6 +1,6 @@
 <script setup>
 // Bandeau affiché sur tout le site (public + espace admin, posé dans App.vue)
-// quand la connexion internet est coupée : sans ça, un appel Supabase qui
+// quand la connexion internet est coupée : sans ça, un appel à l'API qui
 // échoue pendant une coupure (voir composables/useConnexion.js) ne se voit
 // nulle part pour l'utilisateur, qui croit juste que le site est cassé ou lent.
 import { useConnexion } from '../composables/useConnexion'

@@ -1,11 +1,10 @@
 <script setup>
 // Carte « Santé du site » du tableau de bord admin : état du serveur, de la
-// base Supabase et de la dernière ronde de Mlezi, le robot de maintenance
+// base de données PostgreSQL et de la dernière ronde de Mlezi, le robot de maintenance
 // (.github/workflows/mlezi-gardien.yml). Lecture seule, rien à configurer :
 // - /api/sante : bilan public du serveur (voir backend/app.js) ;
 // - l'API publique de GitHub : dernière exécution du workflow Mlezi.
 import { onMounted, ref } from 'vue'
-import { API_BASE_URL } from '../../lib/apiBase'
 import AdminIcon from './AdminIcon.vue'
 
 const DEPOT = 'chamoueni/dispositif-d-accompagnement'
@@ -13,19 +12,19 @@ const LIEN_MLEZI = `https://github.com/${DEPOT}/actions/workflows/mlezi-gardien.
 
 const chargement = ref(false)
 const serveur = ref(null) // { ok, ms } ou null tant que non vérifié
-const supabase = ref(null) // true / false / null
+const base = ref(null) // true / false / null
 const mlezi = ref(null) // { ok, quand } ou null si indisponible
 
 async function verifierServeur() {
   const debut = performance.now()
   try {
-    const reponse = await fetch(`${API_BASE_URL}/api/sante`, { cache: 'no-store' })
+    const reponse = await fetch('/api/sante', { cache: 'no-store' })
     const corps = await reponse.json().catch(() => ({}))
     serveur.value = { ok: corps.api === 'ok', ms: Math.round(performance.now() - debut) }
-    supabase.value = corps.supabase === 'ok'
+    base.value = corps.base === 'ok'
   } catch {
     serveur.value = { ok: false, ms: null }
-    supabase.value = null
+    base.value = null
   }
 }
 
@@ -86,9 +85,9 @@ onMounted(verifier)
       </div>
 
       <div class="sante-site-item">
-        <span class="sante-site-libelle">Base de données (Supabase)</span>
-        <span :class="['sante-site-etat', supabase === null ? '' : supabase ? 'est-ok' : 'est-ko']">
-          ● {{ supabase === null ? '…' : supabase ? 'Opérationnelle' : 'Injoignable' }}
+        <span class="sante-site-libelle">Base de données (PostgreSQL)</span>
+        <span :class="['sante-site-etat', base === null ? '' : base ? 'est-ok' : 'est-ko']">
+          ● {{ base === null ? '…' : base ? 'Opérationnelle' : 'Injoignable' }}
         </span>
         <span class="sante-site-detail">Lue régulièrement : plus de mise en pause</span>
       </div>

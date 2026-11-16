@@ -19,7 +19,7 @@ const { t } = useI18n()
 const libelleService = (code) => t(`demande.service_${code}`)
 const { user } = useAuth()
 
-// Le prestataire ciblé est maintenant chargé de façon asynchrone (Supabase) au
+// Le prestataire ciblé est maintenant chargé de façon asynchrone (API) au
 // montage, plutôt que lu directement dans le mock au moment du setup().
 const aidant = ref(null)
 const chargement = ref(true)

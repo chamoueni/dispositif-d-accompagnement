@@ -1,61 +1,54 @@
-// Modèle « adhérent » : lecture et écriture de la table PostgreSQL « adherents »
-// (Supabase), la même base que les profils, demandes et missions.
+// Modèle « adhérent » : requêtes SQL sur la table « adherents », dans la même
+// base que les profils, demandes et missions.
 //
-// Chaque fonction reçoit le client Supabase de l'administrateur connecté
-// (req.supabase) : la base applique alors ses règles RLS, qui réservent cette
-// table à l'administrateur (voir supabase/schema.sql). C'est une seconde
-// protection, en plus du contrôle verifierAdmin fait par la route.
-import crypto from 'node:crypto'
+// Ces fonctions ne sont appelées que par les routes /api/adherents, réservées
+// à l'administrateur (middleware verifierAdmin, voir routes/adherents.routes.js).
+import { requete, requeteUne } from '../db.js'
 
 // Copie les champs modifiables saisis dans le formulaire admin, nettoyés.
-// L'email est mis en minuscules : l'index unique sur l'email (voir la
-// migration 20261112_adherents_sans_mongodb.sql) compare alors des valeurs
-// homogènes.
+// L'email est mis en minuscules : l'index unique sur l'email compare alors des
+// valeurs homogènes.
 function champsAdherent(donnees) {
-  return {
-    nom: donnees.nom.trim(),
-    email: donnees.email.trim().toLowerCase(),
-    telephone: (donnees.telephone || '').trim(),
-    ville: (donnees.ville || '').trim(),
-    role: donnees.role || 'particulier',
-    statut: donnees.statut || 'actif',
-  }
+  return [
+    donnees.nom.trim(),
+    donnees.email.trim().toLowerCase(),
+    (donnees.telephone || '').trim(),
+    (donnees.ville || '').trim(),
+    donnees.role || 'particulier',
+    donnees.statut || 'actif',
+  ]
 }
 
 // Liste des adhérents, du plus ancien au plus récent.
-export async function obtenirAdherents(client) {
-  const { data, error } = await client.from('adherents').select('*').order('created_at', { ascending: true })
-  if (error) throw error
-  return data
+export function obtenirAdherents() {
+  return requete('select * from adherents order by created_at asc')
 }
 
-// Ajoute un adhérent avec un nouvel identifiant (UUID) ; la base remplit ses dates.
-export async function ajouterAdherent(client, donnees) {
-  const { data, error } = await client
-    .from('adherents')
-    .insert({ id: crypto.randomUUID(), ...champsAdherent(donnees) })
-    .select()
-    .single()
-  if (error) throw error
-  return data
+// Ajoute un adhérent ; la base crée son identifiant (UUID) et ses dates.
+export function ajouterAdherent(donnees) {
+  return requeteUne(
+    `insert into adherents (nom, email, telephone, ville, role, statut)
+     values ($1, $2, $3, $4, $5, $6)
+     returning *`,
+    champsAdherent(donnees),
+  )
 }
 
 // Modifie un adhérent. Renvoie null si aucun adhérent ne porte cet id
-// (=> 404 dans le contrôleur) ; "id" et "created_at" ne changent jamais.
-export async function modifierAdherent(client, id, donnees) {
-  const { data, error } = await client
-    .from('adherents')
-    .update({ ...champsAdherent(donnees), updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .maybeSingle()
-  if (error) throw error
-  return data
+// (=> 404 dans le contrôleur) ; « id » et « created_at » ne changent jamais.
+export function modifierAdherent(id, donnees) {
+  return requeteUne(
+    `update adherents
+     set nom = $2, email = $3, telephone = $4, ville = $5, role = $6, statut = $7,
+         updated_at = now()
+     where id = $1
+     returning *`,
+    [id, ...champsAdherent(donnees)],
+  )
 }
 
 // Supprime un adhérent. Renvoie false si aucun adhérent ne portait cet id.
-export async function supprimerAdherent(client, id) {
-  const { data, error } = await client.from('adherents').delete().eq('id', id).select('id')
-  if (error) throw error
-  return data.length === 1
+export async function supprimerAdherent(id) {
+  const lignes = await requete('delete from adherents where id = $1 returning id', [id])
+  return lignes.length === 1
 }

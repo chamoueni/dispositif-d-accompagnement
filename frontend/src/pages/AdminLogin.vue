@@ -1,6 +1,6 @@
 <script setup>
 // Connexion admin séparée de la connexion "grand public" (voir Connexion.vue) :
-// même mécanisme Supabase en dessous (un seul système d'authentification), mais
+// même mécanisme de connexion en dessous (un seul système d'authentification), mais
 // une page dédiée à l'URL /admin/connexion, pour que l'espace admin se comporte
 // comme un site à part plutôt qu'une simple sous-page du site public.
 import { onMounted, ref } from 'vue'

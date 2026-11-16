@@ -1,6 +1,6 @@
 // Contrôleur des adhérents (espace admin › Adhérents).
-// Données dans la table PostgreSQL « adherents » de Supabase
-// (models/adherent.model.js), lue avec le client de l'administrateur connecté.
+// Données dans la table PostgreSQL « adherents » (models/adherent.model.js).
+// Les routes sont réservées à l'administrateur (voir routes/adherents.routes.js).
 import {
   ajouterAdherent,
   modifierAdherent,
@@ -16,9 +16,9 @@ const INTROUVABLE = { message: 'Adhérent introuvable.' }
 const estDoublon = (error) => error?.code === '23505'
 
 // GET /api/adherents
-export async function lister(req, res, next) {
+export async function lister(_req, res, next) {
   try {
-    res.json(await obtenirAdherents(req.supabase))
+    res.json(await obtenirAdherents())
   } catch (error) {
     next(error)
   }
@@ -31,7 +31,7 @@ export async function ajouter(req, res, next) {
     if (erreur) return res.status(400).json({ message: erreur })
     // Pas deux adhérents avec le même email : l'index unique de la base le
     // garantit, même pour un double-clic ou deux envois simultanés.
-    const adherent = await ajouterAdherent(req.supabase, req.body)
+    const adherent = await ajouterAdherent(req.body)
     return res.status(201).json(adherent)
   } catch (error) {
     if (estDoublon(error)) return res.status(409).json(DOUBLON)
@@ -46,7 +46,7 @@ export async function modifier(req, res, next) {
     if (!isUuid(req.params.id)) return res.status(404).json(INTROUVABLE)
     const erreur = validerAdherent(req.body)
     if (erreur) return res.status(400).json({ message: erreur })
-    const adherent = await modifierAdherent(req.supabase, req.params.id, req.body)
+    const adherent = await modifierAdherent(req.params.id, req.body)
     if (!adherent) return res.status(404).json(INTROUVABLE)
     return res.json(adherent)
   } catch (error) {
@@ -59,7 +59,7 @@ export async function modifier(req, res, next) {
 // DELETE /api/adherents/:id
 export async function supprimer(req, res, next) {
   try {
-    if (!isUuid(req.params.id) || !(await supprimerAdherent(req.supabase, req.params.id))) {
+    if (!isUuid(req.params.id) || !(await supprimerAdherent(req.params.id))) {
       return res.status(404).json(INTROUVABLE)
     }
     return res.status(204).end()

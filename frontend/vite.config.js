@@ -5,8 +5,8 @@ import vue from '@vitejs/plugin-vue'
 // Le site (Vue) vit dans frontend/, mais deux choses restent à la racine du
 // dépôt, volontairement :
 // - le fichier .env (partagé avec le serveur backend/) -> envDir ;
-// - le dossier dist/ produit par le build -> outDir. Render publie "dist"
-//   depuis la racine : le garder là évite de changer ses réglages.
+// - le dossier dist/ produit par le build -> outDir. Le serveur Express
+//   (backend/app.js) sert ce dossier à la racine du dépôt sur alwaysdata.
 const dossierFrontend = fileURLToPath(new URL('.', import.meta.url))
 const racineDepot = fileURLToPath(new URL('..', import.meta.url))
 
