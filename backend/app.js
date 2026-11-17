@@ -78,7 +78,12 @@ site.use('/api', routeIntrouvable)
 // 3. Le site Vue. Les fichiers qui existent (JS, CSS, images…) sont envoyés
 //    tels quels ; les fichiers avec un nom « haché » (assets/) peuvent rester
 //    en cache un an, car leur nom change à chaque nouvelle version.
-if (existsSync(dossierSite)) {
+//    SERVIR_FRONT=false : le front est hébergé à part (site statique
+//    alwaysdata, voir DEPLOIEMENT.md) et ce serveur ne fait que l'API.
+const servirFront = process.env.SERVIR_FRONT !== 'false'
+if (!servirFront) {
+  console.log('SERVIR_FRONT=false : ce serveur ne sert que l’API (le front est hébergé à part).')
+} else if (existsSync(dossierSite)) {
   // fallthrough: false : un fichier d'assets/ introuvable répond 404 (au lieu
   // de recevoir la page d'accueil à la place d'un script, ce qui serait trompeur).
   site.use('/assets', express.static(path.join(dossierSite, 'assets'), { immutable: true, maxAge: '1y', fallthrough: false }))
@@ -107,6 +112,10 @@ if (existsSync(dossierSite)) {
 // avant de transmettre la requête.
 if (sousDossier) app.use(sousDossier, site)
 app.use(site)
+
+// Adresse qui ne correspond à rien (par exemple une page, quand le front est
+// hébergé à part) : réponse 404 claire plutôt que la page d'erreur d'Express.
+app.use((_req, res) => res.status(404).json({ message: 'Adresse introuvable.' }))
 
 // 4. Erreurs inattendues.
 app.use(gestionErreurs)

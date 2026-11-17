@@ -99,43 +99,55 @@ alwaysdata donne une seule adresse par compte : **`moustakim@alwaysdata.net`**
      `node -e "require('express');require('pg');require('bcryptjs');console.log('paquets OK')"`.
    - Node.js du serveur : v24 (20 minimum).
 
-## Étape 6 : construire le site sur le PC et l'envoyer
+## Étape 6 : construire le front sur le PC et l'envoyer
 
-Le build (Vite) demande trop de mémoire pour le serveur : on le fait sur le PC, puis on envoie
-le dossier `dist/`.
+Le front et le back sont hébergés **séparément**, sur deux sites alwaysdata reliés par le même
+nom de domaine (la connexion par cookie fonctionne donc sans réglage particulier) :
 
-Le site est publié dans un **sous-dossier** : `https://moustakim.alwaysdata.net/aufildesages`
-(sans nom de domaine, alwaysdata refuse une adresse comme `aufildesages.moustakim.alwaysdata.net`,
-et `moustakim.alwaysdata.net` est déjà utilisée par un autre site). Le code déduit ce
-sous-dossier de l'adresse : `VITE_SITE_URL` au build, `SITE_URL` sur le serveur.
+| | Front (site Vue) | Back (API) |
+| --- | --- | --- |
+| Type de site alwaysdata | **PHP** (Apache, utilisé ici seulement pour envoyer des fichiers) | **Node.js** |
+| Adresse | `moustakim.alwaysdata.net/aufildesages` | `moustakim.alwaysdata.net/aufildesages/api` |
+| Dossier sur le serveur | `aufildesages-front` (contenu de `dist/`) | `aufildesages` (le code, `git clone`) |
+
+Sans nom de domaine, alwaysdata n'accepte que `moustakim.alwaysdata.net` (déjà utilisée par un
+autre site) : d'où le **sous-dossier** `/aufildesages`. Le code le déduit de l'adresse :
+`VITE_SITE_URL` au build, `SITE_URL` sur le serveur. alwaysdata transmet l'adresse complète
+(`/aufildesages/api/...`) au serveur Node.js, qui sait la traiter.
+
+Le build (Vite) demande trop de mémoire pour le serveur : on le fait sur le PC. Il produit aussi
+`dist/.htaccess`, les règles d'Apache pour le front (mode « history » de Vue Router, pages SEO,
+en-têtes de sécurité).
 
 Dans un terminal **sur le PC** (PowerShell), à la racine du projet :
 
 ```powershell
 $env:VITE_SITE_URL = "https://moustakim.alwaysdata.net/aufildesages"; npm run build; Remove-Item Env:VITE_SITE_URL
-scp -r dist moustakim@ssh-moustakim.alwaysdata.net:aufildesages/
+scp -r dist/. moustakim@ssh-moustakim.alwaysdata.net:aufildesages-front/
 ```
 
-Vérifier dans `dist/index.html` que les fichiers commencent par `/aufildesages/assets/`.
+(Créer d'abord le dossier sur le serveur la première fois : `mkdir -p ~/aufildesages-front`.)
 
-## Étape 7 : déclarer le site Node.js
+## Étape 7 : déclarer les deux sites
 
-**Web › Sites › Ajouter un site** :
+**Web › Sites › Ajouter un site**, deux fois.
+
+**Site 1 : le back (API)**
 
 | Champ | Valeur |
 | --- | --- |
-| Adresses | `moustakim.alwaysdata.net/aufildesages` |
+| Adresses | `moustakim.alwaysdata.net/aufildesages/api` |
 | Type | **Node.js** |
 | Commande | `node backend/app.js` |
 | Répertoire de travail | `aufildesages` |
 | Version de Node.js | Version par défaut (v24) |
 
-**Variables d'environnement** (même page, champ « Environnement », une par ligne, sans
-espace ni guillemets) :
+Variables d'environnement (champ « Environnement », une par ligne, sans espace ni guillemets) :
 
 ```
 NODE_ENV=production
 SITE_URL=https://moustakim.alwaysdata.net/aufildesages
+SERVIR_FRONT=false
 DATABASE_URL=postgresql://moustakim_app:MOT_DE_PASSE@postgresql-moustakim.alwaysdata.net:5432/moustakim_aufildesages
 JWT_SECRET=une-longue-cle-aleatoire-differente-de-celle-du-pc
 SMTP_HOST=smtp-moustakim.alwaysdata.net
@@ -145,14 +157,22 @@ SMTP_PASS=mot-de-passe-de-l-adresse
 EMAIL_ADMIN=adresse-qui-recoit-les-alertes-sos
 ```
 
+- `SERVIR_FRONT=false` : ce serveur ne sert que l'API, les pages viennent du site front.
 - `JWT_SECRET` se génère avec
   `node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"`.
-- **Ne pas** définir `PORT` ni `IP` : alwaysdata les fournit lui-même, et le serveur les lit
-  (`process.env.PORT`, `process.env.IP` dans [backend/app.js](backend/app.js)).
-- Pas de `EMAIL_EXPEDITEUR` avec des espaces : ce champ ne les accepte pas.
+- **Ne pas** définir `PORT` ni `IP` : alwaysdata les fournit (lus dans [backend/app.js](backend/app.js)).
 - Ces secrets ne vont **jamais** dans GitHub : uniquement ici et dans le `.env` local (ignoré par git).
 
-Enregistre : alwaysdata démarre le site.
+**Site 2 : le front**
+
+| Champ | Valeur |
+| --- | --- |
+| Adresses | `moustakim.alwaysdata.net/aufildesages` |
+| Type | **PHP** (aucun code PHP : Apache envoie les fichiers et lit `.htaccess`) |
+| Répertoire racine | `aufildesages-front` |
+
+alwaysdata envoie chaque requête au site dont l'adresse correspond le mieux : `/aufildesages/api/...`
+va au back, tout le reste de `/aufildesages/...` au front.
 
 ## Étape 8 : tester
 
@@ -170,17 +190,18 @@ Enregistre : alwaysdata démarre le site.
 
 ## Mettre à jour le site plus tard
 
-Sur le serveur (SSH) :
+- **Back** (code serveur modifié), sur le serveur en SSH :
 
-```bash
-cd aufildesages
-git pull
-npm install --omit=dev --no-audit --no-fund
-```
+  ```bash
+  cd aufildesages
+  git pull
+  npm install --omit=dev --no-audit --no-fund
+  ```
 
-Si le site (frontend) a changé : refaire l'étape 6 sur le PC (build + `scp`). Puis
-**Web › Sites › (le site) › Redémarrer**. Si `backend/sql/schema.sql` change, rejoue les
-nouvelles instructions dans phpPgAdmin : la base ne se met pas à jour toute seule.
+  puis **Web › Sites › (site API) › Redémarrer**.
+- **Front** (site Vue modifié) : refaire l'étape 6 sur le PC (build + `scp`). Rien à redémarrer.
+- Si `backend/sql/schema.sql` change, rejouer les nouvelles instructions dans phpPgAdmin : la
+  base ne se met pas à jour toute seule.
 
 ## Étape finale : arrêter Supabase et Render
 

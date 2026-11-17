@@ -174,4 +174,52 @@ const notFound = replaceHead(template, {
   .replace('<div id="app"></div>', `<div id="app"><main id="contenu"><h1>Page introuvable (404)</h1><p>L’adresse a peut-être changé ou la page n’existe plus.</p><a href="${sousDossier}/">Retour à l’accueil</a></main></div>`)
 await writeFile(path.join(dist, '404.html'), notFound)
 
+// .htaccess : règles du serveur Apache quand le front est hébergé seul, en
+// « fichiers statiques », sans le serveur Express (site alwaysdata séparé de
+// l'API, voir DEPLOIEMENT.md). Il refait ce que faisait backend/app.js :
+// - un fichier qui existe (JS, CSS, images…) est envoyé tel quel ;
+// - /services → services/index.html (pages SEO générées ci-dessus) ;
+// - toute autre adresse (/mon-compte…) → index.html : Vue Router affiche la
+//   bonne page (mode « history ») ;
+// - en-têtes de sécurité (anti-clickjacking, etc.).
+// Le serveur Express n'envoie jamais ce fichier (fichier caché, ignoré).
+await writeFile(path.join(dist, '.htaccess'), `# Fichier généré par frontend/scripts/generate-seo-pages.js : ne pas modifier à la main.
+Options -Indexes
+DirectoryIndex index.html
+DirectorySlash Off
+
+RewriteEngine On
+RewriteBase ${sousDossier}/
+
+# 1. Fichier qui existe : envoyé tel quel.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# 2. Page publique pré-générée : /services -> services/index.html
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.+?)/?$ $1/index.html [L]
+
+# 3. Fichier d'assets/ introuvable : vraie erreur 404 (pas la page d'accueil).
+RewriteRule ^assets/ - [R=404,L]
+
+# 4. Toute autre adresse : l'application Vue (index.html).
+RewriteRule ^ index.html [L]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(self), geolocation=(self)"
+  Header always set Strict-Transport-Security "max-age=31536000"
+  # Fichiers d'assets/ : leur nom change à chaque version, cache d'un an.
+  <If "%{REQUEST_URI} =~ m#/assets/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+  # Pages HTML : toujours revérifiées, pour voir tout de suite une nouvelle version.
+  <FilesMatch "\\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+`)
+
 console.log(`Pages SEO générées : ${pages.length}${siteUrl ? ` (${siteUrl})` : ' (VITE_SITE_URL à renseigner pour le sitemap de production)'}`)
