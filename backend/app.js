@@ -44,7 +44,7 @@ const dossierSite = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1)
 
 // Sous-dossier où le site est publié, déduit de son adresse (SITE_URL) :
-// https://moustakim.alwaysdata.net/aufildesages donne « /aufildesages ».
+// https://moustakim.alwaysdata.net/fil donne « /fil ».
 // Vide si le site est à la racine (en local notamment).
 const sousDossier = (() => {
   try {
@@ -62,7 +62,7 @@ app.use(enTetesSecurite)
 app.use(verifierOrigine)
 
 // Tout le site (API + pages) est regroupé dans un « routeur », branché plus
-// bas sur le sous-dossier : /aufildesages/api/... et /aufildesages/mon-compte
+// bas sur le sous-dossier : /fil/api/... et /fil/mon-compte
 // arrivent ici comme /api/... et /mon-compte.
 const site = express.Router()
 site.use('/api', sessionMiddleware)

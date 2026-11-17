@@ -10,7 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const dist = path.join(root, 'dist')
 const configuredSiteUrl = (process.env.VITE_SITE_URL || '').trim()
 let siteUrl = ''
-// Sous-dossier où le site est publié (ex. « /aufildesages »), vide sinon.
+// Sous-dossier où le site est publié (ex. « /fil »), vide sinon.
 // Il est déduit de VITE_SITE_URL, comme dans frontend/vite.config.js.
 let sousDossier = ''
 if (configuredSiteUrl) {

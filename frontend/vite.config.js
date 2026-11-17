@@ -11,8 +11,8 @@ const dossierFrontend = fileURLToPath(new URL('.', import.meta.url))
 const racineDepot = fileURLToPath(new URL('..', import.meta.url))
 
 // Sous-dossier où le site est publié, déduit de son adresse publique
-// (VITE_SITE_URL) : https://moustakim.alwaysdata.net/aufildesages donne
-// « /aufildesages/ ». Sans sous-dossier (ou en local), « / ». Vite ajoute alors
+// (VITE_SITE_URL) : https://moustakim.alwaysdata.net/fil donne
+// « /fil/ ». Sans sous-dossier (ou en local), « / ». Vite ajoute alors
 // ce préfixe à tous les fichiers construits et le donne au code dans
 // import.meta.env.BASE_URL (routeur, appels à l'API, fichiers audio…).
 function sousDossier(adresse) {

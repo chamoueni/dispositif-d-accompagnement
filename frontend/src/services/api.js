@@ -3,7 +3,7 @@
 //
 // Le site et l'API sont servis par le même serveur Express (alwaysdata), donc
 // à la même adresse. Le site peut être publié dans un sous-dossier
-// (ex. moustakim.alwaysdata.net/aufildesages) : PREFIXE ajoute ce sous-dossier
+// (ex. moustakim.alwaysdata.net/fil) : PREFIXE ajoute ce sous-dossier
 // devant « /api/... ». En développement, PREFIXE est vide et le serveur Vite
 // redirige /api vers Express (vite.config.js).
 //

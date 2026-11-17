@@ -225,7 +225,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  // BASE_URL = sous-dossier du site (ex. /aufildesages/, voir vite.config.js).
+  // BASE_URL = sous-dossier du site (ex. /fil/, voir vite.config.js).
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior() {

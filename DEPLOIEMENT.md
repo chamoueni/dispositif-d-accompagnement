@@ -107,13 +107,13 @@ nom de domaine (la connexion par cookie fonctionne donc sans réglage particulie
 | | Front (site Vue) | Back (API) |
 | --- | --- | --- |
 | Type de site alwaysdata | **PHP** (Apache, utilisé ici seulement pour envoyer des fichiers) | **Node.js** |
-| Adresse | `moustakim.alwaysdata.net/aufildesages` | `moustakim.alwaysdata.net/aufildesages/api` |
+| Adresse | `moustakim.alwaysdata.net/fil` | `moustakim.alwaysdata.net/fil/api` |
 | Dossier sur le serveur | `aufildesages-front/dist` (envoyé depuis le PC) | `aufildesages` (le code, `git clone`) |
 
 Sans nom de domaine, alwaysdata n'accepte que `moustakim.alwaysdata.net` (déjà utilisée par un
-autre site) : d'où le **sous-dossier** `/aufildesages`. Le code le déduit de l'adresse :
+autre site) : d'où le **sous-dossier** `/fil` (court à taper). Le code le déduit de l'adresse :
 `VITE_SITE_URL` au build, `SITE_URL` sur le serveur. alwaysdata transmet l'adresse complète
-(`/aufildesages/api/...`) au serveur Node.js, qui sait la traiter.
+(`/fil/api/...`) au serveur Node.js, qui sait la traiter.
 
 Le build (Vite) demande trop de mémoire pour le serveur : on le fait sur le PC. Il produit aussi
 `dist/.htaccess`, les règles d'Apache pour le front (mode « history » de Vue Router, pages SEO,
@@ -122,7 +122,7 @@ en-têtes de sécurité).
 Dans un terminal **sur le PC** (PowerShell), à la racine du projet :
 
 ```powershell
-$env:VITE_SITE_URL = "https://moustakim.alwaysdata.net/aufildesages"; npm run build; Remove-Item Env:VITE_SITE_URL
+$env:VITE_SITE_URL = "https://moustakim.alwaysdata.net/fil"; npm run build; Remove-Item Env:VITE_SITE_URL
 scp -r dist moustakim@ssh-moustakim.alwaysdata.net:aufildesages-front/
 ```
 
@@ -137,7 +137,7 @@ Les fichiers arrivent dans `~/aufildesages-front/dist`, et un nouvel envoi rempl
 
 | Champ | Valeur |
 | --- | --- |
-| Adresses | `moustakim.alwaysdata.net/aufildesages/api` |
+| Adresses | `moustakim.alwaysdata.net/fil/api` |
 | Type | **Node.js** |
 | Commande | `node backend/app.js` |
 | Répertoire de travail | `aufildesages` |
@@ -147,7 +147,7 @@ Variables d'environnement (champ « Environnement », une par ligne, sans espace
 
 ```
 NODE_ENV=production
-SITE_URL=https://moustakim.alwaysdata.net/aufildesages
+SITE_URL=https://moustakim.alwaysdata.net/fil
 SERVIR_FRONT=false
 DATABASE_URL=postgresql://moustakim_app:MOT_DE_PASSE@postgresql-moustakim.alwaysdata.net:5432/moustakim_aufildesages
 JWT_SECRET=une-longue-cle-aleatoire-differente-de-celle-du-pc
@@ -168,22 +168,22 @@ EMAIL_ADMIN=adresse-qui-recoit-les-alertes-sos
 
 | Champ | Valeur |
 | --- | --- |
-| Adresses | `moustakim.alwaysdata.net/aufildesages` |
+| Adresses | `moustakim.alwaysdata.net/fil` |
 | Type | **PHP** (aucun code PHP : Apache envoie les fichiers et lit `.htaccess`) |
 | Répertoire racine | `aufildesages-front/dist` |
 
-alwaysdata envoie chaque requête au site dont l'adresse correspond le mieux : `/aufildesages/api/...`
-va au back, tout le reste de `/aufildesages/...` au front.
+alwaysdata envoie chaque requête au site dont l'adresse correspond le mieux : `/fil/api/...`
+va au back, tout le reste de `/fil/...` au front.
 
 ## Étape 8 : tester
 
-1. `https://moustakim.alwaysdata.net/aufildesages/api/sante` doit afficher
+1. `https://moustakim.alwaysdata.net/fil/api/sante` doit afficher
    `{"ok":true,"api":"ok","base":"ok",...}`.
-2. La page d'accueil s'affiche, et recharger une page comme `/aufildesages/mon-compte`
+2. La page d'accueil s'affiche, et recharger une page comme `/fil/mon-compte`
    fonctionne (pas d'erreur 404).
 3. Connexion avec un compte de démo : son ancien mot de passe marche.
 4. « Mot de passe oublié » : l'email arrive, le lien permet de changer le mot de passe.
-5. Connexion admin (`/aufildesages/admin/connexion`) : tableau de bord, messages, adhérents.
+5. Connexion admin (`/fil/admin/connexion`) : tableau de bord, messages, adhérents.
 6. Avec deux comptes : une demande envoyée par un senior est visible par l'intervenant
    concerné, et **pas** par un troisième compte.
 7. Le site `moustakim.alwaysdata.net` (fitness) fonctionne toujours.

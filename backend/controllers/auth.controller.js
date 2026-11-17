@@ -8,7 +8,7 @@
 import crypto from 'node:crypto'
 import { ROLES_AUTORISES } from '../config/constantes.js'
 import { transaction } from '../db.js'
-import { creerProfil } from '../models/profil.model.js'
+import { creerProfil, trouverProfil } from '../models/profil.model.js'
 import {
   changerMotDePasse as enregistrerMotDePasse,
   creerJetonReinitialisation,
@@ -140,7 +140,9 @@ export async function motDePasseOublie(req, res, next) {
       const jeton = crypto.randomBytes(32).toString('base64url')
       await creerJetonReinitialisation(utilisateur.id, empreinte(jeton), new Date(Date.now() + DUREE_LIEN_MS))
       try {
-        await envoyerLienReinitialisation(utilisateur.email, jeton)
+        // Le nom du profil (s'il existe) sert à saluer la personne dans l'email.
+        const profil = await trouverProfil(utilisateur.id)
+        await envoyerLienReinitialisation(utilisateur.email, jeton, profil?.nom)
       } catch (error) {
         // On ne dit pas au visiteur que l'envoi a échoué (ça révélerait que le
         // compte existe) ; l'erreur est notée dans le journal du serveur.
