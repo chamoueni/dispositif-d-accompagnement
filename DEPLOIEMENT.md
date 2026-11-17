@@ -108,7 +108,7 @@ nom de domaine (la connexion par cookie fonctionne donc sans réglage particulie
 | --- | --- | --- |
 | Type de site alwaysdata | **PHP** (Apache, utilisé ici seulement pour envoyer des fichiers) | **Node.js** |
 | Adresse | `moustakim.alwaysdata.net/aufildesages` | `moustakim.alwaysdata.net/aufildesages/api` |
-| Dossier sur le serveur | `aufildesages-front` (contenu de `dist/`) | `aufildesages` (le code, `git clone`) |
+| Dossier sur le serveur | `aufildesages-front/dist` (envoyé depuis le PC) | `aufildesages` (le code, `git clone`) |
 
 Sans nom de domaine, alwaysdata n'accepte que `moustakim.alwaysdata.net` (déjà utilisée par un
 autre site) : d'où le **sous-dossier** `/aufildesages`. Le code le déduit de l'adresse :
@@ -123,10 +123,11 @@ Dans un terminal **sur le PC** (PowerShell), à la racine du projet :
 
 ```powershell
 $env:VITE_SITE_URL = "https://moustakim.alwaysdata.net/aufildesages"; npm run build; Remove-Item Env:VITE_SITE_URL
-scp -r dist/. moustakim@ssh-moustakim.alwaysdata.net:aufildesages-front/
+scp -r dist moustakim@ssh-moustakim.alwaysdata.net:aufildesages-front/
 ```
 
-(Créer d'abord le dossier sur le serveur la première fois : `mkdir -p ~/aufildesages-front`.)
+(La première fois, créer d'abord le dossier sur le serveur : `mkdir -p ~/aufildesages-front`.
+Les fichiers arrivent dans `~/aufildesages-front/dist`, et un nouvel envoi remplace l'ancien.)
 
 ## Étape 7 : déclarer les deux sites
 
@@ -169,7 +170,7 @@ EMAIL_ADMIN=adresse-qui-recoit-les-alertes-sos
 | --- | --- |
 | Adresses | `moustakim.alwaysdata.net/aufildesages` |
 | Type | **PHP** (aucun code PHP : Apache envoie les fichiers et lit `.htaccess`) |
-| Répertoire racine | `aufildesages-front` |
+| Répertoire racine | `aufildesages-front/dist` |
 
 alwaysdata envoie chaque requête au site dont l'adresse correspond le mieux : `/aufildesages/api/...`
 va au back, tout le reste de `/aufildesages/...` au front.
