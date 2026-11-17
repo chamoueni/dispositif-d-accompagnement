@@ -3,43 +3,39 @@ name: Mlezi, la gardienne du site
 # Robot de maintenance automatique et gratuit (GitHub Actions, dépôt public).
 # "Mlezi" = "celle qui prend soin" en swahili.
 #
-# - Toutes les 10 minutes en journée : appelle /api/sante, ce qui réveille l'API
-#   Render (endormie après 15 min sans visite sur l'offre gratuite) et fait une
-#   lecture dans Supabase (qui met en pause les projets gratuits inactifs).
-# - Chaque matin : contrôle complet (pages du site, API, règle de réécriture,
-#   Supabase). En cas de panne, ouvre un ticket GitHub "mlezi" : le propriétaire
-#   du dépôt reçoit un email. Quand tout remarche, le ticket est fermé.
+# Le site est hébergé sur alwaysdata (front : /fil, API + base PostgreSQL :
+# /fil/api, voir DEPLOIEMENT.md). alwaysdata n'endort pas les sites : il n'y a
+# plus besoin de « réveiller » l'API toutes les 10 minutes comme sur Render.
 #
-# Remplace l'ancien workflow keep-supabase-alive.yml (ping tous les 3 jours, qui
-# n'avait pas suffi à empêcher la pause de Supabase en octobre 2026).
+# - Toutes les heures en journée : appel léger de /api/sante (API + base).
+# - Chaque matin (et sur demande) : contrôle complet (pages du site, API, base).
+#   En cas de panne, ouvre un ticket GitHub "mlezi" : le propriétaire du dépôt
+#   reçoit un email. Quand tout remarche, le ticket est fermé.
 #
-# Horaires décalés sur des minutes « calmes » (7, 17, 27...) : GitHub retarde,
-# voire saute, les tâches programmées aux minutes rondes (:00, :10...), où
-# tout le monde lance les siennes. Aux horaires ronds, Mlezi n'avait fait
-# aucune ronde automatique pendant ses premières heures.
+# Horaires décalés sur des minutes « calmes » (17, 23…) : GitHub retarde,
+# voire saute, les tâches programmées aux minutes rondes (:00, :10…).
 on:
   schedule:
-    - cron: "7-59/10 4-19 * * *" # vers 7 h 07 -> 22 h 57, heure de Mayotte (UTC+3)
-    - cron: "23 5 * * *"         # contrôle complet vers 8 h 23, heure de Mayotte
-  workflow_dispatch:             # bouton "Run workflow" pour un contrôle à la demande
+    - cron: "17 4-19 * * *" # toutes les heures, vers 7 h 17 -> 22 h 17, heure de Mayotte (UTC+3)
+    - cron: "23 5 * * *"    # contrôle complet vers 8 h 23, heure de Mayotte
+  workflow_dispatch:        # bouton "Run workflow" pour un contrôle à la demande
 
 env:
-  SITE_URL: https://dispositif-d-accompagnement.onrender.com
-  API_URL: https://dispositif-d-accompagnement-ulzn.onrender.com
+  SITE_URL: https://moustakim.alwaysdata.net/fil
 
 jobs:
-  reveil:
-    if: github.event.schedule == '7-59/10 4-19 * * *'
+  ronde:
+    if: github.event.schedule == '17 4-19 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Réveiller l'API et Supabase
+      - name: Vérifier l'API et la base
         # Pas d'échec bloquant ici : un raté ponctuel ne doit pas envoyer
-        # d'email toutes les 10 minutes. Le contrôle du matin signale les pannes.
+        # d'email toutes les heures. Le contrôle du matin signale les pannes.
         run: |
-          curl --silent --show-error --max-time 100 --retry 2 --retry-all-errors \
+          curl --silent --show-error --max-time 60 --retry 2 --retry-all-errors \
             --output /dev/null --write-out "API : %{http_code} en %{time_total}s\n" \
-            "$API_URL/api/sante" || true
+            "$SITE_URL/api/sante" || true
 
   controle:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '23 5 * * *'
@@ -48,11 +44,8 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: Contrôler le site, l'API et Supabase
+      - name: Contrôler le site, l'API et la base
         id: controle
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           pannes=0
           printf '| | Vérification | Code |\n|---|---|---|\n' > rapport.md
@@ -62,7 +55,7 @@ jobs:
           verifier() {
             local libelle="$1" attendu="$2"; shift 2
             local code
-            code=$(curl --silent --fail --max-time 100 --retry 2 --retry-all-errors \
+            code=$(curl --silent --fail --max-time 60 --retry 2 --retry-all-errors \
               --output corps.txt --write-out "%{http_code}" "$@") || true
             if [[ "$code" =~ ^2 ]] && { [[ -z "$attendu" ]] || grep -q "$attendu" corps.txt; }; then
               echo "| ✅ | $libelle | $code |" >> rapport.md
@@ -72,13 +65,10 @@ jobs:
             fi
           }
 
-          verifier "API + Supabase (/api/sante)" '"ok":true' "$API_URL/api/sante"
-          verifier "API via l'adresse du site (règle de réécriture Render)" '"ok":true' "$SITE_URL/api/sante"
+          verifier "API + base PostgreSQL (/api/sante)" '"base":"ok"' "$SITE_URL/api/sante"
           verifier "Page d'accueil" "" "$SITE_URL/"
           verifier "Page de connexion" "" "$SITE_URL/connexion"
-          verifier "Base Supabase en direct (table avis)" "" \
-            "${SUPABASE_URL%/}/rest/v1/avis?select=id&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY"
+          verifier "Page publique Services" "" "$SITE_URL/services"
 
           cat rapport.md >> "$GITHUB_STEP_SUMMARY"
           echo "pannes=$pannes" >> "$GITHUB_OUTPUT"
