@@ -31,7 +31,7 @@ import {
   masquerCoordonnees,
   visibleDansLaListe,
 } from '../services/confidentialite.service.js'
-import { changerStatutDemande } from '../services/demande.service.js'
+import { RefusMetier, changerStatutDemande } from '../services/demande.service.js'
 import { alerterNouveauMessage } from '../services/email.service.js'
 import { isUuid, jsonObject, patchProfil } from '../services/validation.service.js'
 
@@ -165,9 +165,16 @@ export async function traiterAction(req, res, next) {
         if (!isUuid(id) || !STATUTS_DEMANDE.includes(statut)) {
           return res.status(400).json({ message: 'Identifiant ou statut invalide.' })
         }
-        const demande = await changerStatutDemande(moi, id, statut)
-        if (!demande) return res.status(404).json(DEMANDE_INTROUVABLE)
-        return res.json(demande)
+        try {
+          const demande = await changerStatutDemande(moi, id, statut)
+          if (!demande) return res.status(404).json(DEMANDE_INTROUVABLE)
+          return res.json(demande)
+        } catch (error) {
+          // Changement interdit par une règle de gestion (RG11, RG12, RG14) :
+          // 403 (pas le bon acteur) ou 409 (statut actuel incompatible).
+          if (error instanceof RefusMetier) return res.status(error.status).json({ message: error.message })
+          throw error
+        }
       }
 
       // Missions (mises en relation)

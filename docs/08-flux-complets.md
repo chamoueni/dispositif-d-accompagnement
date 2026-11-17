@@ -140,7 +140,7 @@ MesDemandes.vue (intervenant, « Accepter ») → accepter(demande)
 
 **À connaître**
 
-- Les deux participants peuvent changer le statut (seule l'interface réserve « Accepter » à l'intervenant).
+- Seul l'intervenant destinataire peut accepter ou refuser (`403` sinon) ; une demande déjà traitée ne peut pas être acceptée une seconde fois (`409`). Ces règles (RG11, RG12, RG14) sont vérifiées par le serveur dans la transaction.
 - Aucun contrôle n'empêche un intervenant d'accepter deux demandes sur le même créneau.
 
 **Refus et annulation** : même chemin, statut `refusee` ou `annulee`, sans création de mission.

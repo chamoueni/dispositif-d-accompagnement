@@ -173,7 +173,7 @@ Avec Supabase, ces règles étaient des **règles RLS** dans la base. Elles sont
 | | modification de tout profil | administrateur | transaction « admin » (permet `verifie`) |
 | `demandes` | lecture | le demandeur ou l'intervenant ; l'administrateur voit tout | condition `demandeur_id = moi or aidant_id = moi` ajoutée à la requête |
 | | création | utilisateur connecté, en son nom | `demandeur_id` = le jeton ; destinataire = intervenant existant (`sante` ou `particulier`), pas soi-même |
-| | changement de statut | le demandeur ou l'intervenant | vérifié dans la transaction ; sinon `404` |
+| | changement de statut | accepter / refuser : l'intervenant seul ; annuler une demande en attente : le demandeur seul ; terminer ou annuler une mission acceptée : l'un ou l'autre | vérifié dans la transaction (`verifierTransition`) ; non-participant `404`, mauvais acteur `403`, statut incompatible `409` |
 | `mises_en_relation` | lecture | les deux participants ; l'administrateur voit tout | condition sur les participants |
 | | création | un participant, pour une vraie demande aux mêmes participants | sinon `404` |
 | | changement de statut | un participant | sinon `404` |
@@ -188,7 +188,7 @@ Avec Supabase, ces règles étaient des **règles RLS** dans la base. Elles sont
 **Points d'attention**
 
 - Il n'y a plus de « filet » dans la base : **toute nouvelle route doit refaire ces contrôles**. Le seul contrôle restant au niveau de la base est le déclencheur sur `profiles.verifie`.
-- Les deux participants peuvent changer le statut d'une demande (comme avant avec la RLS) : rien n'empêche côté serveur une personne âgée de marquer sa demande « acceptée ». Seule l'interface limite les boutons affichés.
+- Les changements de statut suivent les règles RG11, RG12 et RG14 du cahier des charges, appliquées par le serveur (`TRANSITIONS` dans [demande.service.js](../backend/services/demande.service.js)) : seul l'intervenant accepte ou refuse, seule la personne âgée annule une demande en attente, et une demande déjà refusée, annulée ou terminée ne change plus.
 - Un utilisateur peut modifier son propre `role` ou `abonnement` (champs autorisés par `patchProfil`).
 
 ## 4. Fonctions, déclencheurs, vues

@@ -57,7 +57,7 @@ Côté site, `isAdmin` lit `user.est_admin` renvoyé par le serveur ([stores/aut
 | Page réservée aux connectés | — | `meta.requiresAuth` | `requireAuth` / `401` |
 | Espace admin | navbar masque les liens | `meta.requiresAdmin` | `verifierAdmin` (`403`) |
 | Seule une personne âgée envoie une demande | bouton masqué (`ProviderCard`), `acces` dans `NouvelleDemande` | non | **partiel** : le destinataire doit être un intervenant et pas soi-même, mais le rôle du demandeur n'est pas vérifié |
-| Seul l'intervenant accepte ou refuse | boutons affichés selon le rôle (`MesDemandes`) | non | **non** : les deux participants peuvent changer le statut |
+| Seul l'intervenant accepte ou refuse (RG12) | boutons affichés selon le rôle (`MesDemandes`) | non | **oui** : `403` pour tout autre compte (`demande.service.js`) |
 | Seule une personne âgée souscrit une formule | `accesAutorise`, `peutSouscrire` | non | **non** |
 | Chacun ne modifie que son profil | — | — | oui (identifiant pris dans le jeton) |
 | Seuls les participants voient une demande ou une mission | — | — | oui |
@@ -130,5 +130,5 @@ Le projet n'a **pas de champ médical structuré** (pas de pathologie, de traite
 - Comptes gérés par le serveur : bcrypt pour les mots de passe, JWT dans un cookie httpOnly pour la session.
 - L'administrateur est reconnu par la colonne `utilisateurs.est_admin`, relue à chaque requête.
 - Toutes les protections d'accès aux données sont dans le serveur : chaque nouvelle route doit les refaire.
-- Les règles « métier » liées au rôle (qui accepte une demande, qui souscrit) restent surtout appliquées par l'interface.
+- Les règles du cycle de vie d'une demande (RG11, RG12, RG14) sont vérifiées par le serveur ; d'autres règles liées au rôle (qui envoie une demande, qui souscrit une formule) restent appliquées par l'interface.
 - Côté RGPD : hébergement en France, coordonnées masquées, pages légales présentes ; il manque la suppression de compte par l'utilisateur et une politique de conservation.
