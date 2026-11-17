@@ -203,7 +203,7 @@ Carte de chiffre clé. **Props** : `icone` (obligatoire), `tone` (défaut `teal`
 
 ### SanteSite — [SanteSite.vue](../frontend/src/components/admin/SanteSite.vue)
 
-Carte « Santé du site » du tableau de bord : état du serveur (`GET /api/sante`, avec le temps de réponse), de la base Supabase et de la dernière ronde du robot Mlezi (API publique de GitHub). Bouton « Vérifier maintenant ». Aucune prop. Parent : `AdminDashboard`.
+Carte « Santé du site » du tableau de bord : état du serveur (`GET /api/sante`, avec le temps de réponse), de la base PostgreSQL et de la dernière ronde du robot Mlezi (API publique de GitHub). Bouton « Vérifier maintenant ». Aucune prop. Parent : `AdminDashboard`.
 
 ### AdminIcon — [AdminIcon.vue](../frontend/src/components/admin/AdminIcon.vue)
 

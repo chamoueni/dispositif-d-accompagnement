@@ -5,9 +5,9 @@
 // Sans ça, la page d'accueil interrogerait deux fois la table profiles pour le
 // même contenu — inutile sur les connexions lentes visées.
 //
-// Rappel : la policy RLS "profiles_select_authenticated" réserve la lecture des
-// profils aux comptes connectés. Un visiteur anonyme reçoit une liste vide, sans
-// erreur. D'où le chargement déclenché par la session, et non au montage.
+// Rappel : le serveur réserve la lecture des profils aux comptes connectés
+// (action profiles.list). D'où le chargement déclenché par la session, et non
+// au montage.
 import { computed, ref, watch } from 'vue'
 import { getUsers, getZoneCommune } from '../data/store'
 import { useAuth } from '../stores/auth'

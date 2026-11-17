@@ -36,8 +36,8 @@ const { t } = useI18n()
 
 // Compteur "pres de chez vous" du hero. La liste vient du meme composable que
 // la carte : une seule requete pour les deux (voir composables/useAidants.js).
-// Rien ne s'affiche sans session : la RLS renvoie une liste vide a un visiteur
-// anonyme, annoncer "0 intervenant" serait faux.
+// Rien ne s'affiche sans session : le serveur refuse la liste des profils a un
+// visiteur anonyme, annoncer "0 intervenant" serait faux.
 const { user } = useAuth()
 const { pres } = useAidants()
 

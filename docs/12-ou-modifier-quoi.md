@@ -46,40 +46,40 @@ Table de correspondance : « je veux… » → les fichiers à ouvrir. Les chemi
 
 | Je veux… | Fichier(s) | Étapes |
 |---|---|---|
-| Ajouter un champ à l'inscription | `frontend/src/pages/Inscription.vue`, `frontend/src/stores/auth.js` (`signup` et `creerProfilDepuisMetadata`), `supabase/schema.sql`, `frontend/src/pages/Profil.vue`, fichiers de langue | Ajouter la colonne dans `profiles` et **rejouer le SQL** ; penser aux deux fonctions de `auth.js` |
-| Changer la règle du mot de passe | `frontend/src/pages/Inscription.vue`, `frontend/src/pages/Profil.vue`, `frontend/src/pages/ReinitialiserMotDePasse.vue` + les messages d'erreur | Supabase a aussi son propre minimum |
+| Ajouter un champ à l'inscription | `frontend/src/pages/Inscription.vue`, `frontend/src/pages/Profil.vue`, `backend/controllers/auth.controller.js` (`inscrire`, objet `champs`), `backend/models/profil.model.js` (`COLONNES`), `backend/services/validation.service.js` (`PROFIL_FIELDS`), `backend/sql/schema.sql`, fichiers de langue | Ajouter la colonne dans `profiles` et **rejouer le SQL** dans phpPgAdmin |
+| Changer la règle du mot de passe | `frontend/src/lib/motDePasse.js` (site) et `backend/config/constantes.js` (`MOT_DE_PASSE_MIN`) + `backend/services/motDePasse.service.js` | C'est la règle du serveur qui fait foi |
 | Changer le format de téléphone accepté | `frontend/src/pages/Inscription.vue` (`TELEPHONE_REGEX`) | `Profil.vue` ne contrôle pas le format |
 | Ajouter une spécialité de santé | `frontend/src/pages/Inscription.vue` et `frontend/src/pages/Profil.vue` (`SPECIALITE_KEYS`) + clés `specialites.*` | |
 | Ajouter une commune | `frontend/src/data/store.js` (`COMMUNES_MAYOTTE`) | Avec `zone`, `lat`, `lng` |
 | Changer les créneaux horaires | `frontend/src/pages/Profil.vue` (`CRENEAUX`) | Les anciens créneaux enregistrés s'afficheront dans « autres créneaux » |
-| Ajouter un champ à la demande d'aide | `frontend/src/pages/NouvelleDemande.vue`, `frontend/src/data/store.js` (`addDemande`, `mapDemande`), `supabase/schema.sql` | |
+| Ajouter un champ à la demande d'aide | `frontend/src/pages/NouvelleDemande.vue`, `frontend/src/data/store.js` (`mapDemande`), `backend/controllers/data.controller.js` (`demandes.create`), `backend/models/demande.model.js` (`creerDemande`), `backend/sql/schema.sql` | Rejouer le SQL |
 
 ## 5. Services et métier
 
 | Je veux… | Fichier(s) | Remarque |
 |---|---|---|
 | **Ajouter un service** (ex. « garde ») | `frontend/src/pages/Inscription.vue` et `frontend/src/pages/Profil.vue` (cases à cocher), `frontend/src/pages/RecherchePersonnel.vue` (`TYPES`), `frontend/src/components/CarteMayotte.vue` (`BESOINS`, `libelleAidant`), `frontend/src/components/ProviderCard.vue` (`SERVICE_KEYS`, `resume`), `frontend/src/pages/AssistantBesoin.vue` (`TYPES_AIDE`, `resultats`), `frontend/src/pages/MesDemandes.vue`, `MesAccompagnements.vue`, `Historique.vue` (`SERVICE_KEYS`), `frontend/src/pages/AdminDashboard.vue` et `AdminDemandes.vue` (`SERVICE_LABELS`), fichiers de langue (`demande.service_*`) | Les services n'ont pas de table : la liste est répétée dans une dizaine de fichiers. C'est la modification la plus dispersée du projet. |
-| Modifier une formule ou un prix | `frontend/src/data/store.js` (`FORMULES`) | Mettre aussi à jour `CONTEXTE_SITE` dans `backend/app.js`, sinon l'assistant annonce l'ancien prix |
+| Modifier une formule ou un prix | `frontend/src/data/store.js` (`FORMULES`) | |
 | Changer le délai « Acceptée » → « En cours » | `frontend/src/data/store.js` (`DELAI_DEMARRAGE_MISSION_MS`) | |
-| Changer la logique d'acceptation d'une demande | `frontend/src/data/store.js` (`updateDemandeStatut`) | |
-| Ajouter un statut de demande | `supabase/schema.sql` (contrainte `check`), `frontend/src/pages/MesDemandes.vue` (`statutAffiche`), pages admin, clés `statut.*` | Rejouer le SQL |
+| Changer la logique d'acceptation d'une demande | `backend/services/demande.service.js` (`changerStatutDemande`, en transaction) | |
+| Ajouter un statut de demande | `backend/sql/schema.sql` (contrainte `check`), `backend/config/constantes.js` (`STATUTS_DEMANDE`), `frontend/src/pages/MesDemandes.vue` (`statutAffiche`), pages admin, clés `statut.*` | Rejouer le SQL |
 | Changer les filtres de la recherche | `frontend/src/pages/RecherchePersonnel.vue` (`filters`, `results`) | |
 | Changer les mots-clés de la commande vocale | `frontend/src/components/SosButton.vue` (`MOTS_CLES`) | |
-| Changer d'administrateur | `frontend/src/stores/auth.js`, `backend/app.js`, `supabase/schema.sql` (toutes les règles), `supabase/functions/notify-contact-message/index.ts` | Quatre endroits ; rejouer le SQL et redéployer la fonction |
+| Changer d'administrateur | Base de données : `update utilisateurs set est_admin = true where email = '…'` (et `false` pour l'ancien), dans phpPgAdmin | Aucun fichier à modifier ; l'adresse qui reçoit les alertes SOS est la variable `EMAIL_ADMIN` du site API |
 
 ## 6. Backend et base de données
 
 | Je veux… | Fichier(s) | Étapes |
 |---|---|---|
-| **Ajouter une route backend** | `backend/app.js` | 1. `app.get/post(...)` avec `try/catch` et `next(error)` ; 2. ajouter `verifierAdmin` si la route est réservée ; 3. appeler la route depuis le frontend avec `API_BASE_URL` |
-| Protéger une route existante | `backend/app.js` | Ajouter `verifierAdmin` en deuxième argument, et envoyer le jeton côté frontend (modèle : `createCompteAdmin` dans `store.js`) |
-| Restreindre les origines autorisées (CORS) | `backend/app.js` (`app.use(cors())`) | |
-| **Ajouter une table** | `supabase/schema.sql` | 1. `create table if not exists` ; 2. `alter table … enable row level security` ; 3. une règle par opération permise ; 4. **exécuter le SQL dans Supabase** ; 5. ajouter les fonctions d'accès dans `frontend/src/data/store.js` |
-| Ajouter une colonne | `supabase/schema.sql` avec `alter table … add column if not exists` | `create table if not exists` ne modifie pas une table existante |
-| Modifier une règle RLS | `supabase/schema.sql` | Garder le `drop policy if exists` avant le `create policy` ; rejouer le SQL |
-| Ajouter ou modifier une requête | `frontend/src/data/store.js` | Ne pas écrire de requête dans une page |
-| Modifier l'e-mail envoyé à l'admin | `supabase/functions/notify-contact-message/index.ts` | Redéployer la fonction |
-| Ajouter une variable d'environnement | `.env.example` + le fichier qui la lit + l'hébergeur | Préfixe `VITE_` uniquement si elle peut être publique |
+| **Ajouter une route backend** | `backend/routes/`, `backend/controllers/`, `backend/app.js` | 1. une ligne dans un fichier de routes (ou un nouveau fichier branché dans `app.js`) ; 2. la fonction du contrôleur, avec `try/catch` et `next(error)` ; 3. **refaire les contrôles d'accès** (`requireAuth`, `exigerRole(...)`, `verifierAdmin`, ou une vérification dans le contrôleur) ; 4. appeler la route depuis le frontend avec `apiRequest` |
+| Protéger une route existante | le fichier de `backend/routes/` | Ajouter `requireAuth`, `exigerRole('senior', …)` ou `verifierAdmin` avant le contrôleur ; le cookie de session est envoyé automatiquement |
+| Changer les origines autorisées (CORS) | `backend/config/origines.js` (variables `SITE_URL`, `CORS_ORIGINS`) | |
+| **Ajouter une table** | `backend/sql/schema.sql`, `backend/models/`, `backend/controllers/` | 1. `create table if not exists` ; 2. **exécuter le SQL dans phpPgAdmin** ; 3. un fichier de modèle avec des requêtes paramétrées ; 4. les actions du contrôleur, **avec leurs contrôles d'accès** ; 5. les fonctions côté site dans `frontend/src/data/store.js` |
+| Ajouter une colonne | `backend/sql/schema.sql` avec `alter table … add column if not exists` | `create table if not exists` ne modifie pas une table existante |
+| Modifier une règle d'accès (qui voit quoi) | `backend/controllers/data.controller.js`, `backend/services/confidentialite.service.js` | Il n'y a plus de règles RLS : les droits sont vérifiés dans le serveur |
+| Ajouter ou modifier une requête SQL | `backend/models/` | Toujours avec des paramètres `$1, $2…`, jamais en collant les valeurs dans le texte |
+| Modifier un email (mot de passe oublié, alerte SOS) | `backend/services/email.service.js` (`gabarit`, `envoyerLienReinitialisation`, `alerterNouveauMessage`) | Puis mettre à jour le site API (`git pull` + redémarrage) |
+| Ajouter une variable d'environnement | `.env.example` + le fichier qui la lit + le champ « Environnement » du site API sur alwaysdata | Préfixe `VITE_` uniquement si elle peut être publique |
 
 ## 7. Composants
 
@@ -95,13 +95,14 @@ Table de correspondance : « je veux… » → les fichiers à ouvrir. Les chemi
 
 ## 8. Réflexes à garder
 
-1. **Après toute modification de `supabase/schema.sql`** : exécuter le SQL dans le tableau de bord Supabase.
+1. **Après toute modification de `backend/sql/schema.sql`** : exécuter le SQL dans phpPgAdmin (alwaysdata).
 2. **Après un nouveau texte** : l'ajouter dans les trois fichiers de langue (au minimum `fr.json`, les autres retombent dessus).
 3. **Avant de pousser** : `npm run lint` puis `npm run build`.
-4. **Une écriture bloquée par la RLS ne renvoie pas d'erreur** : si une modification « ne fait rien », vérifier les règles de la table.
+4. **Une nouvelle route doit vérifier elle-même les droits** : la base ne protège plus les lignes (plus de RLS).
+5. **Après une modification du front** : reconstruire avec `VITE_SITE_URL` puis renvoyer `dist/` (voir [11-deploiement.md](11-deploiement.md) § 6).
 
 ## À retenir
 
-- Couleurs : `frontend/src/assets/theme.css`. Textes : `frontend/src/locales/`. Routes : `frontend/src/router/index.js`. Requêtes : `frontend/src/data/store.js`. Routes d'API : `backend/app.js`. Tables : `supabase/schema.sql`.
-- Ajouter un service ou changer d'administrateur demande de toucher de nombreux fichiers, car ces informations sont répétées.
-- Toute modification du schéma se termine par une exécution manuelle dans Supabase.
+- Couleurs : `frontend/src/assets/theme.css`. Textes : `frontend/src/locales/`. Routes : `frontend/src/router/index.js`. Appels métier : `frontend/src/data/store.js`. Routes d'API : `backend/routes/`. Requêtes SQL : `backend/models/`. Tables : `backend/sql/schema.sql`.
+- Ajouter un service demande de toucher de nombreux fichiers, car la liste est répétée. Changer d'administrateur se fait dans la base (`est_admin`).
+- Toute modification du schéma se termine par une exécution manuelle dans phpPgAdmin.

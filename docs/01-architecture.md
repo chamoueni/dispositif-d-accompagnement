@@ -4,71 +4,74 @@ Ce document donne la vue d'ensemble : quelles sont les grandes parties du projet
 
 ## 1. Les grandes parties
 
-| Partie | Technologie | Où | Rôle |
-|---|---|---|---|
-| Frontend | Vue 3 + Vite | `frontend/src/`, `index.html` | Toute l'interface : pages publiques, espace personnel, espace admin. C'est une application à page unique (SPA). |
-| Backend Express | Node.js + Express | `backend/` | API REST par laquelle passe tout le site : connexion (sessions sécurisées), données Supabase, adhérents, comptes admin et bilan de santé `/api/sante`. |
-| Base de données et authentification | Supabase (PostgreSQL + Supabase Auth) | `supabase/schema.sql` | Stocke les profils, demandes, mises en relation, avis, messages de contact, adhérents. Gère aussi les comptes (e-mail + mot de passe). |
-| Fonction Edge | Deno (Supabase Edge Function) | `supabase/functions/notify-contact-message/index.ts` | Envoie un e-mail à l'administrateur quand un message de contact est créé. |
-| Robot de maintenance « Mlezi » | GitHub Actions | `.github/workflows/mlezi-gardien.yml` | Toutes les 10 min en journée : réveille l’API Render et fait travailler Supabase (`/api/sante`). Chaque matin : contrôle complet et ticket GitHub en cas de panne. |
+| Partie | Technologie | Où (code) | Où (en ligne) | Rôle |
+|---|---|---|---|---|
+| Frontend | Vue 3 + Vite | `frontend/` | site alwaysdata « PHP » (Apache), `moustakim.alwaysdata.net/fil`, dossier `~/aufildesages-front/dist` | Toute l'interface : pages publiques, espace personnel, espace admin. Application à page unique (SPA), construite sur le PC puis envoyée en fichiers statiques. |
+| Backend (API) | Node.js + Express 5 | `backend/` | site alwaysdata « Node.js », `moustakim.alwaysdata.net/fil/api`, dossier `~/aufildesages` | Seul à parler à la base : connexion et comptes, données métier, adhérents, comptes admin, emails, bilan de santé `/api/sante`. |
+| Base de données | PostgreSQL 17 | `backend/sql/schema.sql` | `postgresql-moustakim.alwaysdata.net`, base `moustakim_aufildesages` | Comptes (`utilisateurs`), profils, demandes, mises en relation, avis, messages de contact, adhérents, liens « mot de passe oublié ». |
+| Robot de maintenance « Mlezi » | GitHub Actions | `.github/workflows/mlezi-gardien.yml` | serveurs de GitHub | Toutes les heures en journée : appelle `/api/sante`. Chaque matin : contrôle complet (API + base, pages) et ticket GitHub en cas de panne. |
 
 Services externes appelés par le projet :
 
-- **Supabase** : appelé uniquement par le backend ([config/supabase.js](../backend/config/supabase.js), [services/session.service.js](../backend/services/session.service.js)) ; le navigateur passe par l’API ([api.js](../frontend/src/lib/api.js)).
+- **Serveur mail (SMTP) d'alwaysdata** : envoi des emails « mot de passe oublié » et des alertes SOS, par le backend ([email.service.js](../backend/services/email.service.js)).
 - **Géoplateforme IGN** : tuiles de carte chargées par le navigateur ([CarteMayotte.vue](../frontend/src/components/CarteMayotte.vue), constante `MODELE_IGN`).
 - **Google Fonts** : polices Fraunces, Inter et Nunito Sans chargées dans [index.html](../frontend/index.html).
 - **Unsplash** : trois photos chargées par URL dans [PourQui.vue](../frontend/src/pages/PourQui.vue).
-- **SMTP Gmail** : utilisé par la fonction Edge pour envoyer l'e-mail.
+- **API publique de GitHub** : la carte « Santé du site » de l'espace admin y lit la dernière ronde de Mlezi ([SanteSite.vue](../frontend/src/components/admin/SanteSite.vue)).
 
 ## 2. Comment les parties communiquent
 
-Point essentiel à comprendre : **le frontend parle directement à Supabase** pour presque tout. Le backend Express n'est pas un passage obligé entre le navigateur et la base.
+Point essentiel : **le navigateur ne parle qu'à l'API** (`/api/...`). Seule l'API lit et écrit dans la base.
 
 ```
-                         NAVIGATEUR (Vue 3, frontend/src/)
-                                   |
-        +--------------------------+---------------------------+
-        |                          |                           |
-        | (1) supabase-js          | (2) fetch /api/...        | (3) tuiles, polices, photos
-        |     clé "anon" + JWT     |     JSON                  |
-        v                          v                           v
-+------------------+      +-------------------+        IGN / Google Fonts / Unsplash
-|    SUPABASE      |      |  EXPRESS (backend/)|
-|  - PostgreSQL    | (4)  |                   |
-|  - règles RLS    |      |  fichier JSON     |
-+--------+---------+      |  backend/data/     |
-         |                +-------------------+
-         | (5) Database Webhook (configuré dans le tableau de bord Supabase)
-         v
-+---------------------------+
-| Fonction Edge (Deno)      |-----> SMTP Gmail -----> e-mail à l'administrateur
-| notify-contact-message    |
-+---------------------------+
+                       NAVIGATEUR (Vue 3, frontend/src/)
+                                  |
+          +-----------------------+-------------------------+
+          |                       |                         |
+          | (1) pages, JS, CSS    | (2) fetch /fil/api/...  | (3) tuiles, polices, photos
+          v                       |     JSON + cookie JWT   v
++----------------------+          |               IGN / Google Fonts / Unsplash
+| SITE FRONT (Apache)  |          v
+| /fil                 |   +--------------------------+
+| ~/aufildesages-front |   | SITE BACK (Node.js)      |
+| dist/ + .htaccess    |   | /fil/api  ~/aufildesages |
++----------------------+   | Express (backend/)       |
+                           +------+-----------+-------+
+                                  |           |
+                     (4) SQL (pg) |           | (5) SMTP
+                                  v           v
+                     +-------------------+   serveur mail alwaysdata --> boîte email
+                     | PostgreSQL 17     |
+                     | moustakim_        |
+                     | aufildesages      |
+                     +-------------------+
 
-GitHub Actions (cron) ----------> lecture de la table "avis" sur Supabase (maintien en activité)
+GitHub Actions « Mlezi » (cron) -----> /fil/api/sante et pages du site (surveillance)
 ```
 
 Détail des flèches :
 
-1. **Navigateur → Supabase.** Toutes les lectures et écritures métier (profils, demandes, missions, avis, messages) passent par [frontend/src/data/store.js](../frontend/src/data/store.js) et [frontend/src/stores/auth.js](../frontend/src/stores/auth.js). La sécurité repose sur les règles RLS de la base (voir [06-base-de-donnees.md](06-base-de-donnees.md)).
-2. **Navigateur → Express.** Toutes les données passent par `/api/...` : connexion (`/api/auth/*`), données (`/api/data`, [store.js](../frontend/src/data/store.js)), adhérents (`/api/adherents`, [frontend/src/stores/adherents.js](../frontend/src/stores/adherents.js)) et comptes admin (`/api/admin/comptes`). L'adresse de base vient de [frontend/src/lib/apiBase.js](../frontend/src/lib/apiBase.js) (vide : même adresse que le site).
+1. **Navigateur → site front.** Apache envoie les fichiers construits (`dist/`). Le fichier `.htaccess` (généré au build) renvoie `index.html` pour toute adresse qui n'est pas un fichier : c'est Vue Router qui affiche la bonne page (mode « history »).
+2. **Navigateur → API.** Toutes les données passent par [frontend/src/services/api.js](../frontend/src/services/api.js) (fonction `apiRequest`), qui ajoute le sous-dossier du site (`/fil`) devant `/api/...`. Le jeton de connexion voyage dans un **cookie httpOnly** : le navigateur le joint tout seul, le JavaScript ne peut pas le lire.
 3. **Navigateur → services tiers.** Chargements directs, sans passer par le backend.
-4. **Express → Supabase.** Avec la clé « service role », qui contourne les règles RLS. Sert à créer/supprimer des comptes Auth et à recopier les adhérents dans la table `adherents`.
-5. **Supabase → fonction Edge.** Le déclencheur (Database Webhook) est décrit dans un commentaire de la fonction mais **n'est pas dans le dépôt** : il se configure dans le tableau de bord Supabase.
+4. **API → base.** Par le paquet `pg` ([backend/db.js](../backend/db.js)), avec des requêtes **paramétrées** (`$1, $2…`) rangées dans [backend/models/](../backend/models/). Les règles d'accès sont vérifiées dans les contrôleurs avant chaque requête.
+5. **API → serveur mail.** Par `nodemailer`.
+
+Front et back sont sur le **même nom de domaine** (`moustakim.alwaysdata.net`) : alwaysdata envoie `/fil/api/...` au site back et le reste de `/fil/...` au site front. Le cookie de connexion fonctionne donc sans réglage particulier (pas de « cookie tiers »).
 
 ## 3. Arborescence
 
-Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supabase/` (la base). Dossiers générés non listés : `node_modules/`, `dist/` (site construit, à la racine car Render le publie depuis là), `.git/`.
+Deux grands dossiers : `frontend/` (le site) et `backend/` (le serveur et la base). Dossiers générés non listés : `node_modules/`, `dist/` (site construit, à la racine), `.git/`.
 
 ```
 .
 ├── frontend/                    LE SITE (Vue 3 + Vite), ce que voit le navigateur
 │   ├── index.html               Page HTML unique ; script anti-flash du thème ; polices
-│   ├── vite.config.js           Configuration Vite : plugin Vue, proxy /api, build vers ../dist
+│   ├── vite.config.js           Configuration Vite : plugin Vue, sous-dossier (base), proxy /api, build vers ../dist
 │   ├── jsconfig.json            Exclusions pour l'éditeur
 │   ├── public/                  Fichiers servis tels quels (favicon, icônes, audio/)
 │   ├── scripts/
-│   │   └── generate-seo-pages.js  Pages SEO, sitemap et 404 générés après le build
+│   │   └── generate-seo-pages.js  Pages SEO, sitemap, 404 et .htaccess générés après le build
 │   └── src/
 │       ├── main.js              Point d'entrée : crée l'app, branche Pinia, routeur, i18n
 │       ├── App.vue              Coquille : bandeau hors-ligne, navbar, <router-view>, pied de page, SOS
@@ -77,43 +80,37 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 │       ├── components/          Composants réutilisables (voir 03-html-composants.md)
 │       │   └── admin/           Composants propres à l'espace admin
 │       ├── composables/         Logique réutilisable sans interface
-│       │   ├── useAidants.js    Liste partagée des intervenants
-│       │   ├── useConnexion.js  État en ligne / hors ligne
-│       │   ├── useSpeech.js     Lecture à voix haute
-│       │   ├── useTheme.js      Thème clair / sombre / auto
-│       │   └── useVoiceInput.js Reconnaissance vocale
-│       ├── data/store.js        Accès aux données (via l'API) + constantes métier
+│       ├── data/store.js        Fonctions métier (appellent l'API) + constantes
 │       ├── i18n/index.js        Configuration vue-i18n (fr, shi, kib)
-│       ├── lib/
-│       │   ├── api.js           Appels à l'API Express (cookies de session)
-│       │   ├── apiBase.js       Adresse de base de l'API (vide : même adresse que le site)
-│       │   └── nom.js           Affichage du nom : prénom, « Prénom N. »
+│       ├── lib/                 motDePasse.js (règles du mot de passe), nom.js (affichage du nom)
 │       ├── locales/             Traductions : fr.json, shi.json, kib.json
 │       ├── pages/               Une vue par route (voir 02-frontend.md)
 │       ├── router/index.js      Routes et garde de navigation
+│       ├── services/api.js      Point de passage unique vers l'API
 │       ├── stores/              auth, accessibility, adherents, adminDashboard (Pinia)
 │       └── styles/              Un fichier CSS par page ou composant + ui.css + bootstrap-custom.scss
 │
 ├── backend/                     LE SERVEUR (Node.js + Express), l'API /api/...
-│   ├── app.js                   Point d'entrée : middlewares + routes, démarrage du serveur
-│   ├── config/                  .env, constantes, origines autorisées, connexion Supabase
-│   ├── middleware/              Sécurité (CORS, origine), session, admin, limites, erreurs
+│   ├── app.js                   Point d'entrée : middlewares, routes, sous-dossier, démarrage
+│   ├── db.js                    Connexion PostgreSQL (pg), requete(), transaction()
+│   ├── sql/
+│   │   ├── schema.sql           Les 8 tables, index, contraintes, déclencheur
+│   │   └── import-supabase.sql  Transfert des données depuis l'ancienne base Supabase
+│   ├── config/                  .env, constantes, origines autorisées
+│   ├── middleware/              Sécurité (CORS, origine), session JWT et rôles, admin, limites, erreurs
 │   ├── routes/                  auth, admin, data, adherents, sante : adresse → contrôleur
-│   ├── controllers/             Traitement de chaque requête et réponse JSON
-│   ├── services/                Règles de gestion : sessions, confidentialité, demandes, validation
-│   ├── models/adherent.model.js Adhérents : table Supabase « adherents »
-│   ├── package.json             Contient seulement {"type": "module"}
+│   ├── controllers/             Traitement de chaque requête : contrôles d'accès + réponse JSON
+│   ├── services/                Jeton JWT, mots de passe, emails, confidentialité, demandes, validation
+│   ├── models/                  Requêtes SQL, un fichier par table
+│   └── package.json             Contient seulement {"type": "module"}
 │
-├── supabase/                    LA BASE DE DONNÉES
-│   ├── schema.sql               Tables, index, règles RLS
-│   ├── migrations/              Scripts SQL à rejouer sur un projet existant
-│   └── functions/notify-contact-message/index.ts   Fonction Edge (e-mail à l'admin)
-│
+├── supabase/                    Ancien schéma Supabase (référence historique, plus utilisé)
 ├── docs/                        Cette documentation
 ├── .github/workflows/
-│   └── mlezi-gardien.yml        Robot de maintenance : garde l’API et Supabase actifs, signale les pannes
+│   └── mlezi-gardien.yml        Robot de maintenance : surveille le site, signale les pannes
 ├── .env.example                 Modèle des variables d'environnement (sans valeurs)
 ├── .gitignore
+├── DEPLOIEMENT.md               Mise en ligne sur alwaysdata, étape par étape
 ├── eslint.config.js             Règles ESLint (JS + Vue, globals Node pour backend/)
 ├── package.json                 Dépendances et scripts (frontend ET backend)
 ├── package-lock.json
@@ -122,29 +119,27 @@ Trois grands dossiers : `frontend/` (le site), `backend/` (le serveur) et `supab
 
 ## 4. Séparation frontend / backend
 
-**Ce qui est bien séparé**
+**Ce qui est séparé**
 
-- Les clés sensibles restent côté serveur. `SUPABASE_SERVICE_ROLE_KEY` et `AUTH_SESSION_SECRET` ne sont lues que dans `backend/` ([config/supabase.js](../backend/config/supabase.js), [services/session.service.js](../backend/services/session.service.js)).
-- Les opérations qui exigent la clé « service role » (création et suppression d'un compte Auth) sont bien dans le backend, protégées par le middleware `verifierAdmin` ([backend/app.js](../backend/app.js), ligne 31).
-- Côté frontend, les pages n'écrivent jamais de requête Supabase elles-mêmes (une seule exception, voir plus bas) : elles appellent les fonctions de [store.js](../frontend/src/data/store.js) ou de [auth.js](../frontend/src/stores/auth.js).
+- **L'hébergement** : deux sites alwaysdata distincts, dans deux dossiers distincts. Le front peut être remplacé sans redémarrer l'API, et inversement. Le back tourne avec `SERVIR_FRONT=false` : il ne sert que l'API.
+- **Les secrets** restent côté serveur : `DATABASE_URL`, `JWT_SECRET`, `SMTP_PASS` ne sont lus que dans `backend/` et ne sont jamais envoyés au navigateur.
+- **Les règles métier et les contrôles d'accès** sont dans le backend : changement de statut d'une demande, création de la mission, code d'arrivée ([demande.service.js](../backend/services/demande.service.js)), qui voit quelles demandes et quelles coordonnées ([data.controller.js](../backend/controllers/data.controller.js), [confidentialite.service.js](../backend/services/confidentialite.service.js)).
+- Côté frontend, les pages n'appellent jamais `fetch` elles-mêmes pour l'API : elles passent par [store.js](../frontend/src/data/store.js), les stores, puis [services/api.js](../frontend/src/services/api.js).
 
 **Ce qui n'est pas séparé**
 
-- **Les règles métier sont dans le navigateur.** Le changement de statut d'une demande, la création de la mise en relation et la génération du code d'arrivée se font dans `updateDemandeStatut` ([store.js](../frontend/src/data/store.js), ligne 307), exécuté dans le navigateur. Le serveur ne vérifie pas, par exemple, que seul l'intervenant accepte une demande : la règle RLS autorise les deux participants à modifier la ligne (voir [06-base-de-donnees.md](06-base-de-donnees.md)).
-- **Un seul `package.json`** pour le frontend et le backend. `backend/package.json` ne contient que `{"type": "module"}`. Les dépendances Express, cors, dotenv, cookie-parser et le SDK Supabase sont donc installées avec celles du frontend.
-- **Une exception à la couche de données** : [ReinitialiserMotDePasse.vue](../frontend/src/pages/ReinitialiserMotDePasse.vue) importe directement `supabase` pour écouter l'événement de récupération de mot de passe.
-- **Une seule base de données** : Supabase/PostgreSQL contient toutes les données, adhérents compris. MongoDB a été utilisé pour les adhérents puis retiré (novembre 2026) : une seconde base n'apportait rien, car les adhérents sont des données structurées comme le reste (voir [05-backend.md](05-backend.md), section 8).
+- **Un seul `package.json`** pour le frontend et le backend. `backend/package.json` ne contient que `{"type": "module"}`. Sur le serveur, `npm install --omit=dev` n'installe que les paquets d'exécution (Express, pg, bcryptjs…) ; Vite et les outils restent sur le PC, où se fait le build.
+- **Un seul dépôt Git** pour les deux parties.
 
 ## 5. Points d'attention relevés dans le dépôt
 
-- Le [README.md](../README.md) cite `frontend/src/components/AdherentsManager.vue` et `frontend/src/styles/AdherentsManager.css`. **Ces deux fichiers n'existent pas** ; la gestion des adhérents est dans [AdminAdherents.vue](../frontend/src/pages/AdminAdherents.vue).
-- Le nom « Au Fil des Âges » **n'apparaît nulle part dans le code**. L'interface affiche « Dispositif d'accompagnement » ([AppNav.vue](../frontend/src/components/AppNav.vue), [App.vue](../frontend/src/App.vue)) et le titre de la page est « Dispositif d'accompagnement personnalisé » ([index.html](../frontend/index.html)).
+- Le nom « Au Fil des Âges » n'apparaît que dans les emails ; l'interface affiche « Dispositif d'accompagnement » ([AppNav.vue](../frontend/src/components/AppNav.vue), [App.vue](../frontend/src/App.vue)).
 - Aucun fichier de test, aucun script `test` dans [package.json](../package.json).
+- Le dossier `supabase/` n'est plus utilisé par le code ; il documente l'ancienne base.
 
 ## À retenir
 
-- Trois blocs : un frontend Vue, un petit backend Express, et Supabase pour la base et les comptes.
-- Le navigateur ne parle qu'au serveur Express (`/api/...`), qui interroge Supabase à sa place.
-- La sécurité des données repose donc surtout sur les règles RLS de `supabase/schema.sql`.
-- Les règles métier (statuts, code d'arrivée) sont exécutées dans le navigateur, pas sur un serveur.
-- Frontend et backend partagent un seul `package.json`.
+- Trois blocs chez alwaysdata : un site front (fichiers statiques), un site back (API Express) et une base PostgreSQL.
+- Le navigateur ne parle qu'à l'API ; l'API est la seule à toucher la base, avec des requêtes SQL paramétrées.
+- Les contrôles d'accès et les règles métier sont exécutés sur le serveur.
+- Frontend et backend partagent un seul `package.json`, mais sont hébergés séparément.

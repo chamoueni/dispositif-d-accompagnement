@@ -30,11 +30,11 @@ Règles recommandées JavaScript et Vue. Variables globales du navigateur partou
 
 ### `.env.example`
 
-Modèle sans valeurs : variables du serveur (Supabase, sessions) et du site (`VITE_SITE_URL`, `SITE_URL`). Voir [11-deploiement.md](11-deploiement.md).
+Modèle sans valeurs : variables du serveur (`DATABASE_URL`, `JWT_SECRET`, `SITE_URL`, SMTP…) et du site (`VITE_SITE_URL`). Voir [11-deploiement.md](11-deploiement.md).
 
-### `.github/workflows/mlezi-gardien.yml` (remplace `keep-supabase-alive.yml`)
+### `.github/workflows/mlezi-gardien.yml`
 
-Tâche planifiée (`cron: "0 6 */3 * *"`) qui lit une ligne de la table `avis` avec `curl`. Elle lit deux secrets GitHub : `SUPABASE_URL` et `SUPABASE_ANON_KEY`. But : empêcher la mise en pause d'un projet Supabase gratuit inactif.
+Robot de surveillance « Mlezi » (GitHub Actions). Toutes les heures en journée, appelle `https://moustakim.alwaysdata.net/fil/api/sante` ; chaque matin, contrôle l'API + la base, l'accueil, la connexion et la page Services, et ouvre (ou ferme) un ticket GitHub `mlezi` en cas de panne. Aucun secret nécessaire.
 
 ---
 
@@ -61,13 +61,15 @@ Tâche planifiée (`cron: "0 6 */3 * *"`) qui lit une ligne de la table `avis` a
 - **Utilise** : `useAuth`.
 - **Utilisé par** : `main.js`.
 
-### `frontend/src/lib/supabaseClient.js` (supprimé en novembre 2026 : le navigateur passe désormais par l’API, voir `frontend/src/lib/api.js`)
+### `frontend/src/services/api.js`
 
-Crée et exporte `supabase`, le client unique du navigateur, à partir de `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`. Écrit une erreur explicite dans la console si elles manquent. Importé par `auth.js`, `store.js` et `ReinitialiserMotDePasse.vue`.
+- **Rôle** : point de passage **unique** vers l'API. Exporte `apiRequest(chemin, { method, body })`.
+- **Fait** : ajoute le sous-dossier du site (`import.meta.env.BASE_URL`, par exemple `/fil`) devant `/api/...`, envoie le JSON, joint le cookie de session (`credentials: 'same-origin'`), renvoie la réponse JSON ou lève une erreur avec le message du serveur (et son code dans `erreur.status`).
+- **`401`** : émet l'événement `auth:expired`, écouté par `stores/auth.js` qui passe le site en mode déconnecté.
+- **Ne manipule jamais le jeton** : il est dans un cookie httpOnly, illisible par le JavaScript.
+- **Utilisé par** : `stores/auth.js`, `data/store.js`, `stores/adherents.js`.
 
-### `frontend/src/lib/apiBase.js`
-
-Une ligne : `API_BASE_URL = import.meta.env.VITE_API_URL || ''`. Vide en local (le proxy Vite prend le relais), adresse du backend en production. Importé par `store.js`, `stores/adherents.js`, `SosButton.vue`.
+Historique : remplace `lib/supabaseClient.js` (client Supabase du navigateur, retiré), puis `lib/api.js` et `lib/apiBase.js` (fusionnés ici lors de la migration vers alwaysdata).
 
 ### `frontend/src/i18n/index.js`
 
@@ -86,25 +88,24 @@ Le fichier le plus important côté compte. Malgré son dossier, ce **n'est pas 
 
 | Fonction | Reçoit | Renvoie / effet | Quand |
 |---|---|---|---|
-| `messageErreurAuth(error)` | une erreur Supabase | un message en français | à chaque erreur d'authentification |
-| `messageErreurProfil(error)` | une erreur de base | un message en français (exportée) | écriture dans `profiles` |
-| `chargerProfil(authUser)` | l'utilisateur Auth | remplit `state.user` (profil + e-mail) ou `null` | connexion, restauration, changement de session |
-| `creerProfilDepuisMetadata(authUser)` | l'utilisateur Auth | crée la ligne `profiles` à partir des métadonnées ; `true` si créé | première connexion après confirmation d'e-mail |
-| `signup(payload)` | les champs du formulaire | le profil créé, ou lève une erreur | inscription |
-| `login(email, password)` | identifiants | le profil | connexion |
-| `logout()` | — | vide `state.user` | déconnexion |
-| `updateProfile(patch)` | un objet partiel | écrit en base **et** met à jour `state.user` | profil, disponibilités, formule |
-| `changerMotDePasse(nouveau)` | texte | — | profil, réinitialisation |
-| `demanderReinitialisationMotDePasse(email)` | texte | — | mot de passe oublié, création de compte par l'admin |
+| `messageErreurProfil(error)` | une erreur | un message en français (exportée) | écriture dans `profiles` |
+| `initialiserSession()` | — | `GET /api/auth/session` → remplit `state.user` ou `null`, puis `initialized = true` | à l'ouverture du site |
+| `signup(payload)` | les champs du formulaire | `POST /api/auth/register` → le profil créé, ou lève une erreur | inscription |
+| `login(email, password, remember)` | identifiants | `POST /api/auth/login` → le profil | connexion |
+| `logout()` | — | `POST /api/auth/logout`, vide `state.user` | déconnexion |
+| `updateProfile(patch)` | un objet partiel | action `profiles.updateOwn` **et** met à jour `state.user` | profil, disponibilités, formule |
+| `changerMotDePasse(nouveau)` | texte | `PUT /api/auth/password` | profil |
+| `demanderReinitialisationMotDePasse(email)` | texte | `POST /api/auth/forgot-password` | mot de passe oublié, création de compte par l'admin |
+| `verifierLienReinitialisation(jeton)`, `reinitialiserMotDePasse(jeton, mdp)` | jeton du lien | `/api/auth/recovery/verify`, `/api/auth/recovery` | page de réinitialisation |
 | `useAuth()` | — | `{ user, initialized, isAdmin, …fonctions }` | dans tout composant |
 
-Partie délicate : à l'ouverture du site, deux choses s'exécutent dès l'import du fichier — `getSession()` (restauration) et `onAuthStateChange` (écoute). C'est pour cela que `initialized` existe.
+Partie délicate : `initialiserSession()` s'exécute dès l'import du fichier ; comme c'est asynchrone, `initialized` permet au routeur d'attendre la réponse avant de rediriger. L'événement `auth:expired` (émis par `services/api.js` sur une réponse `401`) remet `state.user` à `null`.
 
-`isAdmin` est un `computed` : vrai si `state.user.email` est égal à `ADMIN_EMAIL`.
+`isAdmin` est un `computed` : vrai si `state.user.est_admin` vaut `true` (valeur envoyée par le serveur, issue de la colonne `utilisateurs.est_admin`).
 
 ### `frontend/src/data/store.js`
 
-- **Rôle** : couche d'accès aux données. Toutes les requêtes Supabase métier sont ici.
+- **Rôle** : fonctions métier du site. Elles appellent l'API (`POST /api/data { action, payload }`, via `appelerDonnees` puis `apiRequest`) et convertissent les réponses.
 - **Constantes exportées** :
   - `COMMUNES_MAYOTTE` : 17 communes avec `zone`, `lat`, `lng`.
   - `FORMULES` : les 4 formules (`basique` 0 €, `essentiel` 25 €, `confort` 39 €, `premium` 101 €).
@@ -114,12 +115,10 @@ Partie délicate : à l'ouverture du site, deux choses s'exécutent dès l'impor
 
 Fonctions à comprendre en priorité :
 
-- **`updateDemandeStatut(id, statut)`** (ligne 307). Reçoit l'identifiant d'une demande et le nouveau statut. Met à jour le statut et la date. Si le statut est `acceptee`, attribue en plus un code d'arrivée et crée la mission. Renvoie la demande. Appelée par `MesDemandes.vue` et `MesAccompagnements.vue`.
-- **`genererCodeArrivee()`** (ligne 269). Tire un nombre avec `crypto.getRandomValues` (imprévisible, contrairement à `Math.random`) et le formate sur 4 chiffres, zéros de tête compris.
-- **`codeArriveeAAttribuer(id)`** (ligne 283). Renvoie un nouveau code, ou `null` si un code existe déjà (il ne doit jamais changer) ou si la colonne n'existe pas encore dans la base.
-- **`missionDemarree(mission, maintenant)`** (ligne 402). Vrai si plus de 3 minutes se sont écoulées depuis `dateDebut`. `maintenant` est passé en paramètre pour que Vue recalcule l'affichage quand le minuteur de la page avance.
+- **`updateDemandeStatut(id, statut)`**. Envoie l'action `demandes.updateStatut`. C'est le **serveur** ([demande.service.js](../backend/services/demande.service.js)) qui, dans une transaction, vérifie que la personne participe à la demande, change le statut et, pour `acceptee`, attribue le code d'arrivée (`crypto.randomInt`, 4 chiffres) et crée la mission. Renvoie la demande. Appelée par `MesDemandes.vue` et `MesAccompagnements.vue`.
+- **`missionDemarree(mission, maintenant)`**. Vrai si plus de 3 minutes se sont écoulées depuis `dateDebut`. `maintenant` est passé en paramètre pour que Vue recalcule l'affichage quand le minuteur de la page avance.
 - **`mapDemande`, `mapMiseEnRelation`, `mapMessageContact`**. Convertissent une ligne de la base (`snake_case`) en objet de l'application (`camelCase`).
-- **`createCompteAdmin` / `deleteCompteAdmin`**. Les deux seules fonctions de ce fichier qui appellent le backend Express plutôt que Supabase, en joignant le jeton de session.
+- **`createCompteAdmin` / `deleteCompteAdmin`**. Appellent les routes `/api/admin/comptes` (administrateur seulement), au lieu de `/api/data`.
 
 ### `frontend/src/stores/adminDashboard.js`
 
@@ -127,7 +126,7 @@ Store Pinia `admin-dashboard`. `charger()` lance quatre lectures en parallèle (
 
 ### `frontend/src/stores/adherents.js`
 
-Store Pinia `adherents`. `appelerApi(url, options)` centralise les `fetch` vers Express : ajoute l'en-tête JSON, lit la réponse, lève une erreur si le statut n'est pas correct. Quatre actions : `chargerAdherents`, `creerAdherent`, `modifierAdherent`, `supprimerAdherent`.
+Store Pinia `adherents`. Ses quatre actions (`chargerAdherents`, `creerAdherent`, `modifierAdherent`, `supprimerAdherent`) appellent `/api/adherents` par `apiRequest` ([services/api.js](../frontend/src/services/api.js)).
 
 ### `frontend/src/stores/accessibility.js`
 
@@ -146,7 +145,7 @@ Store Pinia `adherents`. `appelerApi(url, options)` centralise les `fetch` vers 
 ### `frontend/src/composables/useSpeech.js`
 
 - **Rôle** : lecture à voix haute.
-- **`speak(texte, cle)`** : en français, utilise la synthèse vocale du navigateur. En shimaoré ou kibushi, cherche un fichier `/audio/<langue>/<cle>.mp3` ; s'il n'existe pas, lit le texte **français** de la clé.
+- **`speak(texte, cle)`** : en français, utilise la synthèse vocale du navigateur. En shimaoré ou kibushi, cherche un fichier `audio/<langue>/<cle>.mp3` (dans le sous-dossier du site) ; s'il n'existe pas, lit le texte **français** de la clé.
 - **`audioExiste(url)`** : vérifie le type de contenu renvoyé, car un hébergement statique renvoie `index.html` avec un code 200 pour un fichier absent.
 
 ### `frontend/src/composables/useVoiceInput.js`
@@ -169,35 +168,36 @@ Voir [05-backend.md](05-backend.md) pour les routes. Résumé par fichier :
 
 ### `backend/app.js`
 
-- **Utilise** : `express`, `cors`, `cookie-parser`, `models/adherent.model.js`, `controllers/auth.controller.js`, `controllers/data.controller.js`, `services/session.service.js`.
-- **Fonctions** : `verifierAdmin` (middleware), `validerAdherent(body)` (renvoie un message d'erreur ou `null`), les 7 routes, le gestionnaire d'erreurs.
-- **Constantes** : `rolesAutorises`, `statutsAutorises`, `ADMIN_EMAIL`, `CONTEXTE_SITE`.
-- **Partie délicate** : dans `POST /api/admin/comptes`, si l'insertion du profil échoue après la création du compte Auth, le compte est supprimé pour éviter un compte sans profil.
+- **Rôle** : point d'entrée. Charge `.env`, branche les middlewares (CORS, JSON, cookies, en-têtes, origine), regroupe l'API (et, si `SERVIR_FRONT` n'est pas `false`, le site `dist/`) dans un routeur monté sur le sous-dossier déduit de `SITE_URL`, puis écoute sur `PORT` / `IP`.
+- **Partie délicate** : alwaysdata transmet l'adresse complète (`/fil/api/...`) ; le routeur est donc monté sur `/fil` **et** à la racine.
 
-### `backend/models/adherent.model.js`
+### `backend/db.js`
 
-Lit et écrit la table Supabase `adherents` avec le client de l'administrateur connecté (RLS appliquée). Exporte `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent` (renvoie `null` si introuvable), `supprimerAdherent` (renvoie `false` si introuvable). PostgreSQL gère les accès simultanés ; l'index unique sur l'e-mail empêche les doublons.
+Connexion à PostgreSQL (`pg`, variable `DATABASE_URL`). Exporte `requete`, `requeteUne`, `transaction(fn)` et `transactionAdmin(fn)` (transaction marquée administrateur pour le déclencheur `proteger_verifie`). Pool de 5 connexions, fermées après 30 s d'inactivité.
 
-### `backend/config/supabase.js`
+### `backend/middleware/session.js`
 
-Charge `.env` puis exporte `supabaseAdmin`, ou `null` si l'adresse ou la clé manque. Ce `null` permet au serveur de démarrer sans Supabase.
+Lit le jeton (cookie ou en-tête `Authorization: Bearer`), vérifie sa signature, relit le compte et son rôle dans la base, et remplit `req.utilisateur`. Exporte aussi `requireAuth` et `exigerRole(...roles)`.
+
+### `backend/services/jeton.service.js`, `motDePasse.service.js`, `email.service.js`
+
+- `jeton.service.js` : `creerJeton`, `lireJeton` (JWT HS256), `poserCookie`, `effacerCookie`.
+- `motDePasse.service.js` : `hacherMotDePasse`, `verifierMotDePasse` (bcrypt, comparaison factice si le compte n'existe pas), `motDePasseValide`.
+- `email.service.js` : gabarit HTML aux couleurs du site, `envoyerLienReinitialisation(email, jeton, nom)`, `alerterNouveauMessage({ nom, message })`. Sans SMTP en développement, l'email s'affiche dans le terminal.
+
+### `backend/models/*.model.js`
+
+Une table par fichier, uniquement des requêtes SQL paramétrées. Les droits ne sont **pas** vérifiés ici mais dans les contrôleurs. Détail dans [06-base-de-donnees.md](06-base-de-donnees.md) § 5.
+
+### `backend/sql/schema.sql` et `backend/sql/import-supabase.sql`
+
+Création des 8 tables (détaillées dans [06-base-de-donnees.md](06-base-de-donnees.md)) et requête qui a fabriqué le script de transfert des données depuis Supabase.
 
 ---
 
-## Supabase
+## Ancien dossier `supabase/`
 
-### `supabase/schema.sql`
-
-Détaillé dans [06-base-de-donnees.md](06-base-de-donnees.md).
-
-### `supabase/functions/notify-contact-message/index.ts`
-
-- **Rôle** : envoyer un e-mail à l'administrateur.
-- **Reçoit** : le corps d'un Database Webhook (`{ record, ... }`).
-- **Fait** : ouvre une connexion SMTP vers Gmail avec les secrets `GMAIL_USER` et `GMAIL_APP_PASSWORD`, envoie un message au sujet fixe, contenant le nom et le texte.
-- **Renvoie** : `{ success: true }`, `400` sans message, `500` en cas d'erreur.
-- **Dépendance** : `denomailer` 1.6.0, importé par URL.
-- **Environnement** : Deno, pas Node. C'est pour cela que `jsconfig.json` exclut le dossier `supabase` et que `.vscode/settings.json` active Deno pour ce dossier.
+Plus utilisé par le code depuis la migration. Il contient l'ancien schéma (règles RLS), les migrations et la fonction Edge `notify-contact-message` (Deno) qui envoyait l'alerte SOS par Gmail ; ce rôle est repris par `backend/services/email.service.js`. Conservé comme référence historique.
 
 ---
 
@@ -207,13 +207,12 @@ Détaillé dans [06-base-de-donnees.md](06-base-de-donnees.md).
 |---|---|
 | `frontend/src/components/MayotteSymbol.vue`, `frontend/src/styles/MayotteSymbol.css` | Importés par aucun fichier |
 | `frontend/public/icons.svg` | Aucune référence trouvée dans `frontend/src/` ni `index.html` |
-| `README.md` | Cite deux fichiers qui n'existent pas (`AdherentsManager.vue`, `AdherentsManager.css`) |
 | `--mono`, style `code` dans `index.css` | Un commentaire d'`index.html` indique qu'aucune page n'utilise `<code>` |
 
 ## À retenir
 
-- Pour comprendre le projet, lire dans cet ordre : `router/index.js`, `stores/auth.js`, `data/store.js`, `supabase/schema.sql`, `backend/app.js`.
+- Pour comprendre le projet, lire dans cet ordre : `router/index.js`, `stores/auth.js`, `data/store.js`, `backend/app.js`, `backend/controllers/data.controller.js`, `backend/sql/schema.sql`.
 - `stores/auth.js` n'est pas un store Pinia, contrairement à `adminDashboard.js` et `adherents.js`.
-- `store.js` est le seul endroit où modifier une requête Supabase métier.
-- `updateDemandeStatut` porte la règle métier centrale : accepter = code d'arrivée + mission.
-- La fonction Edge tourne sous Deno et se déploie séparément du reste.
+- Côté site, `store.js` regroupe les appels métier ; côté serveur, une requête SQL se modifie dans `backend/models/`.
+- La règle métier centrale (accepter = code d'arrivée + mission) est dans `backend/services/demande.service.js`, en transaction.
+- Toute l'application (site + API) se lance avec Node ; il n'y a plus de fonction Edge.

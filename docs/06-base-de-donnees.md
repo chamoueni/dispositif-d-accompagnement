@@ -1,18 +1,20 @@
-# 06 — Base de données Supabase
+# 06 — Base de données PostgreSQL
 
-La base est un **PostgreSQL** hébergé par Supabase. Tout le schéma est décrit dans un seul fichier : [supabase/schema.sql](../supabase/schema.sql). Il n'y a pas de dossier de migrations.
+La base est un **PostgreSQL 17** hébergé par **alwaysdata** (hôte `postgresql-moustakim.alwaysdata.net`, base `moustakim_aufildesages`). Tout le schéma est décrit dans un seul fichier : [backend/sql/schema.sql](../backend/sql/schema.sql). Elle se gère dans le navigateur avec **phpPgAdmin** (lien sur la page Bases de données › PostgreSQL d'alwaysdata) ; DBeaver ou tout autre client PostgreSQL convient aussi.
 
-> **Important.** Ce fichier ne s'applique pas tout seul. Après chaque modification, il faut l'exécuter à la main dans l'éditeur SQL du tableau de bord Supabase. Le dépôt ne permet donc pas de garantir que la base en ligne correspond exactement au fichier. Le script est écrit pour pouvoir être rejoué (`create table if not exists`, `drop policy if exists` avant chaque `create policy`).
+> **Important.** Ce fichier ne s'applique pas tout seul. Après chaque modification, il faut l'exécuter à la main (phpPgAdmin › base › onglet SQL). Le script est écrit pour pouvoir être rejoué (`create table if not exists`, `create or replace function`, `drop trigger if exists`).
+
+Seul le serveur Express se connecte à la base (variable `DATABASE_URL`, utilisateur PostgreSQL `moustakim_app`). Le navigateur n'y a jamais accès.
 
 ## 1. Vue d'ensemble
 
-Six tables applicatives, plus la table `auth.users` gérée par Supabase.
+Huit tables.
 
 ```
-auth.users (géré par Supabase : e-mail, mot de passe haché)
-    │ 1
-    │        id = id, on delete cascade
-    │ 1
+utilisateurs (email, mot de passe haché bcrypt, est_admin, version_jeton)
+    │ 1                              │ 1
+    │ id = id, on delete cascade     │ N (utilisateur_id, cascade)
+    │ 1                         jetons_reinitialisation
 profiles ─────────────────────────────────────────────┐
     │ 1                       │ 1                      │ 1
     │                         │                        │
@@ -28,16 +30,44 @@ profiles ───────────────────────�
 adherents   (aucune clé étrangère : table indépendante)
 ```
 
+Supprimer une ligne de `utilisateurs` supprime en cascade son profil, ses demandes, missions et avis : c'est le « droit à l'effacement » du RGPD, utilisé par l'administrateur (`DELETE /api/admin/comptes/:id`).
+
 ## 2. Les tables
 
-### `profiles` — lignes 15 à 47
+### `utilisateurs`
 
-Les informations métier d'un utilisateur. Une ligne par compte.
+Les comptes : de quoi se connecter. Remplace la table `auth.users` de Supabase (mêmes identifiants, copiés lors de la migration).
 
 | Colonne | Type | Contraintes | Remarque |
 |---|---|---|---|
-| `id` | `uuid` | clé primaire ; référence `auth.users(id)` ; `on delete cascade` | Même identifiant que le compte Auth |
-| `role` | `text` | non nul ; `check (role in ('senior','sante','particulier'))` | Pas de valeur « admin » |
+| `id` | `uuid` | clé primaire, défaut `gen_random_uuid()` | |
+| `email` | `text` | non nul, **unique** (`utilisateurs_email_key`), `check (email = lower(email))` | Toujours en minuscules |
+| `mot_de_passe_hash` | `text` | non nul | Empreinte bcrypt (`$2a$10$…` pour les comptes venus de Supabase, `$2b$10$…` pour les nouveaux), jamais le mot de passe |
+| `est_admin` | `boolean` | non nul, défaut `false` | `true` pour l'administrateur seulement |
+| `version_jeton` | `integer` | non nul, défaut `0` | +1 à chaque changement de mot de passe : les jetons émis avant deviennent invalides |
+| `created_at` | `timestamptz` | non nul, défaut `now()` | |
+
+### `jetons_reinitialisation`
+
+Les liens « Mot de passe oublié » envoyés par email.
+
+| Colonne | Type | Contraintes | Remarque |
+|---|---|---|---|
+| `id` | `uuid` | clé primaire | |
+| `utilisateur_id` | `uuid` | non nul ; référence `utilisateurs(id)` ; cascade | |
+| `jeton_hash` | `text` | non nul, unique | Empreinte SHA-256 du jeton, jamais le jeton lui-même |
+| `expire_le` | `timestamptz` | non nul | Création + 1 heure |
+| `utilise_le` | `timestamptz` | nul autorisé | Rempli après usage : un lien ne sert qu'une fois |
+| `created_at` | `timestamptz` | non nul, défaut `now()` | |
+
+### `profiles`
+
+Les informations métier d'un utilisateur. Une ligne par compte (l'administrateur peut ne pas en avoir).
+
+| Colonne | Type | Contraintes | Remarque |
+|---|---|---|---|
+| `id` | `uuid` | clé primaire ; référence `utilisateurs(id)` ; `on delete cascade` | Même identifiant que le compte |
+| `role` | `text` | non nul ; `check (role in ('senior','sante','particulier'))` | Pas de valeur « admin » (voir `utilisateurs.est_admin`) |
 | `nom` | `text` | non nul, défaut `''` | Nom complet en un seul champ |
 | `telephone` | `text` | non nul, défaut `''` | Unique s'il est renseigné (voir index) |
 | `ville` | `text` | non nul, défaut `''` | Une des 17 communes (contrôlé côté formulaire seulement) |
@@ -48,11 +78,14 @@ Les informations métier d'un utilisateur. Une ligne par compte.
 | `disponibilites` | `jsonb` | non nul, défaut `'[]'` | Tableau d'objets `{ jour, heureDebut, heureFin }` |
 | `abonnement` | `jsonb` | nul autorisé | `{ formuleId, dateDebut }` |
 | `actif` | `boolean` | non nul, défaut `true` | Information de suivi admin ; **aucune règle n'en dépend** |
+| `verifie` | `boolean` | non nul, défaut `false` | Profil d'intervenant validé par l'administrateur (sinon absent de la recherche) |
 | `created_at` | `timestamptz` | non nul, défaut `now()` | |
 
 **Index** : `profiles_telephone_unique`, index unique partiel sur `telephone` `where telephone <> ''`. Deux comptes ne peuvent pas partager un numéro, mais plusieurs peuvent avoir un numéro vide.
 
-### `demandes` — lignes 143 à 163
+**Déclencheur** `profiles_proteger_verifie` (fonction `proteger_verifie()`) : seule une transaction marquée « administrateur » (`set_config('app.admin', 'on', true)`, voir `transactionAdmin()` dans [db.js](../backend/db.js)) peut changer `verifie`. Pour toute autre écriture, un nouveau profil part à `false` et une modification de `verifie` est annulée. C'est une seconde protection, au niveau de la base, en plus du filtrage des champs fait par le serveur.
+
+### `demandes`
 
 Une personne âgée sollicite un intervenant.
 
@@ -62,15 +95,17 @@ Une personne âgée sollicite un intervenant.
 | `demandeur_id` | `uuid` | non nul ; référence `profiles(id)` ; cascade |
 | `aidant_id` | `uuid` | non nul ; référence `profiles(id)` ; cascade |
 | `type_service` | `text` | non nul (valeurs utilisées par le code : `soins`, `coursier`, `menage` ; pas de `check`) |
-| `urgence` | `text` | non nul, défaut `'normale'` (pas de `check`) |
+| `urgence` | `text` | non nul, défaut `'normale'` (le serveur n'accepte que `normale` ou `urgente`) |
 | `message` | `text` | non nul, défaut `''` |
 | `creneau_souhaite` | `jsonb` | nul autorisé |
 | `statut` | `text` | non nul, défaut `'en_attente'` ; `check` : `en_attente`, `acceptee`, `refusee`, `terminee`, `annulee` |
-| `code_arrivee` | `text` | nul autorisé ; ajouté par `alter table` (ligne 163) |
+| `code_arrivee` | `text` | nul autorisé ; 4 chiffres créés à l'acceptation |
 | `date_creation` | `timestamptz` | non nul, défaut `now()` |
-| `date_mise_a_jour` | `timestamptz` | non nul, défaut `now()` (mis à jour par le code, pas par un trigger) |
+| `date_mise_a_jour` | `timestamptz` | non nul, défaut `now()` (mis à jour par la requête de changement de statut) |
 
-### `mises_en_relation` — lignes 190 à 199
+Index : `demandes_demandeur_idx`, `demandes_aidant_idx`.
+
+### `mises_en_relation`
 
 La mission, créée quand une demande est acceptée.
 
@@ -84,9 +119,9 @@ La mission, créée quand une demande est acceptée.
 | `date_fin` | `timestamptz` | nul autorisé |
 | `statut_mission` | `text` | non nul, défaut `'en_cours'` ; `check` : `en_cours`, `terminee`, `annulee` |
 
-Aucune contrainte d'unicité sur `demande_id` : la base n'empêche pas deux missions pour une même demande.
+Index : sur `demande_id`, `demandeur_id`, `aidant_id`. Pas de contrainte d'unicité sur `demande_id` : c'est le serveur qui vérifie, dans la même transaction que l'acceptation, qu'aucune mission n'existe déjà pour la demande.
 
-### `avis` — lignes 114 à 120
+### `avis`
 
 Témoignages publiés sur la page « Pour qui ».
 
@@ -100,7 +135,7 @@ Témoignages publiés sur la page « Pour qui ».
 
 Pas de note chiffrée, pas de lien vers un intervenant.
 
-### `messages_contact` — lignes 229 à 236
+### `messages_contact`
 
 Messages envoyés depuis « SOS › Un problème avec le site ».
 
@@ -113,93 +148,81 @@ Messages envoyés depuis « SOS › Un problème avec le site ».
 | `lu` | `boolean` | non nul, défaut `false` |
 | `created_at` | `timestamptz` | non nul, défaut `now()` |
 
-### `adherents` — lignes 82 à 94
+### `adherents`
 
-Copie des adhérents gérés par l'API Express.
+Liste gérée par l'administrateur (espace admin › Adhérents).
 
 | Colonne | Type | Contraintes |
 |---|---|---|
-| `id` | `uuid` | clé primaire (fourni par le serveur) |
+| `id` | `uuid` | clé primaire, défaut `gen_random_uuid()` |
 | `nom` | `text` | non nul |
-| `email` | `text` | non nul (pas d'unicité) |
+| `email` | `text` | non nul ; **unique** (`adherents_email_unique`) |
 | `telephone`, `ville` | `text` | non nul, défaut `''` |
 | `role` | `text` | défaut `'particulier'` ; `check` : `senior`, `sante`, `particulier` |
 | `statut` | `text` | défaut `'actif'` ; `check` : `actif`, `inactif` |
 | `created_at`, `updated_at` | `timestamptz` | non nul, défaut `now()` |
 
-## 3. Règles RLS (Row Level Security)
+## 3. Contrôles d'accès (qui voit et modifie quoi)
 
-La RLS est activée sur les six tables. Sans règle qui l'autorise, toute opération est refusée. « Admin » signifie ici : l'e-mail contenu dans le jeton (`auth.jwt() ->> 'email'`) est égal à l'adresse de l'administrateur écrite en dur dans le fichier.
+Avec Supabase, ces règles étaient des **règles RLS** dans la base. Elles sont maintenant **dans le serveur** ([data.controller.js](../backend/controllers/data.controller.js), [demande.service.js](../backend/services/demande.service.js), [confidentialite.service.js](../backend/services/confidentialite.service.js)), qui est seul à parler à la base. L'identité vient toujours du jeton vérifié (`req.utilisateur`), jamais d'un identifiant envoyé par le navigateur.
 
-| Table | Règle | Opération | Qui |
+| Table | Opération | Qui | Comment |
 |---|---|---|---|
-| `profiles` | `profiles_select_authenticated` | lecture | **Tout utilisateur connecté, toutes les lignes** |
-| | `profiles_insert_own` | création | L'utilisateur, pour sa propre ligne (`auth.uid() = id`) |
-| | `profiles_update_own` | modification | L'utilisateur, sa propre ligne |
-| | `profiles_update_admin` | modification | Admin, toutes les lignes |
-| `demandes` | `demandes_select_participants` | lecture | Le demandeur ou l'intervenant de la demande |
-| | `demandes_insert_demandeur` | création | Le demandeur (`auth.uid() = demandeur_id`) |
-| | `demandes_update_participants` | modification | Le demandeur **ou** l'intervenant |
-| | `demandes_select_admin` | lecture | Admin |
-| `mises_en_relation` | `mer_select_participants` | lecture | Les deux participants |
-| | `mer_insert_participants` | création | L'un des deux participants |
-| | `mer_update_participants` | modification | L'un des deux participants |
-| | `mer_select_admin` | lecture | Admin |
-| `avis` | `avis_select_anyone` | lecture | Tout le monde, même non connecté |
-| | `avis_insert_own` | création | Utilisateur connecté, en son nom |
-| | `avis_delete_own_or_admin` | suppression | L'auteur ou l'admin |
-| `messages_contact` | `messages_contact_insert_anyone` | création | Tout le monde, même non connecté |
-| | `messages_contact_select_admin` | lecture | Admin |
-| | `messages_contact_update_admin` | modification | Admin |
-| | `messages_contact_delete_admin` | suppression | Admin |
-| `adherents` | `adherents_select_admin` | lecture | Admin |
-| | `adherents_modify_admin` | tout | Admin |
+| `profiles` | lecture | tout utilisateur connecté | téléphone et adresse masqués sans demande acceptée commune ; profils non validés et comptes de démo filtrés |
+| | modification de son profil | l'utilisateur, sa propre ligne | l'identifiant est celui du jeton ; champs autorisés filtrés (`patchProfil`), `verifie` exclu |
+| | modification de tout profil | administrateur | transaction « admin » (permet `verifie`) |
+| `demandes` | lecture | le demandeur ou l'intervenant ; l'administrateur voit tout | condition `demandeur_id = moi or aidant_id = moi` ajoutée à la requête |
+| | création | utilisateur connecté, en son nom | `demandeur_id` = le jeton ; destinataire = intervenant existant (`sante` ou `particulier`), pas soi-même |
+| | changement de statut | le demandeur ou l'intervenant | vérifié dans la transaction ; sinon `404` |
+| `mises_en_relation` | lecture | les deux participants ; l'administrateur voit tout | condition sur les participants |
+| | création | un participant, pour une vraie demande aux mêmes participants | sinon `404` |
+| | changement de statut | un participant | sinon `404` |
+| `avis` | lecture | tout le monde, même non connecté | |
+| | création | utilisateur connecté ayant un profil, en son nom | |
+| | suppression | l'auteur ou l'administrateur | sinon `403` |
+| `messages_contact` | création | tout le monde, même non connecté | |
+| | lecture, marquer lu, suppression | administrateur | sinon `403` |
+| `adherents` | tout | administrateur | middleware `verifierAdmin` sur `/api/adherents` |
+| `utilisateurs` | création / suppression par un tiers | administrateur | `/api/admin/comptes` |
 
-Opérations **sans règle**, donc refusées depuis le navigateur : suppression d'un profil, suppression d'une demande, suppression d'une mission, modification d'un avis.
+**Points d'attention**
 
-### Limites de ces règles
+- Il n'y a plus de « filet » dans la base : **toute nouvelle route doit refaire ces contrôles**. Le seul contrôle restant au niveau de la base est le déclencheur sur `profiles.verifie`.
+- Les deux participants peuvent changer le statut d'une demande (comme avant avec la RLS) : rien n'empêche côté serveur une personne âgée de marquer sa demande « acceptée ». Seule l'interface limite les boutons affichés.
+- Un utilisateur peut modifier son propre `role` ou `abonnement` (champs autorisés par `patchProfil`).
 
-- **Lecture des profils large côté base.** La règle RLS laisse tout compte connecté lire tous les profils (« simplifié pour ce projet »). Depuis novembre 2026, le **serveur** masque le téléphone et l'adresse aux personnes sans demande acceptée commune (voir [05-backend.md](05-backend.md) § 7 bis), et le navigateur n'a plus d'accès direct à la base. Une règle RLS plus fine resterait la protection la plus solide.
-- **Pas de contrôle des transitions de statut.** La règle `demandes_update_participants` laisse les deux participants modifier **toute** la ligne. Rien n'empêche, côté base, une personne âgée d'accepter sa propre demande ou de changer le destinataire. Seule l'interface limite les boutons affichés.
-- **Pas de contrôle du rôle à la création.** `demandes_insert_demandeur` vérifie l'identité, pas que le demandeur est une personne âgée ni que le destinataire est un intervenant.
-- **Un utilisateur peut modifier son propre `role` ou `abonnement`** : `profiles_update_own` n'exclut aucune colonne.
+## 4. Fonctions, déclencheurs, vues
 
-## 4. Fonctions, triggers, vues
+| Objet | Rôle |
+|---|---|
+| Fonction `proteger_verifie()` + déclencheur `profiles_proteger_verifie` | Protège la colonne `profiles.verifie` (voir § 2). |
 
-**Non trouvé dans le code.** `schema.sql` ne définit aucune fonction SQL, aucun trigger, aucune vue. Conséquences : `date_mise_a_jour` est tenu à jour par le code JavaScript, et la création de la mission après acceptation n'est pas garantie par la base.
+Aucune vue. `date_mise_a_jour` et la création de la mission sont faits par le serveur, dans une transaction.
 
 ## 5. Requêtes principales
 
-Toutes passent par le constructeur de requêtes de `@supabase/supabase-js` ; il n'y a pas de SQL écrit à la main dans l'application.
+Toutes les requêtes sont écrites en SQL dans [backend/models/](../backend/models/), avec des **paramètres** (`$1, $2…`) : les valeurs voyagent séparément du texte SQL, l'injection SQL est impossible.
 
-| Fonction | Fichier | Requête |
-|---|---|---|
-| `getUsers` | [store.js](../frontend/src/data/store.js) l. 115 | `from('profiles').select('*')` |
-| `findById` | store.js l. 124 | `from('profiles').select('*').eq('id', id).single()` |
-| `updateCompteAdmin` | store.js l. 136 | `from('profiles').update(patch).eq('id', id).select('id')` |
-| `getDemandes` | store.js l. 209 | `from('demandes').select('*')` |
-| `getDemandesByDemandeur` | store.js l. 218 | `… .eq('demandeur_id', id)` |
-| `getDemandesByAidant` | store.js l. 230 | `… .eq('aidant_id', id)` |
-| `addDemande` | store.js l. 241 | `from('demandes').insert({...}).select().single()` |
-| `updateDemandeStatut` | store.js l. 307 | `from('demandes').update(patch).eq('id', id).select().single()` |
-| `getMisesEnRelation` | store.js l. 353 | `from('mises_en_relation').select('*')` |
-| `getMiseEnRelationByDemande` | store.js l. 362 | `… .eq('demande_id', id).maybeSingle()` |
-| `addMiseEnRelation` | store.js l. 376 | `from('mises_en_relation').insert({...})` |
-| `updateMiseEnRelationStatut` | store.js l. 407 | `from('mises_en_relation').update({...}).eq('id', id)` |
-| `addMessageContact` | store.js l. 440 | `from('messages_contact').insert({...})` |
-| `getMessagesContact` | store.js l. 451 | `… .select('*').order('created_at', { ascending: false })` |
-| `marquerMessageContactLu` | store.js l. 465 | `… .update({ lu: true }).eq('id', id)` |
-| `deleteMessageContact` | store.js l. 476 | `… .delete().eq('id', id).select('id')` |
-| `getAvis` / `addAvis` / `deleteAvis` | store.js l. 491, 505, 517 | lecture triée, insertion, suppression |
-| `chargerProfil` | [auth.js](../frontend/src/stores/auth.js) l. 68 | `from('profiles').select('*').eq('id', authUser.id).single()` |
-| `signup`, `creerProfilDepuisMetadata` | auth.js | `from('profiles').insert({...})` |
-| `updateProfile` | auth.js l. 187 | `from('profiles').update(patch).eq('id', user.id)` |
-| `obtenirAdherents`, `ajouterAdherent`, `modifierAdherent`, `supprimerAdherent` | [models/adherent.model.js](../backend/models/adherent.model.js) | `from('adherents')` : `select`, `insert`, `update`, `delete` |
+| Fonction (modèle) | Requête |
+|---|---|
+| `trouverPourConnexion` (utilisateur) | `select id, email, est_admin, version_jeton, mot_de_passe_hash from utilisateurs where email = $1` |
+| `creerUtilisateur` | `insert into utilisateurs (email, mot_de_passe_hash) values ($1, $2) returning …` |
+| `changerMotDePasse` | `update utilisateurs set mot_de_passe_hash = $2, version_jeton = version_jeton + 1 where id = $1` |
+| `listerProfils` / `trouverProfil` (profil) | `select * from profiles …` |
+| `creerProfil` / `modifierProfil` | `insert` / `update profiles set …` (colonnes prises dans une liste fixe, jamais dans la requête du navigateur) |
+| `listerDemandes` (demande) | `select * from demandes where … (demandeur_id = $n or aidant_id = $n) order by date_creation desc` |
+| `creerDemande` | `insert into demandes (…) values ($1 … $6) returning *` |
+| `modifierStatut` | `update demandes set statut = $2, code_arrivee = coalesce($3, code_arrivee), date_mise_a_jour = now() where id = $1` |
+| `demandesEnRelation` | demandes `acceptee` ou `terminee` de la personne (pour le masquage des coordonnées) |
+| `listerMissions` / `creerMission` / `modifierStatutMission` (mission) | `select` / `insert` / `update mises_en_relation …` |
+| `listerAvis` / `creerAvis` / `supprimerAvis` (avis) | lecture triée, insertion, suppression |
+| `listerMessages` / `creerMessage` / `marquerLu` / `supprimerMessage` (message) | `messages_contact` |
+| `obtenirAdherents` … `supprimerAdherent` (adherent) | `adherents` |
 
 Deux détails utiles :
 
-- **Conversion des noms.** La base utilise `snake_case` (`demandeur_id`), l'application `camelCase` (`demandeurId`). Les fonctions `mapDemande`, `mapMiseEnRelation` et `mapMessageContact` font la conversion.
-- **Suppressions silencieuses.** Une suppression bloquée par la RLS ne renvoie pas d'erreur, juste zéro ligne. `deleteMessageContact`, `deleteAvis` et `updateCompteAdmin` ajoutent donc `.select('id')` et lèvent une erreur si rien ne revient.
+- **Conversion des noms.** La base utilise `snake_case` (`demandeur_id`), l'application `camelCase` (`demandeurId`). Les fonctions `mapDemande`, `mapMiseEnRelation` et `mapMessageContact` de [store.js](../frontend/src/data/store.js) font la conversion côté navigateur.
+- **Colonnes `jsonb`.** Le paquet `pg` transforme un tableau JavaScript en tableau PostgreSQL (`text[]`), pas en JSON : les modèles convertissent eux-mêmes `disponibilites`, `abonnement` et `creneau_souhaite` avec `JSON.stringify`.
 
 ## 6. Écarts avec la conception
 
@@ -207,28 +230,27 @@ Comparaison avec le MCD initial (UTILISATEUR, PERSONNE_AGEE, PERSONNEL_SANTE, PA
 
 | Entité prévue | Ce que fait le code | Écart |
 |---|---|---|
-| UTILISATEUR | `auth.users` (e-mail, mot de passe) + `profiles` (le reste) | Séparée en deux. Pas de champ prénom : un seul champ `nom`. |
+| UTILISATEUR | `utilisateurs` (email, mot de passe haché, admin) + `profiles` (le reste) | Séparée en deux. Pas de champ prénom : un seul champ `nom`. |
 | PERSONNE_AGEE, PERSONNEL_SANTE, PARTICULIER | Une seule table `profiles` avec une colonne `role` | **Pas de tables de spécialisation.** Les champs propres à un rôle (`specialite`, `services`) sont dans la même table et laissés vides pour les autres. |
 | DISPONIBILITE | Colonne `profiles.disponibilites` (`jsonb`) | **Pas de table.** Donc pas de clé étrangère vers un créneau, et aucune contrainte de non-chevauchement en base. |
 | SERVICE | Colonne `profiles.services` (`text[]`) + `demandes.type_service` (`text`) | **Pas de table.** Les valeurs (`soins`, `coursier`, `menage`) sont des chaînes écrites dans le code. Le personnel de santé n'a pas de service enregistré : c'est son `role` qui vaut « soins ». |
 | DEMANDE | Table `demandes` | Présente. Ajouts : `urgence`, `code_arrivee`, statut `terminee`. |
 | MISE_EN_RELATION | Table `mises_en_relation` | Présente. |
 | AVIS_EVALUATION | Table `avis` | **Différente** : texte libre sur le dispositif, sans note et sans lien vers un intervenant ou une mission. |
-| NOTIFICATION | — | **Absente.** Aucune table, aucun code de notification aux utilisateurs. Seul l'administrateur reçoit un e-mail pour les messages de contact. |
-| (non prévu) | Tables `messages_contact` et `adherents` | Ajoutées. |
-| (non prévu) | `profiles.abonnement`, `profiles.actif`, `profiles.adresse` | Ajoutés. |
+| NOTIFICATION | — | **Absente.** Aucune table. Seuls des emails existent : « mot de passe oublié » et alerte SOS à l'administrateur. |
+| (non prévu) | Tables `messages_contact`, `adherents`, `jetons_reinitialisation` | Ajoutées. |
+| (non prévu) | `profiles.abonnement`, `profiles.actif`, `profiles.adresse`, `profiles.verifie` | Ajoutés. |
 
 Écarts fonctionnels liés à la base :
 
-- **Rôle administrateur** : pas de valeur `admin` dans `profiles.role`. L'administrateur est reconnu par son e-mail. Comme `chargerProfil` exige une ligne `profiles`, le compte admin doit quand même avoir un profil avec l'un des trois rôles.
-- **Validation des profils par l'administrateur** : aucune colonne de statut de validation (« en attente », « validé », « refusé »). Un intervenant apparaît dans la recherche dès son inscription.
+- **Rôle administrateur** : pas de valeur `admin` dans `profiles.role` ; l'administrateur est reconnu par `utilisateurs.est_admin` et n'a pas besoin de profil.
 - **Suspension** : `actif` existe mais n'est lu par aucune requête de recherche ni par la connexion.
-- **Base de données** : le cahier des charges annonce MySQL ; le code utilise PostgreSQL via Supabase.
+- **Base de données** : le cahier des charges annonce MySQL ; le code utilise PostgreSQL.
 
 ## À retenir
 
-- Un seul fichier de schéma, à rejouer à la main dans Supabase après chaque changement.
-- Six tables ; `profiles` regroupe les trois types d'utilisateurs, leurs services et leurs disponibilités.
-- La sécurité des données repose sur les règles RLS ; elles vérifient **qui** écrit, pas **ce qui** est écrit.
-- Pas de trigger ni de fonction SQL : la cohérence (statuts, dates, création de la mission) dépend du code JavaScript.
+- Un seul fichier de schéma, [backend/sql/schema.sql](../backend/sql/schema.sql), à rejouer à la main dans phpPgAdmin après chaque changement.
+- Huit tables ; `profiles` regroupe les trois types d'utilisateurs, leurs services et leurs disponibilités ; `utilisateurs` porte la connexion.
+- Les contrôles d'accès sont dans le serveur ; la base protège seulement la colonne `verifie` (déclencheur).
+- Toutes les requêtes sont paramétrées ; les opérations en plusieurs étapes sont faites en transaction.
 - Par rapport au MCD : pas de tables DISPONIBILITE, SERVICE ni NOTIFICATION, et un AVIS sans évaluation.

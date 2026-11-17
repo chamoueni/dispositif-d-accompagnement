@@ -131,7 +131,8 @@ export const FORMULES = [
 // ---------------------------------------------------------------------------
 
 // Renvoie tous les profils (utilisé par la page Recherche pour filtrer les
-// prestataires). La RLS limite déjà ça aux utilisateurs connectés.
+// prestataires). Le serveur la réserve aux utilisateurs connectés et masque
+// les coordonnées sans mise en relation (backend/controllers/data.controller.js).
 export async function getUsers() {
   try {
     return await appelerDonnees('profiles.list')
@@ -150,7 +151,7 @@ export async function findById(id) {
   }
 }
 
-// Réservé à l'admin (policy RLS "profiles_update_admin") : modifie n'importe
+// Réservé à l'admin (vérifié par le serveur, action profiles.updateAdmin) : modifie n'importe
 // quel profil depuis l'espace admin, contrairement à updateProfile() dans
 // stores/auth.js qui ne touche qu'au profil de l'utilisateur connecté.
 export async function updateCompteAdmin(id, patch) {
@@ -330,8 +331,8 @@ export async function addMessageContact(payload) {
   await appelerDonnees('contact.create', payload)
 }
 
-// Réservé à l'admin : la RLS renverrait de toute façon une liste vide pour
-// n'importe qui d'autre, mais autant ne l'appeler que depuis la page Admin.
+// Réservé à l'admin : le serveur répond 403 à n'importe qui d'autre, autant
+// ne l'appeler que depuis la page Admin.
 export async function getMessagesContact() {
   try {
     return (await appelerDonnees('messages.list')).map(mapMessageContact)
@@ -341,7 +342,7 @@ export async function getMessagesContact() {
   }
 }
 
-// Réservé à l'admin ("messages_contact_update_admin" en RLS) : bouton
+// Réservé à l'admin (vérifié par le serveur) : bouton
 // "Marquer lu" de l'espace admin.
 export async function marquerMessageContactLu(id) {
   await appelerDonnees('messages.markRead', { id })
@@ -359,7 +360,7 @@ export async function deleteMessageContact(id) {
 // AVIS (témoignages postés par les utilisateurs, page "Pour qui")
 // ---------------------------------------------------------------------------
 
-// Page publique : accessible même sans connexion (RLS "avis_select_anyone").
+// Page publique : accessible même sans connexion (action avis.list ouverte à tous).
 export async function getAvis() {
   try {
     return await appelerDonnees('avis.list')
@@ -369,15 +370,14 @@ export async function getAvis() {
   }
 }
 
-// payload attendu : { userId, nom, texte }. Réservé aux utilisateurs connectés
-// (RLS "avis_insert_own" vérifie que userId correspond bien à l'appelant).
+// payload attendu : { userId, nom, texte }. Réservé aux utilisateurs connectés :
+// le serveur ne garde que le texte, l'auteur et le nom viennent du jeton et du profil.
 export async function addAvis(payload) {
   await appelerDonnees('avis.create', payload)
 }
 
-// L'auteur (ou l'admin) peut retirer son propre avis. Même garde-fou que
-// deleteMessageContact() : un delete() bloqué par la RLS ne renvoie pas
-// d'erreur, juste 0 ligne affectée, donc on le détecte nous-mêmes.
+// L'auteur (ou l'admin) peut retirer son propre avis : le serveur le vérifie
+// et répond 403 sinon, ce qui affiche une erreur au lieu d'un faux succès.
 export async function deleteAvis(id) {
   await appelerDonnees('avis.delete', { id })
 }

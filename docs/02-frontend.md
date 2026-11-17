@@ -93,18 +93,19 @@ Trois préférences sont conservées dans `localStorage` : `theme`, `dispositif.
 
 ## 6. Appels aux données et gestion des erreurs
 
-Les pages n'écrivent pas de requête Supabase elles-mêmes (seule exception : `ReinitialiserMotDePasse.vue`, qui lit la session). Elles passent par :
+Les pages n'appellent jamais l'API elles-mêmes. Elles passent par :
 
 - [frontend/src/data/store.js](../frontend/src/data/store.js) pour les données métier ;
 - [frontend/src/stores/auth.js](../frontend/src/stores/auth.js) pour le compte ;
-- `fetch` vers Express dans trois endroits (voir [05-backend.md](05-backend.md)).
+- [frontend/src/stores/adherents.js](../frontend/src/stores/adherents.js) pour les adhérents ;
+- tous ces fichiers appellent `apiRequest` de [frontend/src/services/api.js](../frontend/src/services/api.js) (voir [05-backend.md](05-backend.md)).
 
 Deux conventions à connaître dans `store.js` :
 
 - **Les fonctions de lecture ne lèvent pas d'erreur.** En cas d'échec, elles écrivent dans la console et renvoient une liste vide ou `null` (`getUsers`, `getDemandes`, `findById`…). Conséquence : une panne de lecture ressemble à « aucun résultat » pour l'utilisateur.
 - **Les fonctions d'écriture lèvent une erreur** (`throw new Error(...)`) que la page doit attraper.
 
-Les messages d'erreur de Supabase, en anglais, sont traduits par `messageErreurAuth` et `messageErreurProfil` dans [auth.js](../frontend/src/stores/auth.js).
+Les messages d'erreur viennent du serveur, déjà en français (`{ message }`) ; `messageErreurProfil` dans [auth.js](../frontend/src/stores/auth.js) en adapte quelques-uns.
 
 Point faible repéré : dans [MesDemandes.vue](../frontend/src/pages/MesDemandes.vue) et [MesAccompagnements.vue](../frontend/src/pages/MesAccompagnements.vue), les fonctions `accepter`, `refuser`, `annuler`, `terminer` et `annulerMission` ont un `try … finally` **sans `catch`**. Si l'écriture échoue, aucun message n'est affiché.
 
@@ -154,7 +155,7 @@ Page statique : trois engagements (constante `VALEURS`). Composants : `BackLink`
 - **Données** : `getUsers()` appelé par `lancerRecherche()` à la fin de l'étape 4.
 - **Actions** : `suivant`, `precedent`, `modifierReponses`, `recommencer`, filtres sur les résultats.
 - **Déroulé** : l'utilisateur répond → `peutContinuer` active le bouton → étape 4 validée → chargement des profils → `resultats` filtre par type, commune et, en option, par jour disponible (`jourDemande`).
-- **À savoir** : sur les 7 types d'aide de `TYPES_AIDE`, seuls 3 sont marqués `disponible: true` (santé, courses, ménage). La page est publique, mais `getUsers()` renvoie une liste vide à un visiteur non connecté (règle RLS) : il ne verra donc aucun résultat.
+- **À savoir** : sur les 7 types d'aide de `TYPES_AIDE`, seuls 3 sont marqués `disponible: true` (santé, courses, ménage). La page est publique, mais le serveur refuse la liste des profils à un visiteur non connecté : `getUsers()` renvoie une liste vide, il ne verra donc aucun résultat.
 
 ### Inscription — `/inscription` — [Inscription.vue](../frontend/src/pages/Inscription.vue)
 
@@ -174,7 +175,7 @@ Page statique : trois engagements (constante `VALEURS`). Composants : `BackLink`
 
 ### Réinitialiser le mot de passe — `/reinitialiser-mot-de-passe` — [ReinitialiserMotDePasse.vue](../frontend/src/pages/ReinitialiserMotDePasse.vue)
 
-Ouverte depuis le lien reçu par e-mail. Au montage, elle vérifie qu'une session existe (`supabase.auth.getSession()`) et écoute l'événement `PASSWORD_RECOVERY`. `handleSubmit` contrôle la longueur et la confirmation, appelle `changerMotDePasse`, puis `logout`.
+Ouverte depuis le lien reçu par email (`…/reinitialiser-mot-de-passe#type=recovery&access_token=…`). Au montage, elle lit le jeton dans l'adresse, l'efface de la barre d'adresse et vérifie qu'il est valable (`verifierLienReinitialisation`). `handleSubmit` contrôle la longueur et la confirmation, puis appelle `reinitialiserMotDePasse(jeton, motDePasse)`.
 
 ### Mon compte — `/mon-compte` — [MonCompte.vue](../frontend/src/pages/MonCompte.vue)
 
@@ -260,5 +261,5 @@ Liste des messages de contact. Actions : `marquerLu`, `supprimer`. Le bouton « 
 - Une seule page HTML ; le routeur change le composant affiché dans `<router-view>`.
 - Les droits d'accès par page sont dans `meta` des routes et appliqués par `router.beforeEach`. Le contrôle du rôle est fait dans les pages concernées.
 - L'état partagé vient soit de modules réactifs (`auth.js`, `useTheme.js`…), soit de deux stores Pinia (admin, adhérents).
-- Les pages passent toujours par `data/store.js` ou `stores/auth.js` pour parler à Supabase.
+- Les pages passent toujours par `data/store.js`, `stores/auth.js` ou `stores/adherents.js`, qui appellent l'API par `services/api.js`.
 - Les lectures qui échouent renvoient une liste vide sans message : penser à regarder la console.

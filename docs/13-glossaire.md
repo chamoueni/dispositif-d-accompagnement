@@ -25,7 +25,7 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | Terme | Explication |
 |---|---|
 | **Frontend** | La partie qui s'exécute dans le navigateur : ce que l'utilisateur voit. Ici, `frontend/src/`. |
-| **Backend** | La partie qui s'exécute sur un serveur. Ici, `backend/`, plus Supabase. |
+| **Backend** | La partie qui s'exécute sur un serveur. Ici, `backend/` (l'API Express), avec sa base PostgreSQL. |
 | **API** | Ensemble d'adresses qu'un programme appelle pour demander ou envoyer des données. |
 | **API REST** | API organisée autour de ressources et de verbes HTTP : `GET` (lire), `POST` (créer), `PUT` (modifier), `DELETE` (supprimer). Exemple : `/api/adherents`. |
 | **Route** | Deux sens dans ce projet. Côté frontend : une adresse de page (`/profil`). Côté backend : une adresse d'API (`GET /api/sante`). |
@@ -94,10 +94,12 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 |---|---|---|
 | **Node.js** | Programme qui exécute du JavaScript hors du navigateur | `node backend/app.js` |
 | **Express** | Bibliothèque pour créer un serveur web en Node | `backend/app.js` |
-| **Middleware** | Fonction qui s'exécute avant la route (contrôle, transformation) | `verifierAdmin`, `cors()` |
-| **CORS** | Règle des navigateurs qui limite les appels d'un site vers un autre ; le serveur dit qui il accepte | `app.use(cors())` |
-| **Supabase** | Service en ligne qui fournit une base PostgreSQL, l'authentification et des fonctions | |
-| **BaaS** | « Backend as a Service » : un backend prêt à l'emploi, comme Supabase | |
+| **Middleware** | Fonction qui s'exécute avant la route (contrôle, transformation) | `verifierAdmin`, `requireAuth`, `exigerRole` |
+| **CORS** | Règle des navigateurs qui limite les appels d'un site vers un autre ; le serveur dit qui il accepte | `middleware/securite.js` |
+| **alwaysdata** | Hébergeur français du projet : sites, base PostgreSQL, emails | `moustakim.alwaysdata.net/fil` |
+| **phpPgAdmin** | Outil web d'alwaysdata pour gérer la base PostgreSQL (exécuter du SQL, voir les tables) | |
+| **`pg`** | Paquet Node qui se connecte à PostgreSQL | `backend/db.js` |
+| **Supabase** | Ancien service utilisé avant novembre 2026 (base, comptes) ; remplacé par alwaysdata | dossier `supabase/` |
 | **PostgreSQL** | Système de base de données relationnelle | |
 | **Table / colonne / ligne** | Tableau de données / un champ / un enregistrement | `profiles` |
 | **Clé primaire** | Colonne qui identifie une ligne de façon unique | `id` |
@@ -109,17 +111,11 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **`jsonb`** | Type PostgreSQL qui stocke du JSON | `disponibilites` |
 | **`text[]`** | Type PostgreSQL : liste de textes | `services` |
 | **`timestamptz`** | Date et heure avec fuseau horaire | `created_at` |
-| **RLS** (Row Level Security) | Règles de la base qui décident, ligne par ligne, qui peut lire ou écrire | `schema.sql` |
-| **Policy** | Une règle RLS | `profiles_update_own` |
-| **`auth.uid()`** | Dans une règle : l'identifiant de l'utilisateur qui fait la requête | |
-| **Clé « anon »** | Clé publique de Supabase, utilisée dans le navigateur, limitée par la RLS | `VITE_SUPABASE_ANON_KEY` |
-| **Clé « service role »** | Clé d'administration qui **contourne** la RLS ; uniquement côté serveur | `SUPABASE_SERVICE_ROLE_KEY` |
-| **Fonction Edge** | Petit programme hébergé par Supabase, exécuté par Deno | `notify-contact-message` |
-| **Deno** | Environnement d'exécution JavaScript/TypeScript, différent de Node | |
-| **Webhook** | Appel automatique d'une adresse quand un événement se produit | insertion dans `messages_contact` |
-| **SMTP** | Protocole d'envoi d'e-mails | fonction Edge |
-| **Migration** | Fichier qui décrit une évolution du schéma ; le projet n'en a pas, seulement `schema.sql` | |
-| **Transaction** | Groupe d'écritures qui réussissent ou échouent ensemble ; non utilisé à l'acceptation d'une demande | |
+| **Requête paramétrée** | Requête SQL où les valeurs sont envoyées à part (`$1, $2…`) : protège de l'injection SQL | `backend/models/` |
+| **Déclencheur (trigger)** | Fonction de la base exécutée automatiquement avant ou après une écriture | `profiles_proteger_verifie` |
+| **RLS** (Row Level Security) | Règles de la base qui décident, ligne par ligne, qui peut lire ou écrire ; utilisées avec Supabase, remplacées par des contrôles dans le serveur | ancien `supabase/schema.sql` |
+| **SMTP** | Protocole d'envoi d'emails | `email.service.js` |
+| **Transaction** | Groupe d'écritures qui réussissent ou échouent ensemble | acceptation d'une demande, inscription |
 
 ## Authentification et sécurité
 
@@ -130,7 +126,9 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **Session** | Période pendant laquelle l'utilisateur reste connecté. |
 | **JWT** (jeton) | Texte signé remis à la connexion, joint aux requêtes pour prouver l'identité. |
 | **`Bearer`** | Façon d'envoyer un jeton : en-tête `Authorization: Bearer <jeton>`. |
-| **Hachage** | Transformation irréversible d'un mot de passe ; fait ici par Supabase. |
+| **Hachage** | Transformation irréversible d'un mot de passe ; fait ici avec bcrypt (`bcryptjs`). |
+| **bcrypt** | Algorithme de hachage de mots de passe volontairement lent, avec un sel aléatoire. |
+| **Cookie httpOnly** | Cookie que le JavaScript de la page ne peut pas lire ; ici, il contient le jeton de connexion. |
 | **XSS** | Injection de code dans une page via un texte non échappé. |
 | **CSRF** | Requête déclenchée à l'insu de l'utilisateur depuis un autre site. |
 | **Injection SQL** | Détournement d'une requête construite par collage de texte. |
@@ -147,7 +145,9 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 | **`.gitignore`** | Liste des fichiers que Git ne doit pas suivre (`.env`, `node_modules`, `dist`). |
 | **GitHub Actions** | Tâches automatiques lancées par GitHub. |
 | **Cron** | Planification d'une tâche à intervalle régulier. |
-| **Render** | Hébergeur du projet. |
+| **SSH** | Connexion sécurisée à un terminal sur le serveur (`ssh moustakim@ssh-moustakim.alwaysdata.net`). |
+| **scp** | Copie de fichiers vers le serveur par SSH (envoi du dossier `dist/`). |
+| **Render** | Ancien hébergeur du projet (suspendu en novembre 2026). |
 | **ESLint** | Outil qui repère les erreurs et incohérences de code. |
 | **npm** | Gestionnaire de paquets de Node (`npm install`, `npm run …`). |
 
@@ -155,4 +155,4 @@ Les termes techniques rencontrés dans le projet, expliqués simplement. Chaque 
 
 - Le code emploie plusieurs mots pour une même notion : aidant = intervenant = prestataire ; mise en relation = mission = accompagnement ; `senior` = personne âgée.
 - « Route » désigne une page côté frontend et une adresse d'API côté backend.
-- RLS, clé « anon » et clé « service role » sont les trois notions à maîtriser pour comprendre la sécurité du projet.
+- Jeton JWT dans un cookie httpOnly, hachage bcrypt et requêtes paramétrées sont les trois notions à maîtriser pour comprendre la sécurité du projet.

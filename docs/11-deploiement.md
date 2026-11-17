@@ -1,30 +1,29 @@
 # 11 — Lancement et déploiement
 
-Ce document sépare ce qui est **écrit dans le dépôt** de ce qui se règle **ailleurs** (tableaux de bord Render, Supabase, GitHub). Pour ce second groupe, le dépôt ne permet pas de confirmer l'état réel : c'est signalé par « Non trouvé ».
+Ce document résume comment lancer le projet en local et comment il est mis en ligne chez **alwaysdata**. Le pas-à-pas complet de la première mise en ligne (création de la base, transfert depuis Supabase, création des sites) est dans [../DEPLOIEMENT.md](../DEPLOIEMENT.md). Les réglages faits dans les interfaces (alwaysdata, GitHub) ne sont pas dans le dépôt : ils sont décrits ici tels qu'ils ont été faits en novembre 2026.
 
 ## 1. Lancer le projet en local
 
-Prérequis : Node.js et npm. La version de Node n'est pas imposée par le projet.
+Prérequis : Node.js 20 ou plus (`"engines": { "node": ">=20" }` dans [package.json](../package.json)) et npm.
 
 ```bash
 npm install
 copy .env.example .env       # sous Windows ; "cp" sous macOS/Linux
-# remplir .env (voir § 2)
+# remplir .env (voir § 2), au minimum DATABASE_URL et JWT_SECRET
 npm run dev:full
 ```
 
 | Commande | Ce qu'elle lance | Adresse |
 |---|---|---|
-| `npm run dev` | Vite (frontend seul) | `http://localhost:5173` (port par défaut de Vite, indiqué dans le README) |
+| `npm run dev` | Vite (frontend seul) | `http://localhost:5173` |
 | `npm run server` | Express (`node backend/app.js`) | `http://localhost:3001` (ou `PORT`) |
 | `npm run dev:full` | Les deux, avec `concurrently` | — |
-| `npm run build` | Construit le site dans `dist/` | — |
+| `npm run build` | Construit le site dans `dist/` (+ pages SEO, sitemap, `.htaccess`) | — |
+| `npm start` | Lance le serveur (API, et site construit si `SERVIR_FRONT` n'est pas `false`) | `http://localhost:3001` |
 | `npm run preview` | Sert le contenu de `dist/` pour vérification | — |
 | `npm run lint` | ESLint sur tout le projet | — |
 
-En local, le frontend appelle `/api/...` et Vite redirige vers Express ([vite.config.js](../frontend/vite.config.js)). `VITE_API_URL` peut donc rester vide.
-
-Sans Express, le site ne fonctionne pas : la connexion et toutes les données passent par lui.
+En local, le frontend appelle `/api/...` et Vite redirige vers Express ([vite.config.js](../frontend/vite.config.js)). La base utilisée est celle d'alwaysdata (`DATABASE_URL`). Sans réglage SMTP, les emails (lien de réinitialisation…) s'affichent dans le terminal au lieu d'être envoyés.
 
 ## 2. Variables d'environnement
 
@@ -32,103 +31,61 @@ Les noms viennent de [.env.example](../.env.example). **Ne jamais écrire leurs 
 
 | Nom | Côté | Lue dans | Rôle |
 |---|---|---|---|
-| `VITE_SUPABASE_URL` | Frontend | `frontend/src/lib/supabaseClient.js` | Adresse du projet Supabase |
-| `VITE_SUPABASE_ANON_KEY` | Frontend | `frontend/src/lib/supabaseClient.js` | Clé publique « anon » |
-| `VITE_API_URL` | Frontend | `frontend/src/lib/apiBase.js` | **Vide** en local comme en production : le site appelle `/api/...` sur sa propre adresse (proxy Vite en local, règle de réécriture Render en ligne) |
-| `SUPABASE_URL` | Backend | `backend/config/supabase.js` | Adresse du projet Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Backend | `backend/config/supabase.js` | Clé d'administration. **Jamais de préfixe `VITE_`.** |
-| `PORT` | Backend | `backend/app.js` | Port d'écoute (fourni par l'hébergeur) |
+| `DATABASE_URL` | Backend | `backend/db.js` | Adresse de la base PostgreSQL (utilisateur, mot de passe, hôte, base) |
+| `DATABASE_SSL` | Backend | `backend/db.js` | `true` seulement si la base exige une connexion chiffrée |
+| `JWT_SECRET` | Backend | `backend/services/jeton.service.js` | Clé qui signe les jetons de connexion (32 caractères minimum, différente en local et en production) |
+| `AUTH_REMEMBER_DAYS`, `AUTH_SESSION_HOURS` | Backend | `jeton.service.js` | Durée de connexion (30 jours / 12 heures par défaut) |
+| `SITE_URL` | Backend | `backend/app.js`, `config/origines.js`, `email.service.js` | Adresse publique du site ; le sous-dossier (`/fil`) en est déduit |
+| `NODE_ENV` | Backend | plusieurs fichiers | `production` en ligne (cookies HTTPS uniquement, proxy de confiance) |
+| `SERVIR_FRONT` | Backend | `backend/app.js` | `false` en ligne : le serveur ne sert que l'API |
+| `PORT`, `IP` | Backend | `backend/app.js` | Fournis par alwaysdata ; 3001 en local |
+| `CORS_ORIGINS` | Backend | `config/origines.js` | Autres adresses autorisées (rarement utile) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Backend | `email.service.js` | Serveur d'envoi d'emails (alwaysdata) |
+| `EMAIL_EXPEDITEUR` | Backend | `email.service.js` | Expéditeur affiché (par défaut « Au Fil des Âges » + `SMTP_USER`) |
+| `EMAIL_ADMIN` | Backend | `email.service.js` | Adresse qui reçoit les alertes SOS |
+| `VITE_SITE_URL` | Frontend (build) | `frontend/vite.config.js`, `router/index.js`, `scripts/generate-seo-pages.js` | Adresse publique ; fixe le sous-dossier du build et les URL canoniques |
 
 Deux règles à retenir :
 
-- Une variable préfixée `VITE_` est **incluse dans le JavaScript envoyé au navigateur**. Elle est lue au moment de `npm run build`, pas au démarrage : après l'avoir changée, il faut reconstruire le site.
-- Les variables du backend sont lues au démarrage du serveur : après un changement, il faut le redémarrer.
-
-Autres secrets, hors `.env` :
-
-| Nom | Où le régler | Utilisé par |
-|---|---|---|
-| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | Secrets des fonctions Edge, dans Supabase | `supabase/functions/notify-contact-message/index.ts` |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Secrets du dépôt GitHub | `.github/workflows/mlezi-gardien.yml` |
+- Une variable préfixée `VITE_` est **incluse dans le JavaScript envoyé au navigateur**. Elle est lue au moment de `npm run build` : après l'avoir changée, il faut reconstruire et renvoyer le site.
+- Les variables du backend sont lues au démarrage du serveur : après un changement, alwaysdata redémarre le site API.
 
 ## 3. Construction (build)
 
-`npm run build` exécute `vite build` et produit le dossier `dist/` : un `index.html`, et un fichier JavaScript par page grâce au chargement à la demande. `dist/` est ignoré par Git.
+`npm run build` exécute `vite build` puis `frontend/scripts/generate-seo-pages.js` et produit le dossier `dist/` : `index.html`, un fichier JavaScript par page (chargement à la demande), les pages publiques pré-générées pour les moteurs de recherche (`services/index.html`…), `sitemap.xml`, `robots.txt`, `404.html` et **`.htaccess`** (règles d'Apache pour le site front). `dist/` est ignoré par Git.
 
-Le backend n'a pas d'étape de construction : il s'exécute tel quel avec Node.
+Le build se fait **sur le PC** : la mémoire de l'offre gratuite d'alwaysdata ne suffit pas pour Vite. Le backend n'a pas d'étape de construction.
 
-## 4. Hébergement
+## 4. Hébergement chez alwaysdata
 
-Le propriétaire indique que le backend est sur **Render**. Voici ce que le dépôt confirme et ce qu'il ne confirme pas.
-
-| Élément | Constat dans le dépôt |
+| Élément | Réglage |
 |---|---|
-| Fichier `render.yaml` | **Non trouvé** |
-| Deux services distincts (site statique + API) | Suggéré par les commentaires de `.env.example` et de `frontend/src/lib/apiBase.js` (« service Render séparé du site statique ») |
-| Adresse du site déployé | **Non trouvée** |
-| Adresse de l'API déployée | **Non trouvée** (l'exemple de `.env.example` est fictif) |
-| Commandes de build et de démarrage réglées chez Render | **Non trouvées** ; elles devraient correspondre aux scripts du § 1 |
-| Nom de domaine personnalisé | **Non trouvé** |
-| Version de Node utilisée en production | **Non trouvée** |
+| Compte | `moustakim` (offre gratuite), adresse imposée `moustakim.alwaysdata.net` |
+| Site front | type **PHP** (Apache, aucun PHP utilisé), adresse `moustakim.alwaysdata.net/fil`, répertoire racine `aufildesages-front/dist` |
+| Site back | type **Node.js**, adresse `moustakim.alwaysdata.net/fil/api`, commande `node backend/app.js`, répertoire de travail `aufildesages` |
+| Base | PostgreSQL 17, `postgresql-moustakim.alwaysdata.net`, base `moustakim_aufildesages`, utilisateur `moustakim_app` |
+| Emails | adresse `moustakim@alwaysdata.net`, SMTP `smtp-moustakim.alwaysdata.net:587` |
+| Autre site du compte | `moustakim.alwaysdata.net` (un autre projet), non touché |
 
-### Réglages attendus, déduits du code
+Pourquoi un **sous-dossier** : sans nom de domaine à lui, le compte gratuit n'accepte que `moustakim.alwaysdata.net`, déjà utilisée. Le code déduit le sous-dossier de l'adresse (`VITE_SITE_URL` au build, `SITE_URL` sur le serveur). alwaysdata envoie `/fil/api/...` au site back (adresse la plus précise) et le reste de `/fil/...` au site front ; il transmet l'adresse complète au serveur Node.js.
 
-**Frontend (site statique)**
+**Sur le serveur, `npm install --omit=dev`** : un `npm install` complet est arrêté faute de mémoire (`Killed`). Le serveur n'a besoin que des paquets d'exécution.
 
-- Commande de construction : `npm install && npm run build`.
-- Dossier publié : `dist`.
-- Variables à définir avant la construction : `VITE_SITE_URL` et `SITE_URL` (adresse publique du site). `VITE_API_URL` reste vide.
-- **Règle de réécriture à placer en premier** (Redirects/Rewrites) : `/api/*` → `https://dispositif-d-accompagnement-ulzn.onrender.com/api/*`, action *Rewrite*. Le navigateur parle ainsi à l’API par l’adresse du site : les cookies de session restent « du même site » (deux sous-domaines `onrender.com` comptent comme deux sites différents, et les navigateurs bloquent de plus en plus les cookies tiers).
-- **Règle de réécriture indispensable** : toutes les adresses doivent renvoyer `index.html`. Le routeur utilise `createWebHistory()` ; sans cette règle, recharger `/mon-compte` donne une erreur 404. Un commentaire de `frontend/src/composables/useSpeech.js` indique que l'hébergement renvoie bien `index.html` pour un chemin inconnu.
-
-**Backend (service web)**
-
-- Commande de démarrage (**Start Command** sur Render) : `npm start`, qui lance `node backend/app.js`. ⚠️ Ne pas écrire de chemin de fichier en dur dans Render : après la réorganisation en `frontend/` + `backend/` (novembre 2026), l'ancienne commande `node server/index.js` faisait échouer chaque déploiement, Render gardant l'ancienne version en ligne sans le signaler aux visiteurs.
-- Contrôle de santé conseillé (**Health Check Path**) : `/api/sante`.
-- Installation : `npm install` à la racine, puisque le `package.json` est commun.
-- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_SESSION_SECRET`, `SITE_URL`, `NODE_ENV=production` (détail dans [.env.example](../.env.example)). `PORT` est en général fourni par l'hébergeur.
-- Un commentaire de `SosButton.vue` mentionne la mise en veille du serveur après inactivité sur l'offre gratuite ; c'est la raison du délai de 5 secondes de l'assistant.
-
-**Point de vigilance.** Toutes les données (adhérents compris) sont dans Supabase : rien n'est écrit sur le disque de Render, qui est effacé à chaque redéploiement. Les anciennes variables `MONGODB_URI` et `MONGODB_DB` ne servent plus et peuvent être supprimées de Render.
-
-## 4 bis. Maintenance automatique : Mlezi
+## 5. Maintenance automatique : Mlezi
 
 [.github/workflows/mlezi-gardien.yml](../.github/workflows/mlezi-gardien.yml), gratuit (GitHub Actions, dépôt public) :
 
 | Quand | Action | Effet |
 |---|---|---|
-| Toutes les 10 min (minutes 07, 17, 27…), 7 h – 23 h (Mayotte) | appelle `GET /api/sante` | réveille l’API Render (endormie après 15 min sans visite) et lit la table `avis` dans Supabase (évite la pause du projet gratuit) |
-| Chaque jour vers 8 h 23 | contrôle l’API, la règle de réécriture, les pages et Supabase | en cas de panne : ticket GitHub étiqueté `mlezi` (email au propriétaire) ; ticket fermé automatiquement quand tout remarche |
+| Toutes les heures (minute 17), 7 h – 22 h (Mayotte) | appelle `GET /fil/api/sante` | vérification légère de l'API et de la base |
+| Chaque jour vers 8 h 23 | contrôle l'API + base, l'accueil, la connexion et la page Services | en cas de panne : ticket GitHub étiqueté `mlezi` (email au propriétaire) ; ticket fermé automatiquement quand tout remarche |
 | À la demande | onglet *Actions* › Mlezi › *Run workflow* | contrôle complet immédiat |
 
-L’ancien `keep-supabase-alive.yml` (un appel tous les 3 jours) a été remplacé : il n’avait pas empêché la pause de Supabase mi-octobre 2026.
-
-Les horaires sont volontairement décalés sur des minutes « calmes » : GitHub retarde, voire saute, les tâches programmées aux minutes rondes (:00, :10…). L’état de Mlezi est aussi visible dans l’espace admin (carte « Santé du site »).
-
-**Réveil de secours dans Supabase.** GitHub n’ayant déclenché aucune ronde programmée de Mlezi le jour de sa mise en place, le réveil est aussi planifié dans la base elle-même : [supabase/migrations/20261109_reveil_pg_cron.sql](../supabase/migrations/20261109_reveil_pg_cron.sql) (extensions `pg_cron` et `pg_net`) appelle `GET /api/sante` toutes les 10 minutes. Comme pour les autres scripts SQL, il faut l’exécuter une fois dans l’éditeur SQL de Supabase. Vérification : `select * from cron.job;` puis, après 10 minutes, `select status_code from net._http_response order by created desc limit 5;` (codes 200 attendus).
-
-## 5. Supabase
-
-Rien ne se déploie automatiquement depuis le dépôt.
-
-1. **Schéma** : copier [supabase/schema.sql](../supabase/schema.sql) dans l'éditeur SQL de Supabase et l'exécuter. À refaire après chaque modification du fichier.
-2. **Authentification** : l'en-tête de `schema.sql` recommande d'activer « Confirm email » (Authentication › Providers › Email). L'état réel : non trouvé dans le dépôt.
-3. **Adresse de retour du mot de passe oublié** : le code envoie `redirectTo: <origine du site>/reinitialiser-mot-de-passe`. Cette adresse doit être acceptée par le projet Supabase. Réglage : non trouvé dans le dépôt.
-4. **Compte administrateur** : le compte dont l'e-mail correspond à `ADMIN_EMAIL` doit exister et posséder une ligne dans `profiles`. Aucun script ne le crée.
-5. **Fonction Edge** : le code est dans `supabase/functions/notify-contact-message/`. La commande de déploiement et le fichier de configuration Supabase (`config.toml`) : **non trouvés**. Il faut aussi définir les deux secrets Gmail.
-6. **Database Webhook** : déclenche la fonction à chaque insertion dans `messages_contact`. Décrit en commentaire, configuré dans le tableau de bord : non trouvé dans le dépôt.
+alwaysdata n'endort pas les sites : l'ancien « réveil » toutes les 10 minutes (pour Render et Supabase) n'est plus utile. L'état de Mlezi est aussi visible dans l'espace admin (carte « Santé du site »).
 
 ## 6. Envoyer une mise à jour en production
 
-Ce que le dépôt montre :
-
-- Le code est sur GitHub : `https://github.com/chamoueni/dispositif-d-accompagnement` (dépôt distant `origin`).
-- La branche principale est `main`.
-- Le seul flux GitHub Actions présent est la tâche de maintien en activité. **Il n'y a pas de flux de déploiement ni de vérification automatique** (lint, build) dans le dépôt.
-
-Le déclenchement d'un déploiement Render à chaque `git push` : **non trouvé dans le dépôt** (c'est un réglage du service Render).
-
-Marche à suivre prudente :
+Le code est sur GitHub : `https://github.com/chamoueni/dispositif-d-accompagnement`, branche `main`. Rien ne se déploie automatiquement.
 
 ```bash
 npm run lint
@@ -140,27 +97,34 @@ git push origin main
 
 Puis, selon ce qui a changé :
 
-| Modification | Action supplémentaire |
+| Modification | Action |
 |---|---|
-| `supabase/schema.sql` | Rejouer le SQL dans Supabase |
-| Fonction Edge | La redéployer chez Supabase |
-| Variable `VITE_…` | Reconstruire le frontend |
-| Variable du backend | Redémarrer le service |
-| `ADMIN_EMAIL` | Modifier les 4 fichiers concernés **et** rejouer le SQL |
+| Code du backend | En SSH : `cd aufildesages && git pull && npm install --omit=dev --no-audit --no-fund`, puis **Web › Sites › (site API) › Redémarrer** |
+| Code du frontend | Sur le PC : `$env:VITE_SITE_URL = "https://moustakim.alwaysdata.net/fil"; npm run build`, puis `scp -r dist moustakim@ssh-moustakim.alwaysdata.net:aufildesages-front/` |
+| `backend/sql/schema.sql` | Rejouer le SQL dans phpPgAdmin |
+| Variable du backend | Modifier le champ « Environnement » du site API (redémarrage automatique) |
+| Adresse du site | Changer l'adresse des deux sites, `SITE_URL` du site API, puis reconstruire et renvoyer le front |
 
 ## 7. Vérifications après déploiement
 
-- La page d'accueil s'affiche, et recharger `/services` ne donne pas d'erreur 404.
-- Connexion avec un compte de test.
-- Dans l'espace admin, la page Adhérents se charge (preuve que la règle `/api/*` atteint le backend).
-- `https://dispositif-d-accompagnement.onrender.com/api/sante` renvoie `{"ok":true,...}` (et non une page HTML).
-- L'assistant SOS répond (preuve que la clé d'IA est définie) ; sinon il renvoie des réponses automatiques.
-- Accepter une demande de test affiche un code à 4 chiffres (preuve que la colonne `code_arrivee` existe).
+- `https://moustakim.alwaysdata.net/fil/api/sante` renvoie `{"ok":true,"api":"ok","base":"ok",...}`.
+- La page d'accueil s'affiche, et recharger `/fil/mon-compte` ne donne pas d'erreur 404.
+- Connexion avec un compte de démo ; connexion admin sur `/fil/admin/connexion`.
+- « Mot de passe oublié » sur un compte de démo : l'email arrive (alwaysdata › Emails › Historique montre chaque envoi).
+- Accepter une demande de test affiche un code à 4 chiffres.
+
+## 8. Anciens services (avant novembre 2026)
+
+| Service | État |
+|---|---|
+| Render (site statique + API) | **Suspendu** (17/11/2026) ; à supprimer après quelques jours sans problème |
+| Supabase (base + comptes) | **En pause** (17/11/2026) ; données transférées et sauvegardées hors du dépôt ; à supprimer plus tard |
+| Dossier `supabase/` du dépôt | Conservé comme référence historique |
 
 ## À retenir
 
-- En local : `npm install`, créer `.env`, `npm run dev:full`.
-- Trois variables `VITE_…` pour le frontend, trois variables pour le backend ; les valeurs ne vont jamais dans Git.
-- Le dépôt ne contient aucun fichier de configuration Render : les réglages sont dans le tableau de bord.
-- Le schéma SQL, la fonction Edge et le webhook se mettent à jour à la main dans Supabase.
-- Le site statique a besoin d'une règle qui renvoie toutes les adresses vers `index.html`.
+- En local : `npm install`, créer `.env` (`DATABASE_URL`, `JWT_SECRET`), `npm run dev:full`.
+- En ligne : deux sites alwaysdata (front statique `/fil`, API Node.js `/fil/api`) et une base PostgreSQL.
+- Le front se construit sur le PC et s'envoie par `scp` ; le back se met à jour par `git pull` en SSH.
+- Les secrets ne vont jamais dans Git : `.env` en local, champ « Environnement » du site API en ligne.
+- Le schéma SQL se rejoue à la main dans phpPgAdmin.

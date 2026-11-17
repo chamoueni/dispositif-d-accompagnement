@@ -68,7 +68,7 @@ async function handleAjouterAvis() {
   }
 }
 
-// L'auteur ou l'admin peuvent retirer un avis (modération basique, RLS "avis_delete_own_or_admin").
+// L'auteur ou l'admin peuvent retirer un avis (modération basique, vérifiée aussi par le serveur).
 function peutSupprimer(avis) {
   return user.value?.id === avis.user_id || isAdmin.value
 }
