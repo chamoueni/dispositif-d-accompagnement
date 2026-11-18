@@ -15,6 +15,9 @@ dist-ssr
 # Secrets (mot de passe de la base, JWT_SECRET, SMTP…) : voir .env.example
 .env
 .env.local
+# Toute variante (.env.production, .env.dev…) peut contenir des secrets ; seul le modèle est publié.
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
